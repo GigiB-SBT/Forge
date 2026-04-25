@@ -109,11 +109,16 @@
     pointer-events:none;opacity:0;transition:opacity 0.4s;white-space:nowrap;z-index:99;}
   #sound-hint.show{opacity:1;}
   /* Log inputs */
-  .log-input{background:#0C1017;border:none;border-bottom:2px solid #5a4136;
-    padding:10px 4px;color:#EDF1F5;font-size:16px;font-family:'DM Sans',sans-serif;
-    width:100%;outline:none;transition:border-color 0.2s;}
+  .log-input{background:#0C1017 !important;border:none;border-bottom:2px solid #5a4136;
+    padding:10px 4px;color:#EDF1F5 !important;-webkit-text-fill-color:#EDF1F5 !important;
+    font-size:16px;font-family:'DM Sans',sans-serif;
+    width:100%;outline:none;transition:border-color 0.2s;
+    -webkit-appearance:none;appearance:none;border-radius:0;}
   .log-input:focus{border-bottom-color:#ffb693;}
-  .log-input::placeholder{color:#5a4136;}
+  .log-input::placeholder{color:#5a4136;-webkit-text-fill-color:#5a4136;}
+  .log-input:-webkit-autofill,.log-input:-webkit-autofill:hover,.log-input:-webkit-autofill:focus{
+    -webkit-box-shadow:0 0 0 1000px #0C1017 inset !important;
+    -webkit-text-fill-color:#EDF1F5 !important;background:#0C1017 !important;}
   /* No-timer circle */
   .no-timer-circle{width:180px;height:180px;border-radius:50%;
     border:3px solid rgba(90,65,54,0.4);display:flex;align-items:center;justify-content:center;font-size:48px;}
@@ -757,7 +762,7 @@ let timerInterval=null;
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function fmtTime(s){return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;}
 function getTodaySuggested(){const d=new Date().getDay();return d===1?"A":d===3?"B":d===6?"C":null;}
-function dayLabel(){return["Dom","Lun","Mar","Mer","Gio","Ven","Sab"][new Date().getDay()];}
+function dayLabel(){return["Lun","Mar","Mer","Gio","Ven","Sab","Dom"][(new Date().getDay()+6)%7];}
 function saveHistory(){localStorage.setItem("kb-history-v2",JSON.stringify(state.history));}
 function saveExternalHistory(){localStorage.setItem("kb-external-history",JSON.stringify(state.externalHistory));}
 function saveHealthHistory(){localStorage.setItem("kb-health-history",JSON.stringify(state.healthHistory));}
@@ -1471,11 +1476,14 @@ function renderLog(){
 
     // Weekly bars ultimi 7gg
     const weekCounts=Array(7).fill(0);
+    // LUN=0...DOM=6 — JS getDay(): Dom=0,Lun=1...Sab=6
+    // Convertiamo: (jsDay+6)%7 → LUN=0,DOM=6
     const dow=["LUN","MAR","MER","GIO","VEN","SAB","DOM"];
+    const todayIdx=(now.getDay()+6)%7; // LUN=0,DOM=6
     allForKPI.forEach(h=>{
       try{const[d,m,y]=h.date.split("/").map(Number);const dt=new Date(y,m-1,d);
-      const diff=Math.floor((now-dt)/(1000*60*60*24));
-      if(diff>=0&&diff<7)weekCounts[6-diff]++;}catch(e){}
+      const diff=Math.round((new Date(now.getFullYear(),now.getMonth(),now.getDate())-new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()))/(1000*60*60*24));
+      if(diff>=0&&diff<7)weekCounts[(todayIdx-diff+7)%7]++;}catch(e){}
     });
     const maxW=Math.max(...weekCounts,1);
 
@@ -5303,7 +5311,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v30';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v31';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
