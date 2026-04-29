@@ -4824,18 +4824,26 @@ function render(){
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
 // ── WAKE LOCK ─────────────────────────────────────────────────────────────────
 let wakeLock=null;
+const WORKOUT_TABS=new Set(['workout','bp-workout','axe-workout','kdp-workout','extra-detail','axe-setup']);
 async function requestWakeLock(){
   try{
     if('wakeLock' in navigator){
+      if(wakeLock) return; // già attivo
       wakeLock=await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release',()=>{wakeLock=null;});
     }
-  }catch(e){}
+  }catch(e){console.warn('WakeLock non disponibile:',e);}
 }
 function releaseWakeLock(){
-  if(wakeLock){wakeLock.release();wakeLock=null;}
+  try{if(wakeLock){wakeLock.release();wakeLock=null;}}catch(e){}
 }
+// Riattiva wake lock se app torna in foreground durante workout
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'&&state.tab==='workout'){requestWakeLock();}
+  if(document.visibilityState==='visible'&&WORKOUT_TABS.has(state.tab)){
+    requestWakeLock();
+  } else if(document.visibilityState==='hidden'){
+    releaseWakeLock();
+  }
 });
 
 function startWorkoutImmediate(key){
@@ -5311,7 +5319,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v31';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v32';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
@@ -5672,6 +5680,7 @@ function kdpShowTrans(name,sub,cb){
 // ── Start / End ────────────────────────────────────────────────
 function kdpStartWorkout(){
   kdpStopTID();
+  requestWakeLock();
   KDP_ACTIVE=true; KDP_PHASE=''; KDP_PAUSED=false; KDP_TOTAL=0;
   KDP_EMOM_SEC=60; KDP_EMOM_MIN=0; KDP_EMOM_IDX=0; KDP_EMOM_ROUND=1;
   KDP_AMRAP_SEC=600; KDP_AMRAP_RNDS=0; KDP_AMRAP_IDX=0;
@@ -5683,7 +5692,7 @@ function kdpStartWorkout(){
   });
 }
 function kdpEndWorkout(){
-  kdpStopTID(); KDP_ACTIVE=false;
+  kdpStopTID(); releaseWakeLock(); KDP_ACTIVE=false;
   kdpBeep(523,0.3,0.15);
   setTimeout(function(){ kdpBeep(659,0.3,0.15); },180);
   setTimeout(function(){ kdpBeep(784,0.4,0.3);  },360);
