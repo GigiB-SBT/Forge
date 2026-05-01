@@ -3673,44 +3673,54 @@ function renderBellplexWorkout(){
 
   // DONE
   if(done){
-    return `<div class="screen bg-background" style="padding-top:64px;">
-      <main class="flex flex-col items-center justify-center flex-1 px-6 py-16 text-center">
-        <div class="font-headline text-9xl text-error leading-none mb-4">${totalSerie}</div>
-        <p class="dm-sans text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-2">SERIE COMPLETATE</p>
-        <h2 class="font-headline text-4xl mb-2">${w.label}</h2>
-        <p class="text-slate-400 text-sm mb-10">${w.title}</p>
-
-        <div class="w-full space-y-3 mb-8">
-          <p class="text-[9px] font-bold text-slate-500 tracking-widest uppercase">SENSAZIONE</p>
+    return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+      <!-- Header -->
+      <div class="flex-shrink-0 px-5 pt-5 pb-4" style="border-bottom:1px solid rgba(255,180,171,0.15)">
+        <p class="font-label text-[9px] uppercase tracking-[0.25em] text-gray-500">SESSIONE COMPLETATA</p>
+        <div class="flex items-baseline gap-3 mt-1">
+          <span class="font-headline leading-none" style="font-size:56px;color:#ffb4ab">${state.bpSerie||totalSerie}</span>
+          <span class="font-headline text-2xl text-gray-500">ROUND · ${w.label}</span>
+        </div>
+      </div>
+      <!-- Centro scrollabile se serve -->
+      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+        <!-- Sensazione -->
+        <div>
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">SENSAZIONE</p>
           <div class="grid grid-cols-4 gap-2">
             ${["😫","😐","💪","🔥"].map(f=>`<button onclick="state.logForm.feeling='${f}';render()"
               class="py-3 text-2xl transition-all"
               style="background:${state.logForm.feeling===f?'rgba(255,180,171,0.15)':'transparent'};border:1px solid ${state.logForm.feeling===f?accentHex:'rgba(90,65,54,0.3)'}">${f}</button>`).join("")}
           </div>
-          <div><label class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">HR MEDIA (bpm)</label>
-          <input class="log-input w-full" type="number" placeholder="150" inputmode="numeric"
-            value="${state.logForm.hrAvg||''}" oninput="state.logForm.hrAvg=this.value"/></div>
         </div>
-
+        <!-- HR -->
+        <div>
+          <label class="font-label text-[9px] uppercase tracking-widest text-gray-500 block mb-1">HR MEDIA (bpm)</label>
+          <input class="log-input w-full" type="number" placeholder="150" inputmode="numeric"
+            value="${state.logForm.hrAvg||''}" oninput="state.logForm.hrAvg=this.value"/>
+        </div>
         <!-- Finisher -->
-        <div class="w-full bg-surface-container ghost-border p-4 border-l-2 mb-4 text-left" style="border-color:#e9c176">
-          <p class="font-label text-[9px] uppercase tracking-widest mb-1" style="color:#e9c176">FINISHER OPZIONALE</p>
-          <p class="font-label text-[10px] text-gray-500 mb-3">5 MIN AMRAP SNATCH · 8-10 rip/braccio</p>
+        <div class="bg-surface-container ghost-border p-4 border-l-2" style="border-color:#e9c176">
+          <p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:#e9c176">⚡ FINISHER — 5 MIN AMRAP SNATCH</p>
           <button onclick="state.finisherReturnTab='train';state.trainSubTab='bellplex';finStart()"
-            class="w-full py-3 font-headline text-lg tracking-widest active:scale-95 transition-transform"
-            style="background:rgba(233,193,118,0.15);border:1px solid rgba(233,193,118,0.4);color:#e9c176">
-            ⚡ INIZIA FINISHER
+            class="w-full py-2.5 font-headline text-lg tracking-widest active:scale-95 transition-transform"
+            style="background:rgba(233,193,118,0.12);border:1px solid rgba(233,193,118,0.35);color:#e9c176">
+            INIZIA
           </button>
         </div>
-
+      </div>
+      <!-- Footer fisso -->
+      <div class="flex-shrink-0 px-5 pb-6 pt-3 space-y-2" style="background:#0C1017;box-shadow:0 -8px 24px rgba(0,0,0,0.6)">
         <button onclick="saveBellplexDone()"
-          class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center mb-3"
+          class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
           style="background:linear-gradient(135deg,#ffb4ab,#93000a);color:#000">
           SALVA SESSIONE
           <span class="material-symbols-outlined">check</span>
         </button>
-        <button onclick="exitBellplex()" class="w-full py-3 bg-surface-container ghost-border font-headline text-lg tracking-widest text-slate-400">ANNULLA</button>
-      </main>
+        <button onclick="exitBellplex()"
+          class="w-full py-3 font-headline text-lg tracking-widest text-gray-500"
+          style="border:1px solid rgba(90,65,54,0.3)">ANNULLA</button>
+      </div>
     </div>`;
   }
 
@@ -3719,104 +3729,86 @@ function renderBellplexWorkout(){
     const remaining=state.remaining||0;
     const totalRest=75;
     const pct=((totalRest-remaining)/totalRest*100).toFixed(0);
-    return `<div class="screen bg-background" style="padding-top:64px;">
-      <header class="bg-background px-6 pt-12 pb-6 flex items-center gap-4">
-        <button onclick="exitBellplex()" class="p-2"><span class="material-symbols-outlined text-error">close</span></button>
+    return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+      <!-- Header -->
+      <div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-4" style="border-bottom:1px solid rgba(255,255,255,0.05)">
         <div>
-          <div class="font-headline text-xl text-error tracking-widest">${w.label}</div>
-          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Serie ${serie-1}/${totalSerie} completata</div>
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">RECUPERO</p>
+          <p class="font-headline text-xl tracking-widest" style="color:#ffb4ab">${w.label} · Round ${serie-1}</p>
         </div>
-      </header>
-      <main class="flex flex-col items-center justify-center flex-1 px-6 text-center">
-        <p class="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-6">RECUPERO</p>
-        <div class="font-headline mb-4" style="font-size:${remaining<=10?'96px':'80px'};color:${remaining<=10?'#ffb4ab':'#e1e2e7'};line-height:1">${remaining}"</div>
-        <div class="w-full h-0.5 bg-surface-container-high mb-2 overflow-hidden">
-          <div class="h-full bg-error transition-all" style="width:${100-pct}%"></div>
-        </div>
-        <p class="dm-sans text-sm text-slate-400 mt-4">Prossima: Serie ${serie}/${totalSerie}</p>
-        <button onclick="bpSkipRest()"
-          class="mt-8 px-10 py-3 bg-surface-container ghost-border font-headline text-xl tracking-widest text-slate-400">
-          SALTA REST
+        <button onclick="exitBellplex()" class="w-8 h-8 flex items-center justify-center" style="background:rgba(255,255,255,0.05)">
+          <span class="material-symbols-outlined text-gray-500 text-base">close</span>
         </button>
-      </main>
+      </div>
+      <!-- Barra progresso -->
+      <div class="h-0.5 flex-shrink-0" style="background:rgba(255,255,255,0.06)">
+        <div style="height:100%;width:${100-pct}%;background:#ffb4ab;transition:width 1s linear"></div>
+      </div>
+      <!-- Centro -->
+      <div class="flex-1 flex flex-col items-center justify-center px-5">
+        <div class="kdp-timer-num" id="bp-rest-num" data-bp-timer
+          style="font-size:${remaining<=10?'96px':'80px'};color:${remaining<=10?'#ffb4ab':'#e1e2e7'}">${remaining}"</div>
+        <p class="font-label text-[9px] uppercase tracking-widest text-gray-600 mt-4">Prossimo → Round ${serie}</p>
+      </div>
+      <!-- Footer -->
+      <div class="flex-shrink-0 px-5 pb-8">
+        <button onclick="bpSkipRest()"
+          class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform"
+          style="border:1px solid rgba(90,65,54,0.4);color:#64748b">
+          SALTA RECUPERO
+        </button>
+      </div>
     </div>`;
   }
 
   // ROUND
   const progPct=((serie-1)/totalSerie*100).toFixed(0);
-  return `<div class="screen bg-background" style="padding-top:64px;">
-    <header class="bg-background px-5 pt-10 pb-4 flex items-center gap-4">
-      <button onclick="exitBellplex()" class="p-2"><span class="material-symbols-outlined text-error">close</span></button>
-      <div class="flex-1">
-        <div class="font-headline text-xl text-error tracking-widest">${w.label} — ${w.title}</div>
-        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Serie ${serie} di ${totalSerie}</div>
+  return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+    <!-- Header fisso -->
+    <div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.05)">
+      <div>
+        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">${w.label}</p>
+        <p class="font-headline text-xl leading-none" style="color:#ffb4ab">${w.title}</p>
       </div>
-      <div class="font-headline text-3xl text-slate-500">${serie}/${totalSerie}</div>
-    </header>
-
-    <div class="px-5 mb-4">
-      <div class="h-0.5 bg-surface-container-high overflow-hidden">
-        <div class="h-full bg-error" style="width:${progPct}%"></div>
+      <div class="flex items-center gap-3">
+        <span class="font-headline text-3xl leading-none" style="color:#ffb4ab">${serie}</span>
+        <button onclick="exitBellplex()" class="w-8 h-8 flex items-center justify-center" style="background:rgba(255,255,255,0.05)">
+          <span class="material-symbols-outlined text-gray-500 text-base">close</span>
+        </button>
       </div>
     </div>
-
-    <!-- Tags round -->
-    <div class="px-5 flex gap-2 mb-6 overflow-x-auto no-scrollbar">
-      <span class="bg-surface-container-high border-l-2 border-error text-[10px] font-bold tracking-widest uppercase px-3 py-1 flex-shrink-0">ROUND ${serie}/5</span>
-      <span class="bg-surface-container-high border-l-2 border-tertiary text-[10px] font-bold tracking-widest uppercase px-3 py-1 flex-shrink-0">KB 10KG</span>
-      <span class="bg-surface-container-high border-l-2 border-secondary text-[10px] font-bold tracking-widest uppercase px-3 py-1 flex-shrink-0">5 SERIE TOTALI</span>
+    <!-- Progress bar -->
+    <div class="h-0.5 flex-shrink-0" style="background:rgba(255,255,255,0.06)">
+      <div style="height:100%;width:${progPct}%;background:#ffb4ab;transition:width 0.4s"></div>
     </div>
 
-    <!-- Instruction -->
-    <div class="mx-5 mb-5 bg-surface-container-low p-5 ghost-border border-l-2 border-l-error relative overflow-hidden">
-      <p class="dm-sans text-[10px] font-bold tracking-widest text-error uppercase mb-2">ESEGUI SENZA POSARE LA KB</p>
-      <p class="dm-sans text-sm text-on-surface leading-relaxed">Completa tutto il lato <strong>SX</strong>, poi lato <strong class="text-error">DX</strong>. Zero pause tra gli esercizi.</p>
+    <!-- Istruzione compatta -->
+    <div class="flex-shrink-0 flex items-center gap-3 px-5 py-2" style="background:rgba(255,180,171,0.06);border-bottom:1px solid rgba(255,180,171,0.1)">
+      <span class="material-symbols-outlined text-sm" style="color:#ffb4ab;font-variation-settings:'FILL' 1">warning</span>
+      <p class="font-label text-[10px] uppercase tracking-widest" style="color:#ffb4ab">SX completo → DX · Non posare la KB</p>
     </div>
 
-    <!-- Exercise list bento -->
-    <div class="px-5 mb-4">
-      <div class="grid grid-cols-12 gap-3">
-        <!-- Main exercise list -->
-        <div class="col-span-8 bg-surface-container ghost-border p-5 relative overflow-hidden">
-          <p class="dm-sans text-[9px] font-bold tracking-widest text-slate-500 uppercase mb-4">Sequenza</p>
-          <div class="space-y-3">
-            ${w.exercises.map((e,i)=>`<div class="flex items-center gap-3 border-b border-white/5 pb-3">
-              <span class="font-headline text-2xl text-error w-6">${i+1}</span>
-              <div class="flex-1">
-                <p class="font-headline text-lg tracking-wide">${e.name}</p>
-                <p class="dm-sans text-[10px] text-slate-500">${e.detail}</p>
-              </div>
-              <span class="font-headline text-lg text-slate-400">${e.t}</span>
-            </div>`).join("")}
+    <!-- Lista esercizi — occupa spazio disponibile -->
+    <div class="flex-1 overflow-hidden px-5 py-3">
+      <div class="space-y-1 h-full">
+        ${w.exercises.map((e,i)=>`<div class="flex items-center gap-4 py-2 border-b border-white/5">
+          <span class="font-headline text-2xl w-6 flex-shrink-0" style="color:#ffb4ab">${i+1}</span>
+          <div class="flex-1 min-w-0">
+            <p class="font-headline text-xl leading-none">${e.name}</p>
+            <p class="font-label text-[10px] text-gray-500 mt-0.5">${e.detail}</p>
           </div>
-        </div>
-
-        <!-- Side info -->
-        <div class="col-span-4 bg-surface-container-low ghost-border p-5 flex flex-col justify-between">
-          <div>
-            <p class="dm-sans text-[9px] font-bold tracking-widest text-slate-500 uppercase mb-2">Rest tra serie</p>
-            <div class="font-headline text-4xl leading-none text-on-surface">60-90"</div>
-          </div>
-          <div class="mt-4">
-            <p class="dm-sans text-[9px] font-bold tracking-widest text-slate-500 uppercase mb-2">Lato DX dopo SX</p>
-            <span class="material-symbols-outlined text-error text-3xl">swap_horiz</span>
-          </div>
-        </div>
-
-        <!-- Tips -->
-        ${w.tips&&w.tips.length?`<div class="col-span-12 bg-surface-container ghost-border p-5">
-          ${w.tips.slice(0,1).map(t=>`<p class="dm-sans text-xs text-slate-400 italic leading-relaxed">"${t}"</p>`).join("")}
-        </div>`:""}
+          <span class="font-headline text-lg text-gray-400 flex-shrink-0">${e.t}</span>
+        </div>`).join("")}
       </div>
     </div>
 
-    <!-- CTA -->
-    <div class="px-5 pb-4">
+    <!-- Footer fisso -->
+    <div class="flex-shrink-0 px-5 pb-6 pt-2" style="background:#0C1017;box-shadow:0 -8px 24px rgba(0,0,0,0.6)">
       <button onclick="bpNextSerie()"
-        class="w-full py-5 font-headline text-xl tracking-widest flex justify-between items-center group"
+        class="w-full py-5 font-headline text-xl tracking-widest flex justify-between items-center px-2 active:scale-95 transition-transform"
         style="background:linear-gradient(135deg,#ffb4ab,#93000a);color:#000">
-        ${serie<totalSerie?`✓ SERIE ${serie} COMPLETATA`:"✓ ULTIMA SERIE — FINITO!"}
-        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        ✓ ROUND ${serie} COMPLETATO
+        <span class="material-symbols-outlined">arrow_forward</span>
       </button>
     </div>
   </div>`;
@@ -5511,7 +5503,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v37';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v39';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
