@@ -1292,22 +1292,19 @@ function renderDone(){
         </div>
 
         <!-- Finisher -->
-        <div class="bg-surface-container ghost-border p-5">
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-secondary" style="font-variation-settings:'FILL' 1">bolt</span>
-              <span class="font-headline text-xl tracking-wider">FINISHER OPZIONALE</span>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="finisher-done-toggle" class="sr-only peer"/>
-              <div class="w-11 h-6 bg-surface-container-highest rounded-full peer
-                peer-checked:bg-secondary
-                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all
-                peer-checked:after:translate-x-full"></div>
-            </label>
+        <div class="bg-surface-container ghost-border p-5 border-l-2 border-l-secondary">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="material-symbols-outlined text-secondary text-lg" style="font-variation-settings:'FILL' 1">bolt</span>
+            <span class="font-headline text-2xl tracking-wider">FINISHER</span>
           </div>
-          <p class="dm-sans text-xs text-slate-400">5' EMOM Snatch: 8-10 rip per braccio ogni minuto.</p>
+          <p class="font-label text-[10px] uppercase tracking-widest text-gray-500 mb-1">5 MIN AMRAP SNATCH</p>
+          <p class="font-label text-xs text-gray-600 mb-4">Alterna ogni braccio · 8-10 rip per minuto</p>
+          <button onclick="state.finisherReturnTab='home';finStart()"
+            class="w-full py-3.5 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
+            style="background:linear-gradient(135deg,#e9c176,#c9a856);color:#000">
+            INIZIA FINISHER
+            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
+          </button>
         </div>
 
         <!-- CTA buttons -->
@@ -4722,6 +4719,13 @@ function renderKdpDone(){
         <p class="font-headline text-2xl" style="color:#7A9A3A">${k.v}</p>
       </div>`).join("")}
     </div>
+
+    <button onclick="state.finisherReturnTab='train';state.trainSubTab='kdp';finStart()"
+      class="w-full py-3.5 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform mb-3"
+      style="border:1px solid rgba(233,193,118,0.4);color:#e9c176;background:rgba(233,193,118,0.08)">
+      ⚡ FINISHER — 5 MIN AMRAP SNATCH
+      <span class="material-symbols-outlined text-lg" style="color:#e9c176">arrow_forward</span>
+    </button>
     <button onclick="state.tab='train';state.trainSubTab='kdp';render()"
       class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform"
       style="background:#7A9A3A;color:#0D0D0F;border:none">
@@ -4799,6 +4803,133 @@ function startWorkout(key){
   });
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// FORGE FINISHER — 5 min AMRAP Snatch
+// ══════════════════════════════════════════════════════════════════
+var FIN_ACTIVE=false, FIN_SEC=300, FIN_REPS=0, FIN_PAUSED=false, FIN_TID=null;
+
+function finStart(){
+  FIN_ACTIVE=true; FIN_SEC=300; FIN_REPS=0; FIN_PAUSED=false;
+  requestWakeLock();
+  state.tab='finisher'; render();
+  setTimeout(function(){
+    FIN_TID=setInterval(function(){
+      if(FIN_PAUSED) return;
+      FIN_SEC--;
+      var el=document.getElementById('fin-timer');
+      if(el){ var m=Math.floor(FIN_SEC/60),s=FIN_SEC%60;
+        el.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+        el.style.color=FIN_SEC<=10?'#ffb4ab':'#ffb693';
+      }
+      if(FIN_SEC<=0){
+        clearInterval(FIN_TID); FIN_TID=null;
+        releaseWakeLock();
+        // beep fine
+        try{var ctx=new(window.AudioContext||window.webkitAudioContext)();
+          [523,659,784].forEach(function(f,i){
+            var o=ctx.createOscillator(),g=ctx.createGain();
+            o.connect(g);g.connect(ctx.destination);
+            o.type='sine';o.frequency.value=f;
+            g.gain.setValueAtTime(0.3,ctx.currentTime+i*0.18);
+            g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.18+0.25);
+            o.start(ctx.currentTime+i*0.18);o.stop(ctx.currentTime+i*0.18+0.3);
+          });}catch(e){}
+        if('vibrate'in navigator)navigator.vibrate([200,100,200,100,400]);
+        document.getElementById('fin-done-banner')&&(document.getElementById('fin-done-banner').style.display='flex');
+        document.getElementById('fin-controls')&&(document.getElementById('fin-controls').style.display='none');
+      }
+    },1000);
+  },100);
+}
+function finAddRep(n){ FIN_REPS+=n; var el=document.getElementById('fin-reps'); if(el)el.textContent=FIN_REPS; }
+function finTogglePause(){
+  FIN_PAUSED=!FIN_PAUSED;
+  var btn=document.getElementById('fin-pause-btn');
+  if(btn)btn.textContent=FIN_PAUSED?'▶ Riprendi':'⏸ Pausa';
+}
+function finExit(returnTab){
+  if(FIN_TID){clearInterval(FIN_TID);FIN_TID=null;}
+  FIN_ACTIVE=false; releaseWakeLock();
+  state.tab=returnTab||'home'; render();
+}
+
+
+// ── RENDER FINISHER ───────────────────────────────────────────────
+function renderFinisher(){
+  const returnTab=state.finisherReturnTab||'home';
+  return `<div class="screen bg-background" style="padding-top:0;min-height:100vh;display:flex;flex-direction:column;">
+    <!-- Header -->
+    <div class="flex justify-between items-center px-5 pt-5 pb-3 flex-shrink-0" style="border-bottom:1px solid rgba(255,182,147,0.15)">
+      <div class="flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full animate-pulse bg-primary"></span>
+        <span class="font-headline text-lg tracking-widest text-primary">FINISHER</span>
+      </div>
+      <button onclick="finExit('${returnTab}')"
+        class="w-9 h-9 flex items-center justify-center bg-surface-container active:scale-90 transition-transform">
+        <span class="material-symbols-outlined text-on-surface text-lg">close</span>
+      </button>
+    </div>
+
+    <!-- Corpo -->
+    <div class="flex flex-col items-center flex-1 px-5 pt-8 pb-4">
+      <p class="font-label text-[9px] uppercase tracking-[0.25em] text-gray-500 mb-3">5 MIN AMRAP</p>
+      <h2 class="font-headline text-5xl leading-none mb-8 text-on-surface">SNATCH</h2>
+
+      <!-- Timer grande stile KDP -->
+      <div class="kdp-timer-num mb-2" id="fin-timer" style="color:#ffb693;font-size:86px">05:00</div>
+      <p class="font-label text-[9px] uppercase tracking-widest text-gray-600 mb-8">Alterna ogni braccio · 8-10 rip/min</p>
+
+      <!-- Contatore reps -->
+      <div class="w-full bg-surface-container ghost-border p-6 mb-6 border-l-2 border-l-primary">
+        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-3">REPS TOTALI</p>
+        <div class="flex items-center justify-between">
+          <span class="font-headline text-7xl leading-none text-primary" id="fin-reps">0</span>
+          <div class="flex flex-col gap-2">
+            <button onclick="finAddRep(5)"
+              class="w-14 h-12 font-headline text-xl active:scale-90 transition-transform"
+              style="background:rgba(255,182,147,0.15);border:1px solid rgba(255,182,147,0.4);color:#ffb693">+5</button>
+            <button onclick="finAddRep(1)"
+              class="w-14 h-12 font-headline text-xl active:scale-90 transition-transform"
+              style="background:transparent;border:1px solid rgba(90,65,54,0.4);color:#64748b">+1</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banner fine (nascosto finché non scade) -->
+      <div id="fin-done-banner" class="w-full bg-surface-container ghost-border p-5 border-l-2 mb-4 items-center gap-3"
+        style="border-color:#7A9A3A;display:none">
+        <span class="material-symbols-outlined text-2xl" style="color:#7A9A3A;font-variation-settings:'FILL' 1">check_circle</span>
+        <div>
+          <p class="font-headline text-xl" style="color:#7A9A3A">FINISHER COMPLETATO</p>
+          <p class="font-label text-[9px] text-gray-500 mt-1" id="fin-done-reps"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controlli fissi -->
+    <div id="fin-controls" class="px-5 pb-6 space-y-2 flex-shrink-0">
+      <div class="flex gap-2">
+        <button id="fin-pause-btn" onclick="finTogglePause()"
+          class="flex-1 py-4 font-headline text-xl tracking-widest"
+          style="border:1px solid rgba(255,182,147,0.3);color:#ffb693;background:transparent">
+          ⏸ Pausa
+        </button>
+        <button onclick="finExit('${returnTab}')"
+          class="w-14 py-4 font-headline text-xl tracking-widest"
+          style="border:1px solid rgba(90,65,54,0.3);color:#64748b;background:transparent">
+          ✕
+        </button>
+      </div>
+      <button onclick="finExit('${returnTab}')"
+        class="w-full py-4 font-headline text-xl tracking-widest"
+        style="background:linear-gradient(135deg,#ffb693,#ff6b00);color:#000">
+        FINE — SALVA
+      </button>
+    </div>
+  </div>`;
+}
+
 function toggleAcc(id){state.plan.openAcc=state.plan.openAcc===id?null:id;render();}
 
 function render(){
@@ -4811,6 +4942,7 @@ function render(){
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
   else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
   else if(state.tab==="kdp-workout") app.innerHTML=renderKdpWorkout();
+  else if(state.tab==="finisher")     app.innerHTML=renderFinisher();
   else if(state.tab==="kdp-done")    app.innerHTML=renderKdpDone();
   else if(state.tab==="axe")         app.innerHTML=renderTrain();
   else if(state.tab==="axe-workout") app.innerHTML=renderAxeWorkout();
@@ -5319,7 +5451,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v32';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v33';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
