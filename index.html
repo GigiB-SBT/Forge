@@ -4652,7 +4652,7 @@ function renderTrain(){
       <div class="space-y-2 mb-5">
         ${[
           {icon:"timer",        txt:"EMOM 12 min — Swing / Clean+Press / Goblet Squat"},
-          {icon:"fitness_center",txt:"AMRAP 10 min — Swing / Push-Up / Row"},
+          {icon:"fitness_center",txt:"AMRAP 10 min — Swing 16kg / Push-Up / Row 16kg"},
           {icon:"flag",         txt:"Finisher — Farmer Carry o Hold bilaterale"},
         ].map(r=>`<div class="flex items-start gap-3">
           <span class="material-symbols-outlined text-base flex-shrink-0 mt-0.5" style="color:#7A9A3A;font-variation-settings:'FILL' 1">${r.icon}</span>
@@ -4753,37 +4753,96 @@ function renderKdpWorkout(){
 
 
 // ── RENDER KDP DONE ───────────────────────────────────────────────
+var KDP_WEIGHTS={emomSwing:16,emomCP:16,emomSquat:16,amrapSwing:16,amrapRow:16};
+function kdpSetWeight(k,v){KDP_WEIGHTS[k]=Number(v);render();}
+
 function renderKdpDone(){
   const s=KDP_SESSIONS[0]||{};
-  return `<div class="screen bg-background" style="padding-top:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;">
-    <div class="w-16 h-16 rounded-full flex items-center justify-center mb-8" style="background:rgba(122,154,58,0.15);border:2px solid #7A9A3A">
-      <span class="material-symbols-outlined text-4xl" style="color:#7A9A3A;font-variation-settings:'FILL' 1">check_circle</span>
-    </div>
-    <p class="font-label text-[9px] uppercase tracking-[0.25em] mb-2" style="color:#7A9A3A">SESSIONE COMPLETATA</p>
-    <h1 class="font-headline text-6xl mb-8">KDP-26</h1>
-    <div class="grid grid-cols-3 gap-4 w-full mb-8">
-      ${[
-        {l:"Durata",  v:`${s.dur||0} min`},
-        {l:"Rounds",  v:`${s.rnd||0}`},
-        {l:"Finisher",v:s.fin||'—'},
-      ].map(k=>`<div class="bg-surface-container ghost-border p-4 text-center">
-        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">${k.l}</p>
-        <p class="font-headline text-2xl" style="color:#7A9A3A">${k.v}</p>
-      </div>`).join("")}
+  const W=KDP_WEIGHTS;
+  const weights=[
+    {k:"emomSwing",  label:"EMOM Swing",       icon:"bolt"},
+    {k:"emomCP",     label:"EMOM C+Press",      icon:"fitness_center"},
+    {k:"emomSquat",  label:"EMOM Goblet",       icon:"accessibility_new"},
+    {k:"amrapSwing", label:"AMRAP Swing",        icon:"bolt"},
+    {k:"amrapRow",   label:"AMRAP Row",          icon:"rowing"},
+  ];
+  const KG=[8,10,12,16,20,24];
+
+  return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="flex-shrink-0 px-5 pt-5 pb-4" style="border-bottom:1px solid rgba(122,154,58,0.2)">
+      <p class="font-label text-[9px] uppercase tracking-[0.25em] mb-1" style="color:#7A9A3A">SESSIONE COMPLETATA</p>
+      <div class="flex items-baseline gap-3">
+        <span class="font-headline text-5xl leading-none">KDP-26</span>
+        <span class="font-headline text-2xl text-gray-500">${s.dur||0} min · ${s.rnd||0} rnd</span>
+      </div>
     </div>
 
-    <button onclick="state.finisherReturnTab='train';state.trainSubTab='kdp';finStart()"
-      class="w-full py-3.5 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform mb-3"
-      style="border:1px solid rgba(233,193,118,0.4);color:#e9c176;background:rgba(233,193,118,0.08)">
-      ⚡ FINISHER — 5 MIN AMRAP SNATCH
-      <span class="material-symbols-outlined text-lg" style="color:#e9c176">arrow_forward</span>
-    </button>
-    <button onclick="state.tab='train';state.trainSubTab='kdp';render()"
-      class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform"
-      style="background:#7A9A3A;color:#0D0D0F;border:none">
-      TORNA AL MENU
-    </button>
+    <div class="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+
+      <!-- Pesi -->
+      <div>
+        <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-3">PESI USATI</p>
+        <div class="space-y-2">
+          ${weights.map(w=>`<div class="flex items-center gap-3 bg-surface-container ghost-border px-3 py-2.5 border-l-2" style="border-color:#7A9A3A55">
+            <span class="material-symbols-outlined text-sm flex-shrink-0" style="color:#7A9A3A;font-variation-settings:'FILL' 1">${w.icon}</span>
+            <span class="font-label text-[10px] uppercase tracking-wider text-gray-400 w-24 flex-shrink-0">${w.label}</span>
+            <div class="flex gap-1 flex-1 justify-end flex-wrap">
+              ${KG.map(kg=>`<button onclick="kdpSetWeight('${w.k}',${kg})"
+                class="w-9 h-8 font-headline text-sm active:scale-90 transition-transform"
+                style="background:${W[w.k]===kg?'#7A9A3A':'transparent'};color:${W[w.k]===kg?'#0D0D0F':'#64748b'};border:1px solid ${W[w.k]===kg?'#7A9A3A':'rgba(90,65,54,0.3)'}">
+                ${kg}
+              </button>`).join("")}
+            </div>
+          </div>`).join("")}
+        </div>
+      </div>
+
+      <!-- Sensazione -->
+      <div>
+        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">SENSAZIONE</p>
+        <div class="grid grid-cols-4 gap-2">
+          ${["😫","😐","💪","🔥"].map(f=>`<button onclick="state.kdpFeeling='${f}';render()"
+            class="py-3 text-2xl transition-all"
+            style="background:${(state.kdpFeeling||'')===f?'rgba(122,154,58,0.15)':'transparent'};border:1px solid ${(state.kdpFeeling||'')===f?'#7A9A3A':'rgba(90,65,54,0.3)'}">${f}</button>`).join("")}
+        </div>
+      </div>
+
+      <!-- Finisher -->
+      <div class="bg-surface-container ghost-border p-4 border-l-2" style="border-color:#e9c176">
+        <p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:#e9c176">⚡ FINISHER — 5 MIN AMRAP SNATCH</p>
+        <button onclick="state.finisherReturnTab='train';state.trainSubTab='kdp';finStart()"
+          class="w-full py-2.5 font-headline text-lg tracking-widest active:scale-95 transition-transform"
+          style="background:rgba(233,193,118,0.12);border:1px solid rgba(233,193,118,0.35);color:#e9c176">
+          INIZIA
+        </button>
+      </div>
+    </div>
+
+    <div class="flex-shrink-0 px-5 pb-6 pt-3" style="background:#0C1017;box-shadow:0 -8px 24px rgba(0,0,0,0.6)">
+      <button onclick="kdpSaveAndExit()"
+        class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform"
+        style="background:#7A9A3A;color:#0D0D0F;border:none">
+        SALVA E TORNA
+      </button>
+    </div>
   </div>`;
+}
+
+function kdpSaveAndExit(){
+  if(KDP_SESSIONS[0]){
+    KDP_SESSIONS[0].weights=Object.assign({},KDP_WEIGHTS);
+    KDP_SESSIONS[0].feeling=state.kdpFeeling||null;
+    kdpSave();
+    var eh=state.externalHistory||[];
+    if(eh[0]&&eh[0]._kdp){
+      var wStr=Object.entries(KDP_WEIGHTS).map(function(e){return e[0]+':'+e[1]+'kg';}).join(', ');
+      eh[0].notes='AMRAP '+(KDP_SESSIONS[0].rnd||0)+' rnd · '+wStr;
+      eh[0].feeling=state.kdpFeeling||null;
+      saveExternalHistory();
+    }
+  }
+  state.kdpFeeling=null;
+  state.tab='train'; state.trainSubTab='kdp'; render();
 }
 
 
@@ -5503,7 +5562,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v39';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v42';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
@@ -5531,17 +5590,26 @@ var KDP_SESSIONS = (function(){
   try{ var r=localStorage.getItem('kdp26v2'); if(r){ var p=JSON.parse(r); return p.s||[]; } }catch(e){}
   return [];
 })();
+// Carica externalHistory se non già caricata
+(function(){
+  try{
+    if(!state.externalHistory||state.externalHistory.length===0){
+      var r=localStorage.getItem('forge-external-v1');
+      if(r) state.externalHistory=JSON.parse(r);
+    }
+  }catch(e){}
+})();
 var KDP_CFG = { beep:true, vib:true };
 
 var KDP_EMOM = [
-  { name:'Swing',         kg:16, reps:'10 REP' },
+  { name:'Swing',         kg:16, reps:'15 REP' },
   { name:'Clean + Press', kg:16, reps:'5+5 REP' },
   { name:'Goblet Squat',  kg:16, reps:'12 REP' },
 ];
 var KDP_AMRAP = [
-  { name:'Swing',   det:'15 rep — KB 10 KG' },
+  { name:'Swing',   det:'15 rep — KB 16 KG' },
   { name:'Push-Up', det:'10 rep — Bodyweight' },
-  { name:'Row',     det:'10 rep — KB 10 KG alt.' },
+  { name:'Row',     det:'10 rep — KB 16 KG alt.' },
 ];
 
 // Stato workout KDP (flat)
@@ -5881,8 +5949,23 @@ function kdpEndWorkout(){
   setTimeout(function(){ kdpBeep(659,0.3,0.15); },180);
   setTimeout(function(){ kdpBeep(784,0.4,0.3);  },360);
   kdpVib([200,100,200,100,400]);
-  KDP_SESSIONS.unshift({ id:Date.now(), date:new Date().toISOString(), dur:Math.floor(KDP_TOTAL/60), rnd:KDP_AMRAP_RNDS, fin:KDP_FIN_TYPE, ok:true });
+  const kdpEntry = { id:Date.now(), date:new Date().toISOString(), dur:Math.floor(KDP_TOTAL/60), rnd:KDP_AMRAP_RNDS, fin:KDP_FIN_TYPE, ok:true };
+  KDP_SESSIONS.unshift(kdpEntry);
   kdpSave();
+  // Salva anche nel log unificato (state.externalHistory)
+  const kdpDate = new Date();
+  const kdpDateStr = kdpDate.getDate().toString().padStart(2,'0')+'/'+(kdpDate.getMonth()+1).toString().padStart(2,'0')+'/'+kdpDate.getFullYear();
+  const kdpLogEntry = {
+    type:'KDP-26',
+    date:kdpDateStr,
+    duration:Math.floor(KDP_TOTAL/60),
+    notes:'AMRAP '+KDP_AMRAP_RNDS+' rnd · finisher: '+KDP_FIN_TYPE,
+    _src:'ext',
+    _kdp:true
+  };
+  if(!state.externalHistory) state.externalHistory=[];
+  state.externalHistory.unshift(kdpLogEntry);
+  saveExternalHistory();
   state.tab='kdp-done'; render();
 }
 
