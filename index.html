@@ -1405,11 +1405,20 @@ function renderLog(){
         </div>`
       :visible.map(h=>{
         const isExt=h._src==="ext";
-        const realIdx=isExt?extHist.findIndex(e=>e.date===h.date&&e.type===h.type):hist.findIndex(e=>e.date===h.date&&e.day===h.day);
+        const realIdx=isExt?extHist.findIndex(e=>e.date===h.date&&e.type===h.type):hist.findIndex(e=>e.date===h.date&&e.day===h.day&&(e.duration===h.duration||e.notes===h.notes));
         const editKey=isExt?`ext_${realIdx}`:`kb_${realIdx}`;
         const isEditing=state.editingEntry===editKey;
-        const col=isExt?(EXT_C[h.type]||"#64748b"):(KPhex[h.day]||"#ffb693");
-        const label=isExt?h.type:h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):`Giorno ${h.day}`;
+        const isBP=!isExt&&h.day&&h.day.startsWith("extra_BP");
+        const isKDP=isExt&&h._kdp;
+        const isFinisher=isExt&&h._finisher;
+        const col=isExt
+          ?(isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#64748b"))
+          :(isBP?"#ffb4ab":(KPhex[h.day]||"#ffb693"));
+        const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
+        const bpW=rawId.startsWith("BP")?getExtraById(rawId):null;
+        const label=isExt
+          ?(isKDP?"KDP-26":isFinisher?"Finisher Snatch":h.type)
+          :(bpW?(bpW.label+" — "+bpW.title):rawId?rawId:`Giorno ${h.day}`);
         const [dayN,...rest]=h.date?h.date.split("/"):["—"];
         const mo=rest.length?["","GEN","FEB","MAR","APR","MAG","GIU","LUG","AGO","SET","OTT","NOV","DIC"][Number(rest[0])]||"":"";
         const editBlock=isEditing?`<div class="mt-3 pt-3 border-t border-white/5 space-y-3">
@@ -3899,8 +3908,9 @@ function saveBellplexDone(){
     feeling:state.logForm.feeling,
     hrAvg:state.logForm.hrAvg?Number(state.logForm.hrAvg):null,
     weight:state.logForm.weight||"10",
-    notes:state.logForm.notes||"",
+    notes:(state.logForm.notes||"")||((state.bpSerie||5)+" round completati"),
     talkTest:null,
+    rounds:state.bpSerie||5,
   };
   state.history.push(entry);
   saveHistory();
@@ -4962,6 +4972,26 @@ function finTogglePause(){
 function finExit(returnTab){
   if(FIN_TID){clearInterval(FIN_TID);FIN_TID=null;}
   FIN_ACTIVE=false; releaseWakeLock();
+  // Salva finisher nel log solo se sono state registrate reps o timer scaduto
+  if(FIN_REPS>0 || FIN_SEC<=0){
+    var now=new Date();
+    var dd=String(now.getDate()).padStart(2,'0');
+    var mm=String(now.getMonth()+1).padStart(2,'0');
+    var yyyy=now.getFullYear();
+    var dateStr=dd+'/'+mm+'/'+yyyy;
+    var minDone=Math.round((300-FIN_SEC)/60);
+    if(!state.externalHistory) state.externalHistory=[];
+    state.externalHistory.unshift({
+      type:'Finisher',
+      date:dateStr,
+      duration:minDone||5,
+      notes:'AMRAP Snatch 5 min · '+FIN_REPS+' reps totali',
+      feeling:null,
+      _src:'ext',
+      _finisher:true
+    });
+    saveExternalHistory();
+  }
   state.tab=returnTab||'home'; render();
 }
 
@@ -5562,7 +5592,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v42';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v45';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
