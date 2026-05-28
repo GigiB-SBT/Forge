@@ -3635,6 +3635,7 @@ function startExtraWorkoutImmediate(id){
     state={...state,
       tab:"bp-workout",
       extraWorkoutId:id,
+      startTime:Date.now(),
       bpSerie:1,           // serie corrente
       bpMaxSerie:5,        // target round (modificabile)
       bpResting:false,     // true = in rest tra serie
@@ -3913,16 +3914,28 @@ function bpSkipRest(){
 
 function exitBellplex(){
   if(bpRestInterval) clearInterval(bpRestInterval);
-  clearTimerInterval();
-  releaseWakeLock();
-  state.tab="extra-detail";
-  state.extraDetailId=state.extraWorkoutId;
-  state.bpResting=false;
-  state.bpDone=false;
-  state.bpMaxSerie=5;
-  state.bpAskContinue=false;
-  state.timerRunning=false;
-  render();
+  clearTimerInterval(); releaseWakeLock(); state.timerRunning=false;
+
+  function doSave(){
+    var roundsDone=(state.bpSerie||1)-1;
+    var w=getExtraById(state.extraWorkoutId)||{};
+    savePartialEntry(w.label||'Bellplex', roundsDone, state.startTime||null, (state.extraWorkoutId||''));
+    doExit();
+  }
+  function doExit(){
+    state.tab="extra-detail";
+    state.extraDetailId=state.extraWorkoutId;
+    state.bpResting=false; state.bpDone=false;
+    state.bpMaxSerie=5; state.bpAskContinue=false;
+    render();
+  }
+
+  var roundsDone=(state.bpSerie||1)-1;
+  if(roundsDone>0){
+    showExitDialog(doSave, doExit);
+  } else {
+    doExit();
+  }
 }
 
 function saveBellplexDone(){
@@ -4777,7 +4790,7 @@ function renderKdpWorkout(){
         <span class="w-1.5 h-1.5 rounded-full animate-pulse" style="background:#7A9A3A"></span>
         <span class="font-headline text-lg tracking-widest" style="color:#7A9A3A">KDP-26</span>
       </div>
-      <button onclick="if(confirm('Abbandonare la sessione?')){kdpStopTID();KDP_ACTIVE=false;state.tab='train';state.trainSubTab='kdp';render();}"
+      <button onclick="if(confirm('Abbandonare la sessione?')){kdpStopTID();releaseWakeLock();KDP_ACTIVE=false;var m=Math.round(KDP_TOTAL/60);if(m>0){if(!state.externalHistory)state.externalHistory=[];state.externalHistory.unshift({type:'KDP-26',date:fmtDateIT(new Date()),duration:m||1,notes:'AMRAP '+KDP_AMRAP_RNDS+' rnd · '+KDP_PHASE+' · ⚠ interrotto',_src:'ext',_kdp:true,_partial:true});saveExternalHistory();}state.tab='train';state.trainSubTab='kdp';render();}"
         class="w-9 h-9 flex items-center justify-center bg-surface-container active:scale-90 transition-transform">
         <span class="material-symbols-outlined text-on-surface text-lg">close</span>
       </button>
@@ -5380,8 +5393,27 @@ function mrTogglePause(){
   if(btn)btn.textContent=MR_STATE.paused?'▶ Riprendi':'⏸ Pausa';
 }
 function mrExit(){
-  mrReset(); releaseWakeLock();
-  state.tab='morning'; render();
+  function doSave(){
+    var exDone=MR_STATE.exIdx||0;
+    var now=new Date();
+    if(exDone>0){
+      if(!state.externalHistory) state.externalHistory=[];
+      state.externalHistory.unshift({
+        type:'Routine Mattutina', date:fmtDateIT(now), duration:Math.ceil(exDone),
+        notes:exDone+'/'+MORNING_ROUTINE.exercises.length+' esercizi · ⚠ interrotto',
+        _src:'ext', _morning:true, _partial:true
+      });
+      saveExternalHistory();
+    }
+    doExit();
+  }
+  function doExit(){ mrReset(); releaseWakeLock(); state.tab='morning'; render(); }
+
+  if(MR_STATE.exIdx>0){
+    showExitDialog(doSave, doExit);
+  } else {
+    doExit();
+  }
 }
 
 // ── renderMorningWorkout ──────────────────────────────────────────
@@ -5589,9 +5621,31 @@ function whFinish(){
 
 function whExit(){
   if(WH_STATE.tid){clearInterval(WH_STATE.tid);WH_STATE.tid=null;}
-  if(WH_STATE.retentionLog.length>0) whSave();
-  whReset(); releaseWakeLock();
-  state.tab='morning'; render();
+  whStopBreathing();
+
+  function doSave(){
+    var partial=WH_STATE.phase!=='done';
+    var now=new Date();
+    var best=WH_STATE.retentionLog.length?
+      Math.max.apply(null,WH_STATE.retentionLog.map(function(r){return r.sec;})):0;
+    if(!state.externalHistory) state.externalHistory=[];
+    state.externalHistory.unshift({
+      type:'Wim Hof', date:fmtDateIT(now), duration:10,
+      notes:WH_STATE.retentionLog.length+' round · apnea max '+best+'"'+(partial?' · ⚠ interrotto':''),
+      _src:'ext', _wimhof:true, _partial:partial,
+      retentionLog:WH_STATE.retentionLog.slice()
+    });
+    saveExternalHistory();
+    doExit();
+  }
+  function doExit(){ whReset(); releaseWakeLock(); state.tab='morning'; render(); }
+
+  if(WH_STATE.retentionLog.length>0 && WH_STATE.phase!=='done'){
+    showExitDialog(doSave, doExit);
+  } else {
+    if(WH_STATE.retentionLog.length>0) doSave();
+    else doExit();
+  }
 }
 
 // ── renderWimHof ─────────────────────────────────────────────────
@@ -5788,6 +5842,70 @@ function renderWimHof(){
   </div>`;
 }
 
+
+function fmtDateIT(d){
+  return String(d.getDate()).padStart(2,'0')+'/'
+    +String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+}
+function savePartialEntry(type, rounds, startTime, extraNotes){
+  var mins = startTime ? Math.round((Date.now()-startTime)/60000) : 0;
+  if(!state.externalHistory) state.externalHistory=[];
+  state.externalHistory.unshift({
+    type: type,
+    date: fmtDateIT(new Date()),
+    duration: mins||1,
+    notes: (rounds>0?rounds+' round':'') + (extraNotes?' · '+extraNotes:'') + ' · ⚠ interrotto',
+    rounds: rounds,
+    _src:'ext',
+    _partial:true
+  });
+  saveExternalHistory();
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// CONFIRM EXIT — dialog universale uscita anticipata
+// ══════════════════════════════════════════════════════════════════
+function showExitDialog(saveFn, exitFn){
+  // Crea overlay se non esiste
+  var existing=document.getElementById('exit-dialog-overlay');
+  if(existing) existing.remove();
+
+  var overlay=document.createElement('div');
+  overlay.id='exit-dialog-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:flex-end;justify-content:center;max-width:480px;left:50%;transform:translateX(-50%)';
+
+  overlay.innerHTML=`<div style="width:100%;background:#0C1017;padding:24px 20px 36px;border-top:2px solid rgba(255,255,255,0.08)">
+    <p style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.25em;color:#64748b;text-transform:uppercase;margin-bottom:16px;text-align:center">INTERROMPI ALLENAMENTO</p>
+    <button id="exit-save-btn"
+      style="width:100%;padding:16px;background:linear-gradient(135deg,#ffb693,#ff6b00);color:#000;border:none;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.1em;margin-bottom:8px;cursor:pointer;display:block">
+      SALVA E ESCI
+    </button>
+    <button id="exit-nosave-btn"
+      style="width:100%;padding:14px;background:transparent;color:#64748b;border:1px solid rgba(90,65,54,0.4);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em;margin-bottom:8px;cursor:pointer;display:block">
+      ESCI SENZA SALVARE
+    </button>
+    <button id="exit-cancel-btn"
+      style="width:100%;padding:14px;background:transparent;color:#64748b;border:none;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;cursor:pointer;display:block">
+      CONTINUA L'ALLENAMENTO
+    </button>
+  </div>`;
+
+  document.body.appendChild(overlay);
+
+  document.getElementById('exit-save-btn').onclick=function(){
+    overlay.remove();
+    if(saveFn) saveFn();
+  };
+  document.getElementById('exit-nosave-btn').onclick=function(){
+    overlay.remove();
+    if(exitFn) exitFn();
+  };
+  document.getElementById('exit-cancel-btn').onclick=function(){
+    overlay.remove();
+  };
+}
+
 function toggleAcc(id){state.plan.openAcc=state.plan.openAcc===id?null:id;render();}
 
 function render(){
@@ -5854,11 +5972,37 @@ function startWorkoutImmediate(key){
 }
 
 function exitWorkout(){
-  clearTimerInterval();releaseWakeLock();
-  if(state.extraWorkoutId){state.tab="extra-detail";}
-  else if(state.dayKey==="bw_jacked"||state.dayKey==="bw_circuit"){state.tab="plan";}
-  else{state.tab="home";}
-  state.timerRunning=false;render();
+  clearTimerInterval(); releaseWakeLock(); state.timerRunning=false;
+
+  function doSave(){
+    var stepsDone=state.stepIdx||0;
+    var seq=state.dayKey&&DAYS[state.dayKey]?DAYS[state.dayKey].seq:[];
+    var mins=state.startTime?Math.round((Date.now()-state.startTime)/60000):0;
+    var label=state.extraWorkoutId?
+      (getExtraById(state.extraWorkoutId)||{}).label||'Extra':
+      ('Giorno '+(state.dayKey||'?'));
+    if(!state.externalHistory) state.externalHistory=[];
+    state.externalHistory.unshift({
+      type:label, date:fmtDateIT(new Date()), duration:mins||1,
+      notes:'Step '+stepsDone+'/'+(seq.length||'?')+' · ⚠ interrotto',
+      _src:'ext', _partial:true
+    });
+    saveExternalHistory();
+    doExit();
+  }
+  function doExit(){
+    if(state.extraWorkoutId){state.tab="extra-detail";}
+    else if(state.dayKey==="bw_jacked"||state.dayKey==="bw_circuit"){state.tab="plan";}
+    else{state.tab="home";}
+    render();
+  }
+
+  var stepsDone=state.stepIdx||0;
+  if(stepsDone>0){
+    showExitDialog(doSave, doExit);
+  } else {
+    doExit();
+  }
 }
 function goHome(){clearTimerInterval();releaseWakeLock();state.extraWorkoutId=null;state.tab="home";state.timerRunning=false;render();}
 
@@ -6312,7 +6456,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v53';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v56';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
