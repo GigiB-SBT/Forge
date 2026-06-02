@@ -12,14 +12,13 @@
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwOTBDMEYiLz48cmVjdCB4PSIyNCIgeT0iMjQiIHdpZHRoPSI0NjQiIGhlaWdodD0iNDY0IiBmaWxsPSIjMEYxNDE5Ii8+PHJlY3QgeD0iMTQwIiB5PSIxMDAiIHdpZHRoPSIzOCIgaGVpZ2h0PSIzMTIiIGZpbGw9IiNmZmI2OTMiLz48cG9seWdvbiBwb2ludHM9IjE3OCwyNTYgMzUwLDExMiAzNTAsMTc2IDIzMCwyNTYgMzUwLDMzNiAzNTAsNDAwIiBmaWxsPSIjZmZiNjkzIi8+PHJlY3QgeD0iMTQwIiB5PSIzODgiIHdpZHRoPSIyMjAiIGhlaWdodD0iNiIgZmlsbD0iI2ZmYjY5MyIgb3BhY2l0eT0iMC40Ii8+PHRleHQgeD0iMjU2IiB5PSI0NzYiIGZvbnQtZmFtaWx5PSJCZWJhcyBOZXVlLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNTIiIGZpbGw9IiNmZmI2OTMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIxNiI+Rk9SR0U8L3RleHQ+PC9zdmc+"/>
 <title>FORGE</title>
-<meta name="app-version" content="66"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script id="tailwind-config">
-  window.addEventListener("load",function(){ if(window.tailwind) tailwind.config = {
+      tailwind.config = {
         darkMode: "class",
         theme: {
           extend: {
@@ -85,8 +84,7 @@
             }
           },
         },
-      };
-  });
+      }
     </script>
 <style>
   .material-symbols-outlined {
@@ -188,45 +186,13 @@
 .kdp-skip-btn{width:54px;height:54px;border:1px solid rgba(255,255,255,.1);background:transparent;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .kdp-complete-btn{flex:1;padding:16px;background:#7A9A3A;border:none;color:#0D0D0F;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.1em;cursor:pointer}
 
-
-/* ── AI COACH PANEL ─────────────────────────────────────────────── */
-.ai-fab{position:fixed;bottom:88px;right:16px;width:52px;height:52px;border-radius:50%;
-  background:linear-gradient(135deg,#8b5cf6,#6d28d9);border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 20px rgba(139,92,246,0.4);z-index:400;
-  transition:transform 0.2s,box-shadow 0.2s;}
-.ai-fab:active{transform:scale(0.9);}
-.ai-panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:450;
-  display:flex;align-items:flex-end;justify-content:center;
-  opacity:0;pointer-events:none;transition:opacity 0.25s;}
-.ai-panel-overlay.open{opacity:1;pointer-events:all;}
-.ai-panel{width:100%;max-width:480px;background:#0C1017;
-  border-top:2px solid rgba(139,92,246,0.3);
-  max-height:85vh;overflow-y:auto;
-  transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);}
-.ai-panel-overlay.open .ai-panel{transform:translateY(0);}
-.ai-bubble-user{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);
-  padding:12px 16px;border-radius:12px 12px 2px 12px;margin-bottom:8px;
-  font-size:13px;color:#e1e2e7;line-height:1.5;align-self:flex-end;max-width:85%;}
-.ai-bubble-claude{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-  padding:12px 16px;border-radius:12px 12px 12px 2px;margin-bottom:8px;
-  font-size:13px;color:#e1e2e7;line-height:1.6;align-self:flex-start;max-width:92%;}
-.ai-typing{display:flex;gap:4px;padding:12px 16px;}
-.ai-typing span{width:6px;height:6px;border-radius:50%;background:#8b5cf6;
-  animation:ai-bounce 1.2s infinite;}
-.ai-typing span:nth-child(2){animation-delay:0.2s;}
-.ai-typing span:nth-child(3){animation-delay:0.4s;}
-@keyframes ai-bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-
 </style>
 </head>
 <body class="bg-background text-on-background font-body">
-  <button class="ai-fab" onclick="aiInit();aiToggle();" id="ai-fab-btn"><span class="material-symbols-outlined" style="color:#fff;font-size:22px">psychology</span></button>
 <div id="app"></div>
 <div id="sound-hint">🔊 Tocca Start per attivare l'audio</div>
 
 <script>
-// FORGE v66
 // ── AUDIO ENGINE ───────────────────────────────────────────────────────────────
 let audioCtx=null,audioUnlocked=false;
 function getAudioCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
@@ -1782,9 +1748,8 @@ function renderAxe(){
       <div class="axe-setup-card">
         <div class="axe-setup-title">CONFIGURAZIONE SESSIONE</div>
 
-        <!-- ESERCIZIO — in evidenza -->
-        <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.3);padding:14px;border-radius:8px;margin-bottom:16px;">
-          <div class="axe-param-lbl" style="font-size:11px;letter-spacing:2px;color:#8b5cf6;margin-bottom:10px;">🏋️ SCEGLI ESERCIZIO</div>
+        <div style="margin-bottom:12px;">
+          <div class="axe-param-lbl" style="font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:7px;">ESERCIZIO</div>
           <div style="display:flex;flex-direction:column;gap:7px;">
             ${Object.entries(AXE_EX).map(([k,ex])=>`
               <button onclick="axeSetExercise('${k}')"
@@ -1868,49 +1833,6 @@ function renderAxe(){
 }
 
 // ── RENDER AXE WORKOUT ────────────────────────────────────────────────────────
-
-function axeSetExercise(k){
-  if(!state.axe) state.axe={};
-  state.axe.exercise=k;
-  render();
-}
-function axeSetReps(v){
-  if(!state.axe) state.axe={};
-  state.axe.repsPerSet=v;
-  render();
-}
-function axeSetRest(v){
-  if(!state.axe) state.axe={};
-  state.axe.restSec=v;
-  render();
-}
-function axeSetTargetSets(v){
-  if(!state.axe) state.axe={};
-  state.axe.targetSets=v;
-  render();
-}
-
-function startAxeSession(){
-  // Reset sessione mantenendo configurazione scelta
-  state.axe.phase='idle';
-  state.axe.setsDone=0;
-  state.axe.sessionRunning=true;
-  state.axe.sessionStart=Date.now();
-  state.axe.talkAsked=false;
-  state.axe.talkAnswered=null;
-  state.axe.restRemaining=0;
-  state.logForm={feeling:null,hrAvg:'',hrMax:'',weight:'10',talkTest:null,notes:''};
-  forgeShowTrans(
-    'AXE PROTOCOL',
-    (AXE_EX[state.axe.exercise||'swing']||AXE_EX['swing']).label +
-    ' · ' + state.axe.repsPerSet + ' reps · ' + state.axe.restSec + '" rest',
-    function(){
-      state.tab='axe-workout';
-      render();
-    }
-  );
-}
-
 function renderAxeWorkout(){
   const ax=state.axe;
   const isWork=ax.phase==="work";
@@ -5300,110 +5222,6 @@ function mrReset(){
 }
 
 
-
-// ══════════════════════════════════════════════════════════════════
-// FORGE PROFILE — obiettivi, giorni, API key
-// ══════════════════════════════════════════════════════════════════
-var FORGE_PROFILE = (function(){
-  try{ var s=localStorage.getItem('forge-profile-v1'); if(s) return JSON.parse(s); }catch(e){}
-  return { objectives:['fiato','dimagrimento'], trainingDays:[2,4,6,0], apiKey:'', };
-})();
-function saveForgeProfile(){ try{ localStorage.setItem('forge-profile-v1',JSON.stringify(FORGE_PROFILE)); }catch(e){} }
-
-const FORGE_OBJECTIVES=[
-  {id:'fiato',        label:'Migliorare il fiato',    icon:'air',            color:'#50dad1'},
-  {id:'dimagrimento', label:'Dimagrire',               icon:'trending_down',   color:'#e9c176'},
-  {id:'forza',        label:'Aumentare la forza',      icon:'fitness_center',  color:'#ffb693'},
-  {id:'ipertrofia',   label:'Ipertrofia',              icon:'exercise',        color:'#ffb4ab'},
-  {id:'mobilita',     label:'Mobilità e recupero',     icon:'self_improvement',color:'#7A9A3A'},
-];
-
-function getSmartSuggestionV2(){
-  var now=new Date();
-  var allHist=[
-    ...(state.history||[]).map(function(h){return Object.assign({},h,{_src:'kb'});}),
-    ...(state.externalHistory||[]).map(function(h){return Object.assign({},h,{_src:'ext'});}),
-  ];
-  function daysSince(filterFn){
-    for(var i=0;i<allHist.length;i++){
-      if(filterFn(allHist[i])){
-        try{ var p=allHist[i].date.split('/');
-          var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
-          return Math.floor((now-dt)/(1000*60*60*24)); }catch(e){}
-      }
-    }
-    return 999;
-  }
-  var daysAxe=daysSince(function(h){return h._src==='ext'&&(h.type||'').toLowerCase().includes('axe');});
-  var daysKdp=daysSince(function(h){return h._src==='ext'&&(h.type||'').toLowerCase().includes('kdp');});
-  var daysBP=daysSince(function(h){return h._src==='kb'&&h.day&&h.day.startsWith('extra_BP');});
-  var daysMorn=daysSince(function(h){return h._src==='ext'&&h._morning;});
-  var week7=allHist.filter(function(h){
-    try{ var p=h.date.split('/');var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
-      return Math.floor((now-dt)/(1000*60*60*24))<7; }catch(e){return false;}
-  }).length;
-
-  var objs=FORGE_PROFILE.objectives||['fiato'];
-  var obj=FORGE_OBJECTIVES.find(function(o){return o.id===objs[0];})||FORGE_OBJECTIVES[0];
-  var suggestions=[];
-
-  if(objs.includes('fiato')&&daysAxe>2)
-    suggestions.push({title:'AXE Protocol',icon:'🪓',color:'#8b5cf6',
-      reason:'Non fai AXE da '+daysAxe+' giorni — il workout più efficace per il fiato.',
-      action:"state.tab='axe-setup';render();",actionLabel:'INIZIA AXE',priority:10});
-
-  if((objs.includes('dimagrimento')||objs.includes('fiato'))&&daysKdp>3)
-    suggestions.push({title:'KDP-26',icon:'⚡',color:'#7A9A3A',
-      reason:'KDP-26 non fatto da '+daysKdp+' giorni — sessione completa.',
-      action:"state.trainSubTab='kdp';state.tab='train';render();",actionLabel:'VAI A KDP-26',priority:8});
-
-  if((objs.includes('forza')||objs.includes('ipertrofia'))&&daysBP>4)
-    suggestions.push({title:'Bellplex',icon:'🔴',color:'#ffb4ab',
-      reason:'Non fai Bellplex da '+daysBP+' giorni — ottimo per forza.',
-      action:"state.trainSubTab='bellplex';state.tab='train';render();",actionLabel:'SCEGLI BELLPLEX',priority:7});
-
-  if(objs.includes('mobilita')&&daysMorn>1)
-    suggestions.push({title:'Routine Mattutina',icon:'🌅',color:'#e9c176',
-      reason:'Non fatta da '+daysMorn+' giorni.',
-      action:"mrStart();",actionLabel:'INIZIA ROUTINE',priority:5});
-
-  if(week7>=4)
-    suggestions.push({title:'Recupero attivo',icon:'😴',color:'#64748b',
-      reason:'Hai fatto '+week7+' sessioni questa settimana — considera un giorno di recupero.',
-      action:null,actionLabel:null,priority:9});
-
-  suggestions.sort(function(a,b){return b.priority-a.priority;});
-  if(suggestions.length>0) return suggestions[0];
-  return {title:'Allenati oggi',icon:'🔥',color:obj.color,
-    reason:'Obiettivo principale: '+obj.label+'.',
-    action:"state.tab='train';render();",actionLabel:'VAI A TRAIN',priority:1};
-}
-
-var AI_LOADING=false, AI_RESULT=null, AI_ERROR=null;
-
-async function askClaude(){
-  if(!FORGE_PROFILE.apiKey){ alert('Inserisci la tua API key nelle impostazioni'); return; }
-  AI_LOADING=true; AI_RESULT=null; AI_ERROR=null; render();
-  var now=new Date();
-  var hist=[...(state.history||[]).slice(0,10).map(function(h){return {tipo:'KB '+h.day,data:h.date,durata:h.duration,feeling:h.feeling};}),
-    ...(state.externalHistory||[]).slice(0,10).map(function(h){return {tipo:h.type,data:h.date,durata:h.duration,note:h.notes};})].slice(0,12);
-  var prompt='Sei un coach di kettlebell. Obiettivi: '+(FORGE_PROFILE.objectives||[]).join(', ')+
-    '. Oggi: '+['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][now.getDay()]+' '+now.toLocaleDateString('it-IT')+
-    '. Ultimi allenamenti: '+JSON.stringify(hist)+
-    '. Workout disponibili: AXE, KDP-26, Bellplex, Giorno A/B/C, Deep Push-Up EMOM, Routine Mattutina, Wim Hof, Condizionamento B4-B9, Forza D1/B2/B3/B8.'+
-    ' Rispondi in italiano, max 120 parole: 1) workout consigliato oggi e perché, 2) cosa evitare, 3) consiglio rapido.';
-  try{
-    var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':FORGE_PROFILE.apiKey,
-        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:300,messages:[{role:'user',content:prompt}]})});
-    var data=await resp.json();
-    if(data.content&&data.content[0]) AI_RESULT=data.content[0].text;
-    else if(data.error) AI_ERROR=data.error.message||'Errore API';
-  }catch(e){ AI_ERROR='Errore connessione: '+e.message; }
-  AI_LOADING=false; render();
-}
-
 // ══════════════════════════════════════════════════════════════════
 // RENDER MORNING — schermata principale
 // ══════════════════════════════════════════════════════════════════
@@ -5413,151 +5231,15 @@ function renderMorning(){
   const lastWH = whLogs[0];
   const mrLogs = (state.externalHistory||[]).filter(function(e){return e._morning;});
   const lastMR = mrLogs[0];
-  const showSettings = state.morningShowSettings||false;
-  const sug = getSmartSuggestionV2();
-  const prof = FORGE_PROFILE;
-  const DAY_LABELS = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
-  const DAY_JS = [
-    {label:'Lun',js:1},{label:'Mar',js:2},{label:'Mer',js:3},
-    {label:'Gio',js:4},{label:'Ven',js:5},{label:'Sab',js:6},{label:'Dom',js:0}
-  ];
-
-  // ── IMPOSTAZIONI ──
-  const settingsPanel = showSettings ? `
-    <section class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#64748b">
-      <div class="flex justify-between items-center mb-5">
-        <h3 class="font-headline text-2xl">IMPOSTAZIONI</h3>
-        <button onclick="state.morningShowSettings=false;render()"
-          class="w-8 h-8 flex items-center justify-center" style="background:rgba(255,255,255,0.05)">
-          <span class="material-symbols-outlined text-gray-500 text-base">close</span>
-        </button>
-      </div>
-
-      <!-- Obiettivi -->
-      <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-3">OBIETTIVI PRIORITARI</p>
-      <div class="space-y-2 mb-6">
-        ${FORGE_OBJECTIVES.map(function(o){
-          var isActive=(prof.objectives||[]).includes(o.id);
-          var rank=(prof.objectives||[]).indexOf(o.id);
-          return `<div class="flex items-center justify-between p-3 ghost-border"
-            style="background:${isActive?'rgba(255,255,255,0.04)':'transparent'};border-left:2px solid ${isActive?o.color:'transparent'}">
-            <div class="flex items-center gap-3">
-              <span class="material-symbols-outlined text-base" style="color:${isActive?o.color:'#64748b'};font-variation-settings:'FILL' 1">${o.icon}</span>
-              <span class="font-label text-sm ${isActive?'text-on-surface':'text-gray-600'}">${o.label}</span>
-              ${isActive&&rank===0?'<span class="font-label text-[8px] uppercase tracking-widest px-2 py-0.5" style="background:'+o.color+'22;color:'+o.color+'">PRIMARIO</span>':''}
-            </div>
-            <button onclick="(function(){
-              var objs=FORGE_PROFILE.objectives||[];
-              var idx=objs.indexOf('${o.id}');
-              if(idx>=0){objs.splice(idx,1);}else{objs.unshift('${o.id}');}
-              FORGE_PROFILE.objectives=[...objs];
-              saveForgeProfile();render();
-            })()"
-              class="w-8 h-8 flex items-center justify-center active:scale-90 transition-transform"
-              style="background:${isActive?o.color+'22':'rgba(255,255,255,0.04)'};border:1px solid ${isActive?o.color+'44':'rgba(90,65,54,0.3)'}">
-              <span class="material-symbols-outlined text-sm" style="color:${isActive?o.color:'#64748b'}">${isActive?'check':'add'}</span>
-            </button>
-          </div>`;
-        }).join("")}
-      </div>
-
-      <!-- Giorni allenamento -->
-      <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-3">GIORNI ALLENAMENTO</p>
-      <div class="flex gap-2 mb-6 flex-wrap">
-        ${DAY_JS.map(function(d){
-          var active=(prof.trainingDays||[]).includes(d.js);
-          return `<button onclick="(function(){
-            var days=FORGE_PROFILE.trainingDays||[];
-            var idx=days.indexOf(${d.js});
-            if(idx>=0){days.splice(idx,1);}else{days.push(${d.js});}
-            FORGE_PROFILE.trainingDays=[...days];
-            saveForgeProfile();render();
-          })()"
-            class="w-10 h-10 font-headline text-base active:scale-90 transition-transform"
-            style="background:${active?'#ffb693':'transparent'};color:${active?'#000':'#64748b'};border:1px solid ${active?'#ffb693':'rgba(90,65,54,0.4)'}">
-            ${d.label}
-          </button>`;
-        }).join("")}
-      </div>
-
-      <!-- API Key -->
-      <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-2">CLAUDE API KEY</p>
-      <p class="font-label text-[9px] text-gray-600 mb-3">Ottieni la tua key su console.anthropic.com → API Keys</p>
-      <input class="log-input w-full mb-2" type="password" placeholder="sk-ant-api03-..."
-        value="${prof.apiKey||''}"
-        onchange="FORGE_PROFILE.apiKey=this.value;saveForgeProfile();"
-        autocomplete="off"/>
-      <p class="font-label text-[9px] text-gray-600">La key è salvata solo sul tuo dispositivo</p>
-    </section>
-  ` : '';
-
-  // ── SUGGERIMENTO INTELLIGENTE ──
-  const sugCard = `
-    <section>
-      <div class="bg-surface-container ghost-border p-6 border-l-2" style="border-color:${sug.color}">
-        <div class="flex items-center justify-between mb-1">
-          <p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:${sug.color}">SUGGERIMENTO OGGI</p>
-          <button onclick="state.morningShowSettings=true;render()"
-            class="w-7 h-7 flex items-center justify-center" style="background:rgba(255,255,255,0.04)">
-            <span class="material-symbols-outlined text-gray-500 text-sm">settings</span>
-          </button>
-        </div>
-        <h2 class="font-headline text-3xl mb-1">${sug.icon} ${sug.title.toUpperCase()}</h2>
-        <p class="font-label text-xs text-gray-400 leading-relaxed mb-4">${sug.reason}</p>
-
-        <!-- Obiettivi attivi -->
-        <div class="flex gap-2 flex-wrap mb-4">
-          ${(prof.objectives||[]).slice(0,3).map(function(id){
-            var o=FORGE_OBJECTIVES.find(function(x){return x.id===id;})||{};
-            return `<span class="font-label text-[8px] uppercase tracking-widest px-2 py-1"
-              style="background:${o.color||'#64748b'}18;border:1px solid ${o.color||'#64748b'}44;color:${o.color||'#64748b'}">${o.label||id}</span>`;
-          }).join("")}
-        </div>
-
-        ${sug.action?`<button onclick="${sug.action}"
-          class="w-full py-3.5 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform mb-2"
-          style="background:linear-gradient(135deg,${sug.color},${sug.color}bb);color:#000">
-          ${sug.actionLabel}
-          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
-        </button>`:''}
-
-        <!-- Chiedi a Claude -->
-        ${prof.apiKey?`<button onclick="askClaude()"
-          class="w-full py-3 font-headline text-base tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
-          style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;background:rgba(139,92,246,0.06)">
-          ${AI_LOADING?'⏳ Analisi in corso...':'🤖 CHIEDI A CLAUDE'}
-          <span class="material-symbols-outlined text-sm" style="color:#8b5cf6">psychology</span>
-        </button>`:`<button onclick="state.morningShowSettings=true;render()"
-          class="w-full py-2.5 font-headline text-sm tracking-widest"
-          style="border:1px solid rgba(90,65,54,0.3);color:#64748b;background:transparent">
-          + Aggiungi API key per suggerimenti AI
-        </button>`}
-
-        <!-- Risultato AI -->
-        ${AI_RESULT?`<div class="mt-3 p-4 border-l-2 bg-surface-container-low" style="border-color:#8b5cf6">
-          <p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:#8b5cf6">ANALISI CLAUDE</p>
-          <p class="font-label text-sm text-gray-300 leading-relaxed">${(AI_RESULT||'').split('\n').join('<br>')}</p>
-        </div>`:''}
-        ${AI_ERROR?`<div class="mt-3 p-3 border-l-2" style="border-color:#ffb4ab;background:rgba(255,180,171,0.06)">
-          <p class="font-label text-xs text-red-400">${AI_ERROR}</p>
-        </div>`:''}
-      </div>
-    </section>`;
 
   return `<div class="screen bg-background" style="padding-top:56px;">
     <main class="px-5 pt-8 pb-12 space-y-6">
-      <header class="mb-2 flex justify-between items-end">
-        <div>
-          <h1 class="font-headline text-6xl tracking-tight leading-none">MORNING</h1>
-          <div class="w-12 h-1 mt-2" style="background:#e9c176"></div>
-        </div>
-        <p class="font-label text-[9px] uppercase tracking-widest text-gray-600">${['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][new Date().getDay()]}</p>
+
+      <header class="mb-2">
+        <h1 class="font-headline text-6xl tracking-tight leading-none">MORNING</h1>
+        <div class="w-12 h-1 mt-2" style="background:#e9c176"></div>
       </header>
 
-      ${settingsPanel}
-      ${!showSettings?sugCard:''}
-
-      ${!showSettings?`
       <!-- Routine Risveglio -->
       <section>
         <div class="bg-surface-container ghost-border p-6 border-l-2" style="border-color:#e9c176">
@@ -5567,7 +5249,21 @@ function renderMorning(){
           </div>
           <h2 class="font-headline text-3xl mb-1">${r.label}</h2>
           <p class="font-label text-xs text-gray-500 mb-4">${r.exercises.length} esercizi · ${r.duration} min · No attrezzatura</p>
+
+          <!-- Preview esercizi -->
+          <div class="space-y-1 mb-5">
+            ${r.exercises.map(function(e,i){return `<div class="flex items-center gap-3 py-1.5 border-b border-white/5">
+              <span class="font-headline text-base w-5 flex-shrink-0" style="color:#e9c176">${i+1}</span>
+              <div class="flex-1">
+                <span class="font-headline text-lg leading-none">${e.name}</span>
+                <span class="font-label text-[10px] text-gray-600 ml-2">${e.sub}</span>
+              </div>
+              <span class="font-label text-[10px] text-gray-600">1 min</span>
+            </div>`;}).join("")}
+          </div>
+
           ${lastMR?`<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: ${lastMR.date}</p>`:""}
+
           <button onclick="mrStart()"
             class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
             style="background:linear-gradient(135deg,#e9c176,#c9a856);color:#000">
@@ -5585,11 +5281,25 @@ function renderMorning(){
             <p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:#50dad1">RESPIRAZIONE</p>
           </div>
           <h2 class="font-headline text-3xl mb-1">Wim Hof</h2>
-          <p class="font-label text-xs text-gray-500 mb-4">Round liberi · 25-30 respiri + apnea + recupero</p>
+          <p class="font-label text-xs text-gray-500 mb-4">3 round · 30 respiri + apnea + recupero</p>
+
+          <div class="space-y-2 mb-5">
+            ${[
+              {icon:"air",       txt:"30 respiri profondi — inspirazione potente, espirazione rilassata"},
+              {icon:"pause",     txt:"Apnea a polmoni vuoti — fino al riflesso"},
+              {icon:"refresh",   txt:"Inspira fondo, trattieni 15 secondi"},
+              {icon:"repeat",    txt:"Ripeti per 3 round"},
+            ].map(function(r){return `<div class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-sm flex-shrink-0 mt-0.5" style="color:#50dad1;font-variation-settings:'FILL' 1">${r.icon}</span>
+              <p class="font-label text-xs text-gray-400">${r.txt}</p>
+            </div>`;}).join("")}
+          </div>
+
           ${lastWH?`<div class="mb-3 p-3 border-l-2 bg-surface-container-low" style="border-color:#50dad155">
-            <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">ULTIMA — ${lastWH.date}</p>
+            <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">ULTIMA SESSIONE — ${lastWH.date}</p>
             <p class="font-label text-xs text-gray-400">${lastWH.notes}</p>
           </div>`:""}
+
           <button onclick="whStart()"
             class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
             style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">
@@ -5597,7 +5307,7 @@ function renderMorning(){
             <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">air</span>
           </button>
         </div>
-      </section>`:''}
+      </section>
 
     </main>
     ${navHTML("morning")}
@@ -5605,14 +5315,25 @@ function renderMorning(){
 }
 
 
-
-
-// ── MORNING ROUTINE: mrTick e renderMorningWorkout ───────────────
+// ══════════════════════════════════════════════════════════════════
+// MORNING ROUTINE — workout e logica
+// ══════════════════════════════════════════════════════════════════
+function mrStart(){
+  mrReset();
+  forgeShowTrans('ROUTINE MATTUTINA','8 esercizi · 1 min ciascuno', function(){
+    MR_STATE.active=true; MR_STATE.exIdx=0; MR_STATE.sec=0;
+    requestWakeLock();
+    state.tab='morning-go'; render();
+    mrTick();
+    MR_STATE.tid=setInterval(mrTick,1000);
+  });
+}
 function mrTick(){
   if(MR_STATE.paused) return;
   MR_STATE.sec++;
   var ex=MORNING_ROUTINE.exercises[MR_STATE.exIdx];
   var remaining=ex.duration-MR_STATE.sec;
+  // Aggiorna DOM direttamente se possibile
   var el=document.getElementById('mr-timer');
   if(el) el.textContent=remaining>0?remaining+'"':'✓';
   var prog=document.getElementById('mr-prog');
@@ -5632,6 +5353,7 @@ function mrTick(){
     if(MR_STATE.exIdx>=MORNING_ROUTINE.exercises.length){
       clearInterval(MR_STATE.tid);MR_STATE.tid=null;
       releaseWakeLock();
+      // Salva
       var now=new Date();
       var dd=String(now.getDate()).padStart(2,'0'),mm=String(now.getMonth()+1).padStart(2,'0');
       if(!state.externalHistory)state.externalHistory=[];
@@ -5644,6 +5366,7 @@ function mrTick(){
       setTimeout(function(){alert('🌅 Routine completata! Ottimo inizio giornata.');},300);
       return;
     }
+    // Beep cambio esercizio
     try{var ctx2=new(window.AudioContext||window.webkitAudioContext)();
       [440,550].forEach(function(f,i){
         var o2=ctx2.createOscillator(),g2=ctx2.createGain();
@@ -5657,13 +5380,65 @@ function mrTick(){
     render();
   }
 }
+function mrSkip(){
+  if(!MR_STATE.active) return;
+  MR_STATE.sec=0;
+  MR_STATE.exIdx++;
+  if(MR_STATE.exIdx>=MORNING_ROUTINE.exercises.length){
+    clearInterval(MR_STATE.tid); MR_STATE.tid=null;
+    releaseWakeLock();
+    var now=new Date();
+    var dd=String(now.getDate()).padStart(2,'0'),mm=String(now.getMonth()+1).padStart(2,'0');
+    if(!state.externalHistory) state.externalHistory=[];
+    state.externalHistory.unshift({
+      type:'Routine Mattutina',date:dd+'/'+mm+'/'+now.getFullYear(),
+      duration:8,notes:'Completata (con skip)',_src:'ext',_morning:true
+    });
+    saveExternalHistory();
+    state.tab='morning'; render();
+    return;
+  }
+  if('vibrate'in navigator) navigator.vibrate([80,40,80]);
+  render();
+}
 
+function mrTogglePause(){
+  MR_STATE.paused=!MR_STATE.paused;
+  var btn=document.getElementById('mr-pause');
+  if(btn)btn.textContent=MR_STATE.paused?'▶ Riprendi':'⏸ Pausa';
+}
+function mrExit(){
+  function doSave(){
+    var exDone=MR_STATE.exIdx||0;
+    var now=new Date();
+    if(exDone>0){
+      if(!state.externalHistory) state.externalHistory=[];
+      state.externalHistory.unshift({
+        type:'Routine Mattutina', date:fmtDateIT(now), duration:Math.ceil(exDone),
+        notes:exDone+'/'+MORNING_ROUTINE.exercises.length+' esercizi · ⚠ interrotto',
+        _src:'ext', _morning:true, _partial:true
+      });
+      saveExternalHistory();
+    }
+    doExit();
+  }
+  function doExit(){ mrReset(); releaseWakeLock(); state.tab='morning'; render(); }
+
+  if(MR_STATE.exIdx>0){
+    showExitDialog(doSave, doExit);
+  } else {
+    doExit();
+  }
+}
+
+// ── renderMorningWorkout ──────────────────────────────────────────
 function renderMorningWorkout(){
   var ex=MORNING_ROUTINE.exercises[MR_STATE.exIdx];
   var next=MORNING_ROUTINE.exercises[MR_STATE.exIdx+1];
   var remaining=ex.duration-MR_STATE.sec;
   var prog=Math.round(MR_STATE.exIdx/MORNING_ROUTINE.exercises.length*100);
   return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+    <!-- Header -->
     <div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.05)">
       <div class="flex items-center gap-2">
         <span class="w-1.5 h-1.5 rounded-full animate-pulse" style="background:#e9c176"></span>
@@ -5673,20 +5448,27 @@ function renderMorningWorkout(){
         <span class="material-symbols-outlined text-gray-500 text-base">close</span>
       </button>
     </div>
+    <!-- Progress bar -->
     <div class="h-0.5 flex-shrink-0" style="background:rgba(255,255,255,0.06)">
       <div id="mr-prog" style="height:100%;width:${prog}%;background:#e9c176;transition:width 0.4s"></div>
     </div>
+
+    <!-- Centro -->
     <div class="flex-1 flex flex-col items-center justify-center px-5 relative">
       <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse at center,rgba(233,193,118,0.05),transparent 70%)"></div>
       <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-4 relative z-10">${ex.sub}</p>
       <h2 class="font-headline text-center leading-none mb-6 relative z-10"
         style="font-size:${ex.name.length>12?'40px':'52px'};color:#e1e2e7">${ex.name}</h2>
+      <!-- Timer -->
       <div class="kdp-timer-num relative z-10" id="mr-timer"
         style="font-size:86px;color:${remaining<=5?'#ffb4ab':'#e9c176'}">${remaining}"</div>
+      <!-- Cue -->
       <div class="mt-6 px-4 py-3 border-l-2 w-full relative z-10" style="border-color:#e9c176;background:rgba(233,193,118,0.06);max-width:340px">
         <p class="font-label text-xs text-gray-400 leading-snug">${ex.cue}</p>
       </div>
     </div>
+
+    <!-- Footer -->
     <div class="flex-shrink-0" style="background:#0C1017;box-shadow:0 -8px 24px rgba(0,0,0,0.6)">
       ${next?`<div class="flex justify-between items-center px-5 py-2.5 border-t border-white/5">
         <span class="font-label text-[9px] uppercase text-gray-600">Prossimo</span>
@@ -5700,7 +5482,8 @@ function renderMorningWorkout(){
         </button>
         <button onclick="mrSkip()"
           class="w-16 py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform flex items-center justify-center"
-          style="border:1px solid rgba(233,193,118,0.2);color:#64748b;background:transparent">
+          style="border:1px solid rgba(233,193,118,0.2);color:#64748b;background:transparent"
+          title="Salta esercizio">
           <span class="material-symbols-outlined">skip_next</span>
         </button>
       </div>
@@ -5708,14 +5491,189 @@ function renderMorningWorkout(){
   </div>`;
 }
 
-// ── WIM HOF renderWimHof ──────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════
+// WIM HOF — logica completa
+// ══════════════════════════════════════════════════════════════════
+function whStart(){
+  whReset();
+  forgeShowTrans('WIM HOF','Respirazione consapevole', function(){
+    requestWakeLock();
+    WH_STATE.phase='breathing';
+    WH_STATE.breathPhase='inhale';
+    state.tab='wim-hof'; render();
+    // Breve pausa poi avvia il ciclo automatico
+    setTimeout(whStartBreathing, 600);
+  });
+}
+
+// ── WIM HOF: timer automatico respirazione ────────────────────────
+// Ogni ciclo = 2 fasi: INSPIRA (inhaleMs) + ESPIRA (exhaleMs)
+var WH_INHALE_MS = 2200;  // durata inspirazione
+var WH_EXHALE_MS = 2200;  // durata espirazione
+var WH_BREATH_TID = null; // interval ciclo
+var WH_ANIM_TID   = null; // timeout cambio fase
+
+function whStartBreathing(){
+  if(WH_BREATH_TID) return;
+  WH_STATE.breathPhase = 'inhale';
+  whDoBreatheStep();
+}
+
+function whDoBreatheStep(){
+  if(WH_STATE.phase!=='breathing'){ whStopBreathing(); return; }
+
+  var isInhale = WH_STATE.breathPhase === 'inhale';
+
+  // Aggiorna bolla via DOM diretto (evita render completo)
+  var ring = document.getElementById('wh-bubble');
+  var lbl  = document.getElementById('wh-phase-lbl');
+  var cnt  = document.getElementById('wh-breath-count');
+  var apnBtn = document.getElementById('wh-apn-btn');
+
+  if(isInhale){
+    // ESPIRA → INSPIRA: incrementa conteggio
+    WH_STATE.breathCount++;
+    if(cnt) cnt.textContent = WH_STATE.breathCount;
+    if(ring){
+      ring.style.width='220px'; ring.style.height='220px';
+      ring.style.background='rgba(80,218,209,0.14)';
+      ring.style.boxShadow='0 0 50px rgba(80,218,209,0.25)';
+      ring.style.borderWidth='3px';
+    }
+    if(lbl){ lbl.textContent='INSPIRA'; lbl.style.color='#50dad1'; }
+    // Aggiorna barra progresso
+    var bar=document.getElementById('wh-prog');
+    if(bar) bar.style.width=Math.min(WH_STATE.breathCount/WH_CONFIG.breathsPerRound*100,100)+'%';
+    // Mostra pulsante apnea da 30 respiri
+    if(apnBtn){
+      if(WH_STATE.breathCount>=25){
+        apnBtn.style.display='flex';
+        apnBtn.querySelector('span.wh-apn-n').textContent=WH_STATE.breathCount;
+      }
+    }
+    WH_ANIM_TID = setTimeout(function(){
+      WH_STATE.breathPhase='exhale';
+      whDoBreatheStep();
+    }, WH_INHALE_MS);
+  } else {
+    // INSPIRA → ESPIRA
+    if(ring){
+      ring.style.width='130px'; ring.style.height='130px';
+      ring.style.background='rgba(80,218,209,0.03)';
+      ring.style.boxShadow='0 0 10px rgba(80,218,209,0.05)';
+      ring.style.borderWidth='1.5px';
+    }
+    if(lbl){ lbl.textContent='ESPIRA'; lbl.style.color='#7A9A3A'; }
+    WH_ANIM_TID = setTimeout(function(){
+      WH_STATE.breathPhase='inhale';
+      whDoBreatheStep();
+    }, WH_EXHALE_MS);
+  }
+}
+
+function whStopBreathing(){
+  if(WH_BREATH_TID){clearInterval(WH_BREATH_TID);WH_BREATH_TID=null;}
+  if(WH_ANIM_TID){clearTimeout(WH_ANIM_TID);WH_ANIM_TID=null;}
+}
+
+function whBreath(){ /* non più usata — automatico */ }
+
+function whGoApnea(){
+  if(WH_STATE.phase!=='breathing') return;
+  whStopBreathing(); // ferma ciclo automatico
+  WH_STATE.phase='retention';
+  WH_STATE.retentionSec=0;
+  if('vibrate'in navigator)navigator.vibrate([100,50,200]);
+  render();
+  WH_STATE.tid=setInterval(function(){
+    WH_STATE.retentionSec++;
+    var el=document.getElementById('wh-ret-timer');
+    if(el){
+      var m=Math.floor(WH_STATE.retentionSec/60),s=WH_STATE.retentionSec%60;
+      el.textContent=m>0?(m+"' "+String(s).padStart(2,'0')+'"'):WH_STATE.retentionSec+'"';
+    }
+  },1000);
+}
+
+function whEndRetention(){
+  // Utente riprende fiato
+  if(WH_STATE.phase!=='retention') return;
+  clearInterval(WH_STATE.tid); WH_STATE.tid=null;
+  WH_STATE.retentionLog.push({round:WH_STATE.round, sec:WH_STATE.retentionSec});
+  if('vibrate'in navigator)navigator.vibrate([200,100,200]);
+  // Fase recovery: inspira fondo e trattieni 15"
+  WH_STATE.phase='recovery';
+  WH_STATE.recoverySec=WH_CONFIG.recoveryHold;
+  render();
+  WH_STATE.tid=setInterval(function(){
+    WH_STATE.recoverySec--;
+    var el=document.getElementById('wh-rec-timer');
+    if(el) el.textContent=WH_STATE.recoverySec+'"';
+    if(WH_STATE.recoverySec<=0){
+      clearInterval(WH_STATE.tid); WH_STATE.tid=null;
+      if('vibrate'in navigator)navigator.vibrate([100,50,100,50,200]);
+      // Dopo ogni round — mostra banner Continua/Fine
+      WH_STATE.phase='ask-continue';
+      render();
+    }
+  },1000);
+}
+
+function whContinue(){
+  WH_STATE.round++;
+  WH_STATE.breathCount=0;
+  WH_STATE.phase='breathing';
+  WH_STATE.breathPhase='inhale';
+  render();
+  setTimeout(whStartBreathing, 600);
+}
+function whFinish(){
+  WH_STATE.phase='done';
+  whSave();
+  render();
+}
+
+function whExit(){
+  if(WH_STATE.tid){clearInterval(WH_STATE.tid);WH_STATE.tid=null;}
+  whStopBreathing();
+
+  function doSave(){
+    var partial=WH_STATE.phase!=='done';
+    var now=new Date();
+    var best=WH_STATE.retentionLog.length?
+      Math.max.apply(null,WH_STATE.retentionLog.map(function(r){return r.sec;})):0;
+    if(!state.externalHistory) state.externalHistory=[];
+    state.externalHistory.unshift({
+      type:'Wim Hof', date:fmtDateIT(now), duration:10,
+      notes:WH_STATE.retentionLog.length+' round · apnea max '+best+'"'+(partial?' · ⚠ interrotto':''),
+      _src:'ext', _wimhof:true, _partial:partial,
+      retentionLog:WH_STATE.retentionLog.slice()
+    });
+    saveExternalHistory();
+    doExit();
+  }
+  function doExit(){ whReset(); releaseWakeLock(); state.tab='morning'; render(); }
+
+  if(WH_STATE.retentionLog.length>0 && WH_STATE.phase!=='done'){
+    showExitDialog(doSave, doExit);
+  } else {
+    if(WH_STATE.retentionLog.length>0) doSave();
+    else doExit();
+  }
+}
+
+// ── renderWimHof ─────────────────────────────────────────────────
 function renderWimHof(){
   var ph=WH_STATE.phase;
   var round=WH_STATE.round;
   var cfg=WH_CONFIG;
 
+  // INTRO già gestita da forgeShowTrans — non dovrebbe mai arrivare qui
+  // ASK CONTINUE — dopo ogni round
   if(ph==='ask-continue'){
     var lastRet=WH_STATE.retentionLog[WH_STATE.retentionLog.length-1]||{};
+    var best=WH_STATE.retentionLog.length?Math.max.apply(null,WH_STATE.retentionLog.map(function(r){return r.sec;})):0;
     return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;">
       <div class="w-16 h-16 flex items-center justify-center mb-6" style="background:rgba(80,218,209,0.1);border:2px solid #50dad1">
         <span class="font-headline text-4xl" style="color:#50dad1">${WH_STATE.round}</span>
@@ -5723,6 +5681,8 @@ function renderWimHof(){
       <p class="font-label text-[9px] uppercase tracking-[0.25em] mb-2" style="color:#50dad1">ROUND COMPLETATO</p>
       <h2 class="font-headline text-5xl mb-2">WIM HOF</h2>
       <p class="font-label text-sm text-gray-500 mb-8">${WH_STATE.retentionLog.length} round · apnea: ${lastRet.sec>59?Math.floor(lastRet.sec/60)+"'"+String(lastRet.sec%60).padStart(2,'0')+'"':lastRet.sec+'"'}</p>
+
+      <!-- Storico apnee -->
       <div class="w-full space-y-2 mb-8">
         ${WH_STATE.retentionLog.map(function(r){
           return `<div class="flex justify-between items-center bg-surface-container ghost-border px-5 py-3 border-l-2" style="border-color:#50dad1">
@@ -5731,6 +5691,7 @@ function renderWimHof(){
           </div>`;
         }).join("")}
       </div>
+
       <button onclick="whContinue()"
         class="w-full py-5 font-headline text-2xl tracking-widest flex justify-between items-center px-6 mb-3 active:scale-95 transition-transform"
         style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">
@@ -5740,11 +5701,13 @@ function renderWimHof(){
       <button onclick="whFinish()"
         class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-6 active:scale-95 transition-transform"
         style="border:1px solid rgba(80,218,209,0.3);color:#64748b;background:transparent">
-        FINE — SALVA <span class="material-symbols-outlined">check</span>
+        FINE — SALVA
+        <span class="material-symbols-outlined">check</span>
       </button>
     </div>`;
   }
 
+  // DONE
   if(ph==='done'){
     var best=Math.max.apply(null,WH_STATE.retentionLog.map(function(r){return r.sec;}));
     return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;">
@@ -5757,12 +5720,12 @@ function renderWimHof(){
         ${WH_STATE.retentionLog.map(function(r){
           return `<div class="flex justify-between items-center bg-surface-container ghost-border px-5 py-3 border-l-2" style="border-color:#50dad1">
             <span class="font-label text-xs uppercase tracking-widest text-gray-500">Round ${r.round}</span>
-            <span class="font-headline text-2xl" style="color:#50dad1">${r.sec>59?Math.floor(r.sec/60)+"' "+String(r.sec%60).padStart(2,'0')+'"':r.sec+'"'}</span>
+            <span class="font-headline text-2xl" style="color:#50dad1">${r.sec > 59 ? Math.floor(r.sec/60)+"' "+String(r.sec%60).padStart(2,'0')+'"' : r.sec+'"'}</span>
           </div>`;
         }).join("")}
         <div class="flex justify-between items-center bg-surface-container ghost-border px-5 py-3 border-l-2 border-l-secondary">
           <span class="font-label text-xs uppercase tracking-widest text-gray-500">Miglior apnea</span>
-          <span class="font-headline text-2xl text-secondary">${best>59?Math.floor(best/60)+"' "+String(best%60).padStart(2,'0')+'"':best+'"'}</span>
+          <span class="font-headline text-2xl text-secondary">${best > 59 ? Math.floor(best/60)+"' "+String(best%60).padStart(2,'0')+'"' : best+'"'}</span>
         </div>
       </div>
       <button onclick="whExit()"
@@ -5773,6 +5736,7 @@ function renderWimHof(){
     </div>`;
   }
 
+  // RETENTION — apnea
   if(ph==='retention'){
     return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
       <div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(80,218,209,0.15)">
@@ -5799,6 +5763,7 @@ function renderWimHof(){
     </div>`;
   }
 
+  // RECOVERY
   if(ph==='recovery'){
     var lastLog=WH_STATE.retentionLog[WH_STATE.retentionLog.length-1];
     return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
@@ -5814,7 +5779,7 @@ function renderWimHof(){
       <div class="flex-1 flex flex-col items-center justify-center px-5">
         ${lastLog?`<div class="mb-6 text-center">
           <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Apnea round ${lastLog.round}</p>
-          <p class="font-headline text-4xl" style="color:#50dad1">${lastLog.sec>59?Math.floor(lastLog.sec/60)+"' "+String(lastLog.sec%60).padStart(2,'0')+'"':lastLog.sec+'"'}</p>
+          <p class="font-headline text-4xl" style="color:#50dad1">${lastLog.sec > 59 ? Math.floor(lastLog.sec/60)+"' "+String(lastLog.sec%60).padStart(2,'0')+'"' : lastLog.sec+'"'}</p>
         </div>`:''}
         <p class="font-label text-[9px] uppercase tracking-widest text-gray-600 mb-4">Inspira fondo — trattieni</p>
         <div class="kdp-timer-num" id="wh-rec-timer" style="font-size:86px;color:#e9c176">${WH_STATE.recoverySec}"</div>
@@ -5825,9 +5790,11 @@ function renderWimHof(){
     </div>`;
   }
 
-  // BREATHING
+  // BREATHING — bolla automatica guidata
   var canGoApnea=WH_STATE.breathCount>=25;
+
   return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+    <!-- Header -->
     <div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(80,218,209,0.15)">
       <div>
         <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">ROUND ${round}</p>
@@ -5837,15 +5804,22 @@ function renderWimHof(){
         <span class="material-symbols-outlined text-gray-500 text-base">close</span>
       </button>
     </div>
+    <!-- Barra progresso -->
     <div class="h-0.5 flex-shrink-0" style="background:rgba(255,255,255,0.06)">
       <div id="wh-prog" style="height:100%;width:${Math.min(WH_STATE.breathCount/cfg.breathsPerRound*100,100)}%;background:#50dad1;transition:width 0.3s"></div>
     </div>
+
     <div class="flex-1 flex flex-col items-center justify-center px-5">
+
+      <!-- Label fase -->
       <p id="wh-phase-lbl" class="font-headline text-2xl tracking-widest mb-8"
         style="color:${WH_STATE.breathPhase==='inhale'?'#50dad1':'#7A9A3A'}">
         ${WH_STATE.breathPhase==='inhale'?'INSPIRA':'ESPIRA'}
       </p>
-      <div id="wh-bubble" class="flex flex-col items-center justify-center"
+
+      <!-- Bolla animata automatica -->
+      <div id="wh-bubble"
+        class="flex flex-col items-center justify-center"
         style="border-radius:50%;border:3px solid #50dad1;
           width:${WH_STATE.breathPhase==='inhale'?'220px':'130px'};
           height:${WH_STATE.breathPhase==='inhale'?'220px':'130px'};
@@ -5855,9 +5829,13 @@ function renderWimHof(){
         <span id="wh-breath-count" class="font-headline leading-none" style="font-size:64px;color:#50dad1">${WH_STATE.breathCount}</span>
         <span class="font-label text-[9px] uppercase tracking-widest mt-1" style="color:rgba(80,218,209,0.5)">respiri</span>
       </div>
+
+      <!-- Suggerimento -->
       <p class="font-label text-xs text-gray-600 mt-8 text-center">
         ${WH_STATE.breathPhase==='inhale'?'Inspira profondo — gonfia petto e pancia':'Espira rilassato — svuota completamente'}
       </p>
+
+      <!-- Round precedenti -->
       ${WH_STATE.retentionLog.length>0?`<div class="flex gap-6 mt-5">
         ${WH_STATE.retentionLog.map(function(r){return `<div class="text-center">
           <p class="font-label text-[8px] uppercase text-gray-600 mb-1">Round ${r.round}</p>
@@ -5865,6 +5843,8 @@ function renderWimHof(){
         </div>`;}).join("")}
       </div>`:''}
     </div>
+
+    <!-- Footer -->
     <div class="flex-shrink-0 px-5 pb-6 pt-3">
       <button id="wh-apn-btn" onclick="whGoApnea()"
         class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
@@ -5872,25 +5852,202 @@ function renderWimHof(){
         APNEA ORA (<span class="wh-apn-n">${WH_STATE.breathCount}</span> respiri)
         <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">pause_circle</span>
       </button>
-      ${!canGoApnea?`<p class="font-label text-[10px] text-center text-gray-600">La bolla guida il tuo respiro — apnea disponibile da 25 respiri</p>`:''}
+      ${!canGoApnea?`<p class="font-label text-[10px] text-center text-gray-600">La bolla guida il tuo respiro — apnea disponibile da 30 respiri</p>`:''}
     </div>
   </div>`;
 }
 
-// ── DPU renderDpuWorkout ──────────────────────────────────────────
+
+function fmtDateIT(d){
+  return String(d.getDate()).padStart(2,'0')+'/'
+    +String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+}
+function savePartialEntry(type, rounds, startTime, extraNotes){
+  var mins = startTime ? Math.round((Date.now()-startTime)/60000) : 0;
+  if(!state.externalHistory) state.externalHistory=[];
+  state.externalHistory.unshift({
+    type: type,
+    date: fmtDateIT(new Date()),
+    duration: mins||1,
+    notes: (rounds>0?rounds+' round':'') + (extraNotes?' · '+extraNotes:'') + ' · ⚠ interrotto',
+    rounds: rounds,
+    _src:'ext',
+    _partial:true
+  });
+  saveExternalHistory();
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// CONFIRM EXIT — dialog universale uscita anticipata
+// ══════════════════════════════════════════════════════════════════
+function showExitDialog(saveFn, exitFn){
+  // Crea overlay se non esiste
+  var existing=document.getElementById('exit-dialog-overlay');
+  if(existing) existing.remove();
+
+  var overlay=document.createElement('div');
+  overlay.id='exit-dialog-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:flex-end;justify-content:center;max-width:480px;left:50%;transform:translateX(-50%)';
+
+  overlay.innerHTML=`<div style="width:100%;background:#0C1017;padding:24px 20px 36px;border-top:2px solid rgba(255,255,255,0.08)">
+    <p style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.25em;color:#64748b;text-transform:uppercase;margin-bottom:16px;text-align:center">INTERROMPI ALLENAMENTO</p>
+    <button id="exit-save-btn"
+      style="width:100%;padding:16px;background:linear-gradient(135deg,#ffb693,#ff6b00);color:#000;border:none;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.1em;margin-bottom:8px;cursor:pointer;display:block">
+      SALVA E ESCI
+    </button>
+    <button id="exit-nosave-btn"
+      style="width:100%;padding:14px;background:transparent;color:#64748b;border:1px solid rgba(90,65,54,0.4);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em;margin-bottom:8px;cursor:pointer;display:block">
+      ESCI SENZA SALVARE
+    </button>
+    <button id="exit-cancel-btn"
+      style="width:100%;padding:14px;background:transparent;color:#64748b;border:none;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;cursor:pointer;display:block">
+      CONTINUA L'ALLENAMENTO
+    </button>
+  </div>`;
+
+  document.body.appendChild(overlay);
+
+  document.getElementById('exit-save-btn').onclick=function(){
+    overlay.remove();
+    if(saveFn) saveFn();
+  };
+  document.getElementById('exit-nosave-btn').onclick=function(){
+    overlay.remove();
+    if(exitFn) exitFn();
+  };
+  document.getElementById('exit-cancel-btn').onclick=function(){
+    overlay.remove();
+  };
+}
+
+
+// ── DPU STATE ─────────────────────────────────────────────────────
+var DPU_STATE = {
+  phase: 'test',     // test | emom | done
+  maxReps: 0,        // massimale tecnico inserito
+  repsPerMin: 0,     // 30% arrotondato
+  round: 0,          // round corrente (1-10)
+  totalRounds: 10,
+  sec: 0,            // secondi nel minuto corrente
+  tid: null,
+  repsLog: [],       // reps per round
+  startTime: 0,
+};
+function dpuReset(){
+  if(DPU_STATE.tid){clearInterval(DPU_STATE.tid);DPU_STATE.tid=null;}
+  DPU_STATE={phase:'test',maxReps:0,repsPerMin:0,round:0,totalRounds:10,
+    sec:0,tid:null,repsLog:[],startTime:0};
+}
+function dpuSave(partial){
+  var now=new Date();
+  var mins=DPU_STATE.startTime?Math.round((Date.now()-DPU_STATE.startTime)/60000):0;
+  if(!state.externalHistory) state.externalHistory=[];
+  state.externalHistory.unshift({
+    type:'Deep Push-Up EMOM', date:fmtDateIT(now), duration:mins||10,
+    notes:'Max '+DPU_STATE.maxReps+' · '+DPU_STATE.repsPerMin+' reps/min · '+
+      DPU_STATE.round+' round'+(partial?' · ⚠ interrotto':''),
+    _src:'ext', _dpu:true, _partial:!!partial,
+    maxReps:DPU_STATE.maxReps, repsPerMin:DPU_STATE.repsPerMin, rounds:DPU_STATE.round
+  });
+  saveExternalHistory();
+}
+
+
+// ── RENDER DPU WORKOUT ────────────────────────────────────────────
+function startDpuWorkout(){
+  forgeShowTrans('DEEP PUSH-UP','EMOM Protocol', function(){
+    requestWakeLock();
+    DPU_STATE.phase='test';
+    state.tab='dpu-workout'; render();
+  });
+}
+
+function dpuStartEmom(){
+  DPU_STATE.phase='emom';
+  DPU_STATE.round=1;
+  DPU_STATE.sec=0;
+  DPU_STATE.startTime=Date.now();
+  DPU_STATE.repsLog=[];
+  render();
+  DPU_STATE.tid=setInterval(function(){
+    DPU_STATE.sec++;
+    var remaining=60-DPU_STATE.sec;
+    var el=document.getElementById('dpu-timer');
+    if(el){
+      el.textContent=remaining+'"';
+      el.style.color=remaining<=5?'#ffb4ab':'#50dad1';
+    }
+    // Beep ultimi 3 secondi
+    if(remaining<=3&&remaining>0){
+      try{var ctx=new(window.AudioContext||window.webkitAudioContext)();
+        var o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.type='sine';o.frequency.value=660;
+        g.gain.setValueAtTime(0.1,ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.1);
+        o.start(ctx.currentTime);o.stop(ctx.currentTime+0.15);}catch(e){}
+    }
+    if(DPU_STATE.sec>=60){
+      // Fine minuto — nuovo round o fine
+      DPU_STATE.sec=0;
+      DPU_STATE.repsLog.push(DPU_STATE.repsPerMin);
+      if('vibrate'in navigator)navigator.vibrate([150,50,150]);
+      try{var ctx2=new(window.AudioContext||window.webkitAudioContext)();
+        [440,550].forEach(function(f,i){var o2=ctx2.createOscillator(),g2=ctx2.createGain();
+          o2.connect(g2);g2.connect(ctx2.destination);o2.type='sine';o2.frequency.value=f;
+          g2.gain.setValueAtTime(0.2,ctx2.currentTime+i*0.15);
+          g2.gain.exponentialRampToValueAtTime(0.001,ctx2.currentTime+i*0.15+0.2);
+          o2.start(ctx2.currentTime+i*0.15);o2.stop(ctx2.currentTime+i*0.15+0.25);});}catch(e){}
+      if(DPU_STATE.round>=DPU_STATE.totalRounds){
+        clearInterval(DPU_STATE.tid);DPU_STATE.tid=null;
+        DPU_STATE.phase='done'; releaseWakeLock();
+        dpuSave(false); render();
+        return;
+      }
+      DPU_STATE.round++;
+      render();
+    }
+  },1000);
+}
+
+function dpuExit(){
+  function doSave(){
+    if(DPU_STATE.tid){clearInterval(DPU_STATE.tid);DPU_STATE.tid=null;}
+    if(DPU_STATE.round>0) dpuSave(true);
+    releaseWakeLock(); dpuReset();
+    state.tab='extra-detail'; state.extraDetailId='DPU'; render();
+  }
+  function doExit(){
+    if(DPU_STATE.tid){clearInterval(DPU_STATE.tid);DPU_STATE.tid=null;}
+    releaseWakeLock(); dpuReset();
+    state.tab='extra-detail'; state.extraDetailId='DPU'; render();
+  }
+  if(DPU_STATE.round>0) showExitDialog(doSave, doExit);
+  else doExit();
+}
+
 function renderDpuWorkout(){
   var ph=DPU_STATE.phase;
+
+  // DONE
   if(ph==='done'){
     var totalReps=DPU_STATE.repsPerMin*DPU_STATE.totalRounds;
+    var nextEasy=DPU_STATE.totalRounds+4;
+    var nextHard=DPU_STATE.totalRounds+2;
     return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;">
       <div class="w-16 h-16 flex items-center justify-center mb-6" style="background:rgba(80,218,209,0.1);border:2px solid #50dad1">
         <span class="material-symbols-outlined text-4xl" style="color:#50dad1;font-variation-settings:'FILL' 1">check_circle</span>
       </div>
-      <p class="font-label text-[9px] uppercase tracking-[0.25em] mb-2" style="color:#50dad1">COMPLETATO</p>
+      <p class="font-label text-[9px] uppercase tracking-[0.25em] mb-2" style="color:#50dad1">SESSIONE COMPLETATA</p>
       <h2 class="font-headline text-4xl mb-1">DEEP PUSH-UP</h2>
-      <p class="font-label text-sm text-gray-500 mb-6">${DPU_STATE.totalRounds} round · ${totalReps} reps totali</p>
-      <div class="grid grid-cols-3 gap-3 w-full mb-6">
-        ${[{l:"Massimale",v:DPU_STATE.maxReps},{l:"Reps/min",v:DPU_STATE.repsPerMin},{l:"Totale",v:totalReps}].map(k=>`<div class="bg-surface-container ghost-border p-4 text-center border-l-2" style="border-color:#50dad1">
+      <p class="font-label text-sm text-gray-500 mb-8">${DPU_STATE.totalRounds} round · ${totalReps} reps totali</p>
+      <div class="grid grid-cols-3 gap-3 w-full mb-8">
+        ${[
+          {l:"Massimale",v:DPU_STATE.maxReps},
+          {l:"Reps/min",v:DPU_STATE.repsPerMin},
+          {l:"Totale",v:totalReps},
+        ].map(k=>`<div class="bg-surface-container ghost-border p-4 text-center border-l-2" style="border-color:#50dad1">
           <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">${k.l}</p>
           <p class="font-headline text-3xl" style="color:#50dad1">${k.v}</p>
         </div>`).join("")}
@@ -5901,10 +6058,12 @@ function renderDpuWorkout(){
           <div class="flex-1 text-center p-3" style="background:rgba(233,193,118,0.08);border:1px solid rgba(233,193,118,0.3)">
             <p class="font-label text-[9px] text-gray-500 mb-1">Era facile</p>
             <p class="font-headline text-2xl" style="color:#e9c176">+4 round</p>
+            <p class="font-label text-[9px] text-gray-600">${nextEasy} round</p>
           </div>
-          <div class="flex-1 text-center p-3" style="border:1px solid rgba(90,65,54,0.3)">
+          <div class="flex-1 text-center p-3" style="background:rgba(233,193,118,0.04);border:1px solid rgba(90,65,54,0.3)">
             <p class="font-label text-[9px] text-gray-500 mb-1">Era duro</p>
             <p class="font-headline text-2xl text-gray-400">+2 round</p>
+            <p class="font-label text-[9px] text-gray-600">${nextHard} round</p>
           </div>
         </div>
       </div>
@@ -5915,35 +6074,53 @@ function renderDpuWorkout(){
       </button>
     </div>`;
   }
+
+  // TEST MASSIMALE
   if(ph==='test'){
     var maxV=DPU_STATE.maxReps||0;
     var preview=maxV>0?Math.max(1,Math.floor(maxV*0.3)):0;
     return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
       <div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-4" style="border-bottom:1px solid rgba(80,218,209,0.15)">
-        <div><p class="font-label text-[9px] uppercase tracking-widest text-gray-500">STEP 1</p>
-          <p class="font-headline text-xl" style="color:#50dad1">TEST MASSIMALE</p></div>
+        <div>
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">STEP 1</p>
+          <p class="font-headline text-xl" style="color:#50dad1">TEST MASSIMALE</p>
+        </div>
         <button onclick="dpuExit()" class="w-8 h-8 flex items-center justify-center" style="background:rgba(255,255,255,0.05)">
           <span class="material-symbols-outlined text-gray-500 text-base">close</span>
         </button>
       </div>
-      <div class="flex-1 overflow-y-auto px-5 py-6 space-y-5">
+      <div class="flex-1 overflow-y-auto px-5 py-6 space-y-6">
         <div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#50dad1">
           <p class="font-label text-[9px] uppercase tracking-widest mb-3" style="color:#50dad1">ISTRUZIONI</p>
-          <div class="space-y-2">
-            ${["Mani su supporti rialzati (manubri, libri, mattoni)","Scendi più in basso possibile — senti lo stretch sul petto","Fai più reps che puoi SENZA arrivare al cedimento","Fermati quando rallenti — quello è il massimale tecnico"].map(t=>`<div class="flex items-start gap-3"><span class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style="background:#50dad1"></span><p class="font-label text-sm text-gray-400">${t}</p></div>`).join("")}
+          <div class="space-y-3">
+            ${[
+              "Posiziona le mani su supporti rialzati (manubri, libri spessi, mattoni)",
+              "Scendi più in basso possibile — senti lo stretch sul petto",
+              "Fai più reps che puoi SENZA arrivare al cedimento",
+              "Fermati quando il ritmo rallenta — quello è il tuo massimale tecnico",
+            ].map(t=>`<div class="flex items-start gap-3">
+              <span class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style="background:#50dad1"></span>
+              <p class="font-label text-sm text-gray-400">${t}</p>
+            </div>`).join("")}
           </div>
         </div>
+        <!-- Inserimento massimale -->
         <div>
-          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-3">MASSIMALE TECNICO</p>
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-3">IL TUO MASSIMALE TECNICO</p>
           <div class="flex items-center gap-4">
-            <button onclick="if(DPU_STATE.maxReps>1){DPU_STATE.maxReps--;render();}" class="w-14 h-14 font-headline text-3xl flex items-center justify-center active:scale-90 transition-transform" style="border:1px solid rgba(80,218,209,0.3);color:#50dad1">−</button>
+            <button onclick="if(DPU_STATE.maxReps>1){DPU_STATE.maxReps--;render();}"
+              class="w-14 h-14 font-headline text-3xl flex items-center justify-center active:scale-90 transition-transform"
+              style="border:1px solid rgba(80,218,209,0.3);color:#50dad1">−</button>
             <div class="flex-1 text-center">
               <div class="font-headline leading-none" style="font-size:72px;color:#50dad1">${maxV}</div>
               <p class="font-label text-[9px] uppercase text-gray-600">reps</p>
             </div>
-            <button onclick="DPU_STATE.maxReps++;render()" class="w-14 h-14 font-headline text-3xl flex items-center justify-center active:scale-90 transition-transform" style="border:1px solid rgba(80,218,209,0.3);color:#50dad1">+</button>
+            <button onclick="DPU_STATE.maxReps++;render()"
+              class="w-14 h-14 font-headline text-3xl flex items-center justify-center active:scale-90 transition-transform"
+              style="border:1px solid rgba(80,218,209,0.3);color:#50dad1">+</button>
           </div>
         </div>
+        <!-- Preview calcolo -->
         ${maxV>0?`<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#e9c176">
           <p class="font-label text-[9px] uppercase tracking-widest mb-3" style="color:#e9c176">IL TUO PROTOCOLLO</p>
           <div class="flex justify-between items-center mb-2">
@@ -5951,27 +6128,31 @@ function renderDpuWorkout(){
             <span class="font-headline text-3xl" style="color:#e9c176">${preview} reps/min</span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="font-label text-sm text-gray-400">Totale (${DPU_STATE.totalRounds} round)</span>
-            <span class="font-headline text-2xl text-gray-400">${preview*DPU_STATE.totalRounds} reps</span>
+            <span class="font-label text-sm text-gray-400">Totale (10 round)</span>
+            <span class="font-headline text-2xl text-gray-400">${preview*10} reps</span>
           </div>
         </div>`:''}
       </div>
       <div class="flex-shrink-0 px-5 pb-6 pt-3" style="background:#0C1017;box-shadow:0 -8px 24px rgba(0,0,0,0.6)">
-        <button onclick="if(DPU_STATE.maxReps<1){alert('Inserisci il massimale');return;}DPU_STATE.repsPerMin=Math.max(1,Math.floor(DPU_STATE.maxReps*0.3));dpuStartEmom();"
+        <button onclick="if(DPU_STATE.maxReps<1){alert('Inserisci il massimale prima');return;}DPU_STATE.repsPerMin=Math.max(1,Math.floor(DPU_STATE.maxReps*0.3));dpuStartEmom();"
           ${maxV<1?'disabled':''} class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
           style="background:${maxV>0?'linear-gradient(135deg,#50dad1,#00aba2)':'rgba(80,218,209,0.2)'};color:${maxV>0?'#000':'#64748b'}">
-          INIZIA EMOM <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">play_arrow</span>
+          INIZIA EMOM
+          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">play_arrow</span>
         </button>
       </div>
     </div>`;
   }
+
   // EMOM
   var remaining=60-DPU_STATE.sec;
   var prog=Math.round((DPU_STATE.round-1)/DPU_STATE.totalRounds*100);
   return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
     <div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(80,218,209,0.15)">
-      <div><p class="font-label text-[9px] uppercase tracking-widest text-gray-500">ROUND ${DPU_STATE.round} / ${DPU_STATE.totalRounds}</p>
-        <p class="font-headline text-xl" style="color:#50dad1">DEEP PUSH-UP EMOM</p></div>
+      <div>
+        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">ROUND ${DPU_STATE.round} / ${DPU_STATE.totalRounds}</p>
+        <p class="font-headline text-xl" style="color:#50dad1">DEEP PUSH-UP EMOM</p>
+      </div>
       <button onclick="dpuExit()" class="w-8 h-8 flex items-center justify-center" style="background:rgba(255,255,255,0.05)">
         <span class="material-symbols-outlined text-gray-500 text-base">close</span>
       </button>
@@ -5981,76 +6162,982 @@ function renderDpuWorkout(){
     </div>
     <div class="flex-1 flex flex-col items-center justify-center px-5 relative">
       <div class="absolute inset-0" style="background:radial-gradient(ellipse at center,rgba(80,218,209,0.05),transparent 70%)"></div>
-      <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-4 relative z-10">${remaining>DPU_STATE.repsPerMin*2?'FAI LE REPS':'RECUPERA'}</p>
-      <div class="kdp-timer-num relative z-10" id="dpu-timer" style="font-size:86px;color:${remaining<=5?'#ffb4ab':'#50dad1'}">${remaining}"</div>
+      <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-4 relative z-10">
+        ${remaining>DPU_STATE.repsPerMin*2?'FAI LE REPS':'RECUPERA'}
+      </p>
+      <div class="kdp-timer-num relative z-10" id="dpu-timer"
+        style="font-size:86px;color:${remaining<=5?'#ffb4ab':'#50dad1'}">${remaining}"</div>
       <div class="mt-6 relative z-10 text-center">
         <p class="font-headline text-5xl" style="color:#50dad1">${DPU_STATE.repsPerMin}</p>
         <p class="font-label text-[9px] uppercase tracking-widest text-gray-600 mt-1">REPS DA FARE</p>
       </div>
+      <div class="mt-8 w-full bg-surface-container ghost-border p-4 border-l-2 relative z-10" style="border-color:#50dad155;max-width:320px">
+        <p class="font-label text-xs text-gray-500 text-center">Mani su supporti rialzati · Scendi profondo · Stretch completo</p>
+      </div>
     </div>
-    <div class="flex-shrink-0 px-5 pb-6 pt-3" style="background:#0C1017">
-      <p class="font-label text-[9px] text-center text-gray-600">${DPU_STATE.totalRounds-DPU_STATE.round} round rimanenti</p>
+    <div class="flex-shrink-0 px-5 pb-6 pt-3" style="background:#0C1017;box-shadow:0 -8px 24px rgba(0,0,0,0.6)">
+      <p class="font-label text-[9px] text-center text-gray-600">Il timer avanza automaticamente · ${DPU_STATE.totalRounds-DPU_STATE.round} round rimanenti</p>
     </div>
   </div>`;
 }
 
-// ══════════════════════════════════════════════════════════════════
-// RENDER PRINCIPALE
-// ══════════════════════════════════════════════════════════════════
+function toggleAcc(id){state.plan.openAcc=state.plan.openAcc===id?null:id;render();}
+
 function render(){
-  const app=document.getElementById('app');
-  if(!app) return;
-  if(state.tab==="home")           app.innerHTML=renderHome();
-  else if(state.tab==="workout")   app.innerHTML=renderWorkout();
-  else if(state.tab==="done")      app.innerHTML=renderDone();
-  else if(state.tab==="log")       app.innerHTML=renderLog();
-  else if(state.tab==="bp-workout")app.innerHTML=renderBellplexWorkout();
-  else if(state.tab==="train")     app.innerHTML=renderTrain();
+  const app=document.getElementById("app");
+  if(state.tab==="workout")          app.innerHTML=renderWorkout();
+  else if(state.tab==="done")        app.innerHTML=renderDone();
+  else if(state.tab==="log")         app.innerHTML=renderLog();
+  else if(state.tab==="bp-workout")  app.innerHTML=renderBellplexWorkout();
+  else if(state.tab==="train")       app.innerHTML=renderTrain();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
-  else if(state.tab==="axe-setup") app.innerHTML=renderAxe();
-  else if(state.tab==="axe-workout")app.innerHTML=renderAxeWorkout();
-  else if(state.tab==="axe-done")  app.innerHTML=renderAxeDone();
-  else if(state.tab==="axe")       app.innerHTML=renderTrain();
-  else if(state.tab==="kdp-workout")app.innerHTML=renderKdpWorkout();
-  else if(state.tab==="kdp-done")  app.innerHTML=renderKdpDone();
-  else if(state.tab==="finisher")  app.innerHTML=renderFinisher();
-  else if(state.tab==="morning")   app.innerHTML=renderMorning();
-  else if(state.tab==="morning-go")app.innerHTML=renderMorningWorkout();
-  else if(state.tab==="wim-hof")   app.innerHTML=renderWimHof();
-  else if(state.tab==="dpu-workout")app.innerHTML=renderDpuWorkout();
-  else if(state.tab==="plan")      app.innerHTML=renderTrain();
-  else if(state.tab==="health")    app.innerHTML=renderLog();
-  else if(state.tab==="extra")     app.innerHTML=renderTrain();
-  else                             app.innerHTML=renderHome();
+  else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
+  else if(state.tab==="kdp-workout") app.innerHTML=renderKdpWorkout();
+  else if(state.tab==="finisher")     app.innerHTML=renderFinisher();
+  else if(state.tab==="morning")      app.innerHTML=renderMorning();
+  else if(state.tab==="dpu-workout")   app.innerHTML=renderDpuWorkout();
+  else if(state.tab==="morning-go")   app.innerHTML=renderMorningWorkout();
+  else if(state.tab==="wim-hof")      app.innerHTML=renderWimHof();
+  else if(state.tab==="kdp-done")    app.innerHTML=renderKdpDone();
+  else if(state.tab==="axe")         app.innerHTML=renderTrain();
+  else if(state.tab==="axe-workout") app.innerHTML=renderAxeWorkout();
+  else if(state.tab==="axe-done")    app.innerHTML=renderAxeDone();
+  else if(state.tab==="plan")        app.innerHTML=renderTrain();
+  else if(state.tab==="health")      app.innerHTML=renderLog();
+  else if(state.tab==="extra")       app.innerHTML=renderTrain();
+  else                               app.innerHTML=renderHome();
 }
 
-function switchTab(t){
-  if(t==="axe"||t==="extra"||t==="plan"||t==="health") t="train";
-  if(t==="wim-hof"||t==="morning-go") t="morning";
-  state.tab=t;
-  window.scrollTo(0,0);
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+// ── WAKE LOCK ─────────────────────────────────────────────────────────────────
+let wakeLock=null;
+const WORKOUT_TABS=new Set(['workout','bp-workout','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      if(wakeLock) return; // già attivo
+      wakeLock=await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release',()=>{wakeLock=null;});
+    }
+  }catch(e){console.warn('WakeLock non disponibile:',e);}
+}
+function releaseWakeLock(){
+  try{if(wakeLock){wakeLock.release();wakeLock=null;}}catch(e){}
+}
+// Riattiva wake lock se app torna in foreground durante workout
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&WORKOUT_TABS.has(state.tab)){
+    requestWakeLock();
+  } else if(document.visibilityState==='hidden'){
+    releaseWakeLock();
+  }
+});
+
+function startWorkoutImmediate(key){
+  unlockAudio();
+  clearTimerInterval();
+  requestWakeLock();
+  const step=DAYS[key].seq[0];
+  state={...state,
+    tab:"workout",dayKey:key,stepIdx:0,
+    remaining:step.timerSec??0,timerRunning:true,startTime:Date.now(),
+    logForm:{feeling:null,hrAvg:"",hrMax:"",weight:"10",talkTest:null,notes:""}
+  };
+  render();
+  if(step.timerSec)startTimerInterval();
+}
+
+function exitWorkout(){
+  clearTimerInterval(); releaseWakeLock(); state.timerRunning=false;
+
+  function doSave(){
+    var stepsDone=state.stepIdx||0;
+    var seq=state.dayKey&&DAYS[state.dayKey]?DAYS[state.dayKey].seq:[];
+    var mins=state.startTime?Math.round((Date.now()-state.startTime)/60000):0;
+    var label=state.extraWorkoutId?
+      (getExtraById(state.extraWorkoutId)||{}).label||'Extra':
+      ('Giorno '+(state.dayKey||'?'));
+    if(!state.externalHistory) state.externalHistory=[];
+    state.externalHistory.unshift({
+      type:label, date:fmtDateIT(new Date()), duration:mins||1,
+      notes:'Step '+stepsDone+'/'+(seq.length||'?')+' · ⚠ interrotto',
+      _src:'ext', _partial:true
+    });
+    saveExternalHistory();
+    doExit();
+  }
+  function doExit(){
+    if(state.extraWorkoutId){state.tab="extra-detail";}
+    else if(state.dayKey==="bw_jacked"||state.dayKey==="bw_circuit"){state.tab="plan";}
+    else{state.tab="home";}
+    render();
+  }
+
+  var stepsDone=state.stepIdx||0;
+  if(stepsDone>0){
+    showExitDialog(doSave, doExit);
+  } else {
+    doExit();
+  }
+}
+function goHome(){clearTimerInterval();releaseWakeLock();state.extraWorkoutId=null;state.tab="home";state.timerRunning=false;render();}
+
+function nextStep(){
+  clearTimerInterval();
+  const seq=DAYS[state.dayKey].seq;
+  if(state.stepIdx>=seq.length-1){
+    state.workoutMins=Math.round((Date.now()-state.startTime)/60000);
+    state.workoutSteps=seq.length;
+    state.tab="done";
+    state.timerRunning=false;
+    releaseWakeLock();
+    render();
+    return;
+  }
+  state.stepIdx++;
+  const step=seq[state.stepIdx];
+  state.remaining=step.timerSec??0;
+  state.timerRunning=!!step.timerSec;
+  render();
+  if(step.timerSec)startTimerInterval();
+}
+
+function toggleTimer(){
+  if(state.timerRunning){
+    clearTimerInterval();state.timerRunning=false;render();
+  }else{
+    unlockAudio();state.timerRunning=true;render();startTimerInterval();
+  }
+}
+
+function resetTimer(){
+  clearTimerInterval();
+  const step=DAYS[state.dayKey].seq[state.stepIdx];
+  state.remaining=step.timerSec;state.timerRunning=false;render();
+}
+
+function startTimerInterval(){
+  timerInterval=setInterval(()=>{
+    state.remaining--;
+    if(state.remaining===3||state.remaining===2||state.remaining===1)beepTick();
+    if(state.remaining<=0){
+      clearTimerInterval();state.timerRunning=false;
+      beepEnd();
+      setTimeout(()=>nextStep(),950);
+      return;
+    }
+    const step=DAYS[state.dayKey].seq[state.stepIdx];
+    const isRest=step.type==="rest"||step.name==="Rest";
+    const isAmrap=!!step.isAmrap;
+    const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
+    const accentColor=isRest?"#50dad1":isAmrap?"#e9c176":(KPhex[state.dayKey]||"#ffb693");
+    const countdown=state.remaining<=3;
+    const glowColor=countdown?"#ffb4ab":accentColor;
+    const disp=document.getElementById("timer-display");
+    if(disp){disp.textContent=fmtTime(state.remaining);disp.style.color=glowColor;}
+    const arc=document.getElementById("timer-arc");
+    if(arc&&step.timerSec>0){
+      const r=44,circ=2*Math.PI*r;
+      const dash=circ*(state.remaining/step.timerSec);
+      arc.setAttribute("stroke-dasharray",`${dash} ${circ}`);
+      arc.setAttribute("stroke",glowColor);
+    }
+    const btn=document.getElementById("btn-startstop");
+    if(btn){btn.style.background="linear-gradient(135deg,#690005,#93000a)";btn.style.color="#ffb4ab";}
+  },1000);
+}
+
+function clearTimerInterval(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+}
+
+// Log form helpers
+function setLogField(field,val){
+  state.logForm[field]=val;
+  // re-render solo la done senza perdere focus su input testo
+  if(field==="feeling"||field==="talkTest"){render();}
+}
+
+function saveSession(){
+  const f=state.logForm;
+  const isExtra=state.dayKey&&state.dayKey.startsWith("extra_");
+  const entry={
+    day:state.dayKey,
+    date:new Date().toLocaleDateString("it-IT"),
+    duration:state.workoutMins,
+    completedSteps:state.workoutSteps,
+    weight:f.weight||"10",
+    hrAvg:f.hrAvg?Number(f.hrAvg):null,
+    hrMax:f.hrMax?Number(f.hrMax):null,
+    feeling:f.feeling||null,
+    talkTest:f.talkTest||null,
+    notes:f.notes||"",
+    warmup:f.warmup&&f.warmup.length?f.warmup:[],
+    partial:state.partial||false,
+  };
+  state.history.push(entry);
+  saveHistory();
+  state.partial=false;
+  state.extraWorkoutId=null;
+  state.tab="home";
+  state.timerRunning=false;
   render();
 }
 
-function toggleAcc(id){
-  state.plan=state.plan||{};
-  state.plan.openAcc=state.plan.openAcc===id?null:id;
+function skipSave(){
+  state.extraWorkoutId=null;
+  state.tab="home";state.timerRunning=false;render();
+}
+
+function deleteEntry(i){
+  if(confirm("Elimina questa sessione?")){
+    state.history.splice(i,1);
+    saveHistory();render();
+  }
+}
+
+function clearAll(){
+  if(confirm("Cancellare tutto lo storico?")){
+    state.history=[];saveHistory();render();
+  }
+}
+
+// ── AXE ACTIONS ───────────────────────────────────────────────────────────────
+let axeRestInterval=null;
+
+function axeSetReps(v){state.axe.repsPerSet=v;render();}
+function axeSetRest(v){state.axe.restSec=v;render();}
+function axeSetExercise(v){state.axe.exercise=v;render();}
+function axeChangeTarget(delta){
+  state.axe.targetSets=Math.max(4,Math.min(40,state.axe.targetSets+delta));
+  const el=document.getElementById("axe-target-val");
+  if(el)el.textContent=state.axe.targetSets;
+}
+
+function startAxeSession(){
+  unlockAudio();
+  requestWakeLock();
+  clearAxeInterval();
+  state.axe.phase="idle";
+  state.axe.setsDone=0;
+  state.axe.sessionRunning=true;
+  state.axe.sessionStart=Date.now();
+  state.axe.talkAsked=false;
+  state.axe.talkAnswered=null;
+  state.logForm={feeling:null,hrAvg:"",hrMax:"",weight:"10",talkTest:null,notes:""};
+  forgeShowTrans('AXE PROTOCOL','Pavel Anti-Glycolytic Training', function(){
+    state.tab="axe-workout";
+    render();
+  });
+}
+
+function axeStartSet(){
+  if(state.axe.phase==="rest")return;
+  unlockAudio();
+  clearAxeInterval();
+  state.axe.phase="work";
+  beepAxeGo();
   render();
 }
 
+function axeAbortSet(){
+  clearAxeInterval();
+  state.axe.phase="idle";
+  render();
+}
+
+function axeSetDone(){
+  clearAxeInterval();
+  state.axe.setsDone++;
+  beepAxeRest();
+  if(state.axe.setsDone>=state.axe.targetSets){
+    beepAxeDone();
+    state.axe.sessionRunning=false;
+    state.tab="axe-done";
+    render();
+    return;
+  }
+  state.axe.phase="rest";
+  state.axe.restRemaining=state.axe.restSec;
+  render();
+  axeRestInterval=setInterval(()=>{
+    state.axe.restRemaining--;
+    if(state.axe.restRemaining<=3&&state.axe.restRemaining>0)beepTick();
+    if(state.axe.restRemaining<=0){
+      clearAxeInterval();
+      beepAxeGo();
+      state.axe.phase="idle";
+      render();
+      return;
+    }
+    // Aggiorna solo il ring senza full re-render
+    const wrap=document.querySelector(".axe-ring-wrap");
+    if(wrap) wrap.innerHTML=ringHTML(state.axe.restSec,state.axe.restRemaining,"#1565C0",state.axe.restRemaining<=3);
+  },1000);
+}
+
+function axeSkipRest(){
+  clearAxeInterval();
+  state.axe.phase="idle";
+  render();
+}
+
+function axeFinishSession(){
+  clearAxeInterval();
+  releaseWakeLock();
+  state.axe.sessionRunning=false;
+  state.tab="axe-done";
+  render();
+}
+
+function axeTalkAnswer(val){
+  state.axe.talkAnswered=val;
+  state.logForm.talkTest=val;
+  if(val==="fail"){
+    if(confirm("Test del parlato fallito — segnale di stop AGT.\nConsigli di terminare la sessione?")){
+      axeFinishSession();
+      return;
+    }
+  }
+  render();
+}
+
+function clearAxeInterval(){
+  if(axeRestInterval){clearInterval(axeRestInterval);axeRestInterval=null;}
+}
+
+function saveAxeSession(){
+  const ax=state.axe;
+  const f=state.logForm;
+  const mins=ax.sessionStart?Math.round((Date.now()-ax.sessionStart)/60000):0;
+  const entry={
+    date:new Date().toLocaleDateString("it-IT"),
+    sets:ax.setsDone,
+    reps:ax.repsPerSet,
+    restSec:ax.restSec,
+    weight:f.weight||"10",
+    hrAvg:f.hrAvg?Number(f.hrAvg):null,
+    hrMax:f.hrMax?Number(f.hrMax):null,
+    feeling:f.feeling||null,
+    talkTest:ax.talkAnswered||null,
+    duration:mins,
+  };
+  state.axeHistory.push(entry);
+  saveAxeHistory();
+  // Aggiorna progressione
+  const pr=state.axeProgress;
+  if(ax.setsDone>pr.currentSets)pr.currentSets=ax.setsDone;
+  if(pr.currentSets>=30&&pr.phase==="fase 1"){
+    pr.phase="fase 2";pr.currentSets=0;pr.repsPerSet=6;
+    showToast("🎉 Fase 1 completata! Ora 6 reps/set","ok");
+  } else if(pr.currentSets>=30&&pr.phase==="fase 2"){
+    pr.phase="fase 3";pr.currentSets=0;pr.repsPerSet=4;
+    showToast("💪 Fase 2 completata! Aumenta il peso KB","ok");
+  }
+  saveAxeProgress();
+  state.tab="train";
+  state.trainSubTab="axe";
+  render();
+}
+
+function stopWorkoutEarly(){
+  clearTimerInterval();
+  releaseWakeLock();
+  state.timerRunning=false;
+  state.workoutMins=Math.round((Date.now()-state.startTime)/60000);
+  state.workoutSteps=state.stepIdx+1;
+  state.tab="done";
+  // Segnala che è parziale
+  state.partial=true;
+  render();
+}
+
+function toggleWarmup(name){
+  const w=state.logForm.warmup||[];
+  const idx=w.indexOf(name);
+  if(idx>=0)w.splice(idx,1);else w.push(name);
+  state.logForm.warmup=[...w];
+  render();
+}
+
+function setStatsFilter(f){state.statsFilter=f;render();}
+
+function setExtField(field,val){
+  state.logExtForm[field]=val;
+  if(field==="type"||field==="feeling")render();
+}
+
+function saveExternalSession(){
+  const ef=state.logExtForm;
+  if(!ef.duration){showToast("⚠️ Inserisci almeno la durata","err");return;}
+  const entry={
+    type:ef.type||"Altro",
+    date:new Date().toLocaleDateString("it-IT"),
+    duration:Number(ef.duration)||null,
+    hrAvg:ef.hrAvg?Number(ef.hrAvg):null,
+    hrMax:ef.hrMax?Number(ef.hrMax):null,
+    feeling:ef.feeling||null,
+    notes:ef.notes||"",
+  };
+  state.externalHistory.push(entry);
+  saveExternalHistory();
+  state.logExtForm={type:"Calisthenics",duration:"",hrAvg:"",hrMax:"",feeling:null,notes:""};
+  state.showExtForm=false;
+  render();
+}
+
+function deleteEntryByKey(key){
+  if(!confirm("Elimina questa sessione?"))return;
+  const [src,idx]=[key.split("_")[0],Number(key.split("_")[1])];
+  if(src==="kb"){state.history.splice(idx,1);saveHistory();}
+  else{state.externalHistory.splice(idx,1);saveExternalHistory();}
+  state.editingEntry=null;
+  render();
+}
+
+function openEdit(key){
+  state.editingEntry=key;
+  render();
+}
+function closeEdit(){
+  state.editingEntry=null;
+  render();
+}
+function editEntryField(key,field,val){
+  const [src,idx]=[key.split("_")[0],Number(key.split("_")[1])];
+  const num=field==='hrAvg'||field==='hrMax';
+  const parsed=num?(val===''?null:Number(val)):val;
+  if(src==="kb"){
+    state.history[idx][field]=parsed;
+    saveHistory();
+  } else {
+    state.externalHistory[idx][field]=parsed;
+    saveExternalHistory();
+  }
+  // niente re-render: l'input onchange salva in background
+}
+
+// ── EXPORT / IMPORT ──────────────────────────────────────────────────────────
+function exportJSON(){
+  const data={
+    version:2,
+    exportedAt:new Date().toISOString(),
+    history:state.history,
+    axeHistory:state.axeHistory,
+    axeProgress:state.axeProgress,
+    activeProgram:state.activeProgram,
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`forge-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCSV(){
+  const headers=["Data","Giorno","Durata (min)","Parziale","Peso KB (kg)","HR Media","HR Max","Sensazione","Talk Test","Warm-up","Note"];
+  const rows=state.history.map(h=>[
+    h.date,
+    h.day,
+    h.duration||"",
+    h.partial?"Si":"No",
+    h.weight||"",
+    h.hrAvg||"",
+    h.hrMax||"",
+    h.feeling||"",
+    h.talkTest||"",
+    (h.warmup||[]).join(" | "),
+    h.notes||""
+  ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","));
+  const csv=[headers.join(","),...rows].join("\n");
+  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`forge-sessioni-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON(){
+  const input=document.createElement("input");
+  input.type="file";
+  input.accept=".json";
+  input.onchange=e=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const data=JSON.parse(ev.target.result);
+        if(!data.history)throw new Error("File non valido");
+        const merge=confirm(
+          `Trovate ${data.history.length} sessioni.\n\nTOCCA OK per UNIRE con i dati attuali.\nTOCCA ANNULLA per SOSTITUIRE tutto.`
+        );
+        if(merge){
+          // Unisce evitando duplicati per data+giorno
+          const existing=new Set(state.history.map(h=>h.date+"_"+h.day));
+          const newEntries=data.history.filter(h=>!existing.has(h.date+"_"+h.day));
+          state.history=[...state.history,...newEntries];
+        } else {
+          state.history=data.history;
+          if(data.axeHistory)state.axeHistory=data.axeHistory;
+          if(data.axeProgress)state.axeProgress=data.axeProgress;
+          if(data.activeProgram)state.activeProgram=data.activeProgram;
+        }
+        saveHistory();
+        localStorage.setItem("kb-axe-history",JSON.stringify(state.axeHistory));
+        localStorage.setItem("kb-axe-progress",JSON.stringify(state.axeProgress));
+        if(state.activeProgram)localStorage.setItem("kb-active-program",JSON.stringify(state.activeProgram));
+        showToast(`✅ Import completato — ${state.history.length} sessioni`,"ok");
+        render();
+      }catch(err){
+        showToast("❌ Errore nel file: "+err.message,"err");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function activateProgram(type,id){
+  const prog=type==="micro"
+    ?MICROCYCLES.find(m=>m.id===id)
+    :MACROCYCLES.find(m=>m.id===id);
+  if(!prog)return;
+  state.activeProgram={...prog,type};
+  saveActiveProgram();
+  render();
+  const hint=document.getElementById('sound-hint');
+  if(hint){
+    hint.textContent=`✅ "${prog.title}" attivato`;
+    hint.classList.add('show');
+    setTimeout(()=>{hint.classList.remove('show');hint.textContent='🔊 Tocca Start per attivare l\'audio';},2500);
+  }
+}
+
+function deactivateProgram(){
+  state.activeProgram=null;
+  saveActiveProgram();
+  render();
+}
+
+render();
+
+// ── PWA: Service Worker + Manifest ───────────────────────────────────────────
+(function(){
+  const manifest={name:"FORGE",short_name:"FORGE",description:"Kettlebell & Density Training — FORGE",start_url:"./",display:"standalone",background_color:"#080C0F",theme_color:"#080C0F",orientation:"portrait",categories:["fitness","health","sports"],icons:[{src:"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIGZpbGw9IiMwOTBDMEYiLz48cmVjdCB4PSIxMiIgeT0iMTIiIHdpZHRoPSIxNjgiIGhlaWdodD0iMTY4IiBmaWxsPSIjMEYxNDE5Ii8+PHJlY3QgeD0iNTYiIHk9IjQ0IiB3aWR0aD0iMTQiIGhlaWdodD0iMTA0IiBmaWxsPSIjZmZiNjkzIi8+PHBvbHlnb24gcG9pbnRzPSI3MCw5NiAxMzAsNTIgMTMwLDY4IDg4LDk2IDEzMCwxMjQgMTMwLDE0MCIgZmlsbD0iI2ZmYjY5MyIvPjxyZWN0IHg9IjU2IiB5PSIxNDAiIHdpZHRoPSI4MCIgaGVpZ2h0PSIyIiBmaWxsPSIjZmZiNjkzIiBvcGFjaXR5PSIwLjQiLz48dGV4dCB4PSI5NiIgeT0iMTc1IiBmb250LWZhbWlseT0iQmViYXMgTmV1ZSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmaWxsPSIjZmZiNjkzIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBsZXR0ZXItc3BhY2luZz0iNiI+Rk9SR0U8L3RleHQ+PC9zdmc+",sizes:"192x192",type:"image/svg+xml",purpose:"any maskable"},{src:"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMwOTBDMEYiLz48cmVjdCB4PSIyNCIgeT0iMjQiIHdpZHRoPSI0NjQiIGhlaWdodD0iNDY0IiBmaWxsPSIjMEYxNDE5Ii8+PHJlY3QgeD0iMTQwIiB5PSIxMDAiIHdpZHRoPSIzOCIgaGVpZ2h0PSIzMTIiIGZpbGw9IiNmZmI2OTMiLz48cG9seWdvbiBwb2ludHM9IjE3OCwyNTYgMzUwLDExMiAzNTAsMTc2IDIzMCwyNTYgMzUwLDMzNiAzNTAsNDAwIiBmaWxsPSIjZmZiNjkzIi8+PHJlY3QgeD0iMTQwIiB5PSIzODgiIHdpZHRoPSIyMjAiIGhlaWdodD0iNiIgZmlsbD0iI2ZmYjY5MyIgb3BhY2l0eT0iMC40Ii8+PHRleHQgeD0iMjU2IiB5PSI0NzYiIGZvbnQtZmFtaWx5PSJCZWJhcyBOZXVlLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNTIiIGZpbGw9IiNmZmI2OTMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIxNiI+Rk9SR0U8L3RleHQ+PC9zdmc+",sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};
+  try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
+
+  if('serviceWorker' in navigator){
+    const swCode=`const CACHE='kb-v58';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
+  }
+
+  let dp=null;
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();dp=e;
+    setTimeout(()=>{
+      if(!dp)return;
+      const ban=document.createElement('div');
+      ban.id='pwa-banner';
+      ban.style.cssText='position:fixed;bottom:80px;left:16px;right:16px;background:#0F1419;border:1.5px solid #FF5722;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:999;box-shadow:0 4px 20px #00000080;';
+      ban.innerHTML='<span style="font-size:26px;">📲</span><div style="flex:1;"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:#FF5722;">INSTALLA L\'APP</div><div style="font-size:11px;color:#607080;">Aggiungila alla home per usarla offline</div></div><button id="pwa-ok" style="background:#FF5722;color:#000;border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;">Installa</button><button id="pwa-no" style="background:none;border:none;color:#607080;font-size:20px;padding:4px;">✕</button>';
+      document.body.appendChild(ban);
+      document.getElementById('pwa-ok').onclick=async()=>{if(dp){dp.prompt();await dp.userChoice;dp=null;}ban.remove();};
+      document.getElementById('pwa-no').onclick=()=>{ban.remove();dp=null;};
+    },30000);
+  });
+  window.addEventListener('appinstalled',()=>{const b=document.getElementById('pwa-banner');if(b)b.remove();});
+})();
+
 // ══════════════════════════════════════════════════════════════════
-// INIT
+// KDP-26 — Kettlebell Density Protocol
 // ══════════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', function(){
-  // Carica external history
+var KDP_SESSIONS = (function(){
+  try{ var r=localStorage.getItem('kdp26v2'); if(r){ var p=JSON.parse(r); return p.s||[]; } }catch(e){}
+  return [];
+})();
+// Carica externalHistory se non già caricata
+(function(){
   try{
     if(!state.externalHistory||state.externalHistory.length===0){
-      var r=localStorage.getItem('forge-external-v1')||localStorage.getItem('kb-external-history');
+      var r=localStorage.getItem('forge-external-v1');
       if(r) state.externalHistory=JSON.parse(r);
     }
   }catch(e){}
-  render();
-});
+})();
+var KDP_CFG = { beep:true, vib:true };
+
+var KDP_EMOM = [
+  { name:'Swing',         kg:16, reps:'15 REP' },
+  { name:'Clean + Press', kg:16, reps:'5+5 REP' },
+  { name:'Goblet Squat',  kg:16, reps:'12 REP' },
+];
+var KDP_AMRAP = [
+  { name:'Swing',   det:'15 rep — KB 16 KG' },
+  { name:'Push-Up', det:'10 rep — Bodyweight' },
+  { name:'Row',     det:'10 rep — KB 16 KG alt.' },
+];
+
+// Stato workout KDP (flat)
+var KDP_ACTIVE   = false;
+var KDP_PHASE    = '';
+var KDP_PAUSED   = false;
+var KDP_TOTAL    = 0;
+var KDP_FIN_TYPE = 'carry';
+
+var KDP_EMOM_SEC   = 60;
+var KDP_EMOM_MIN   = 0;
+var KDP_EMOM_IDX   = 0;
+var KDP_EMOM_ROUND = 1;
+
+var KDP_AMRAP_SEC  = 600;
+var KDP_AMRAP_RNDS = 0;
+var KDP_AMRAP_IDX  = 0;
+
+var KDP_HOLD_SEC     = 45;
+var KDP_HOLD_SIDE    = 'dx';
+var KDP_HOLD_DONE_DX = false;
+var KDP_HOLD_DONE_SX = false;
+var KDP_CARRY_DX     = false;
+var KDP_CARRY_SX     = false;
+
+var KDP_TID      = null;
+var KDP_TRANS_IV = null;
+var KDP_AC       = null;
+
+function kdpSave(){
+  try{ localStorage.setItem('kdp26v2', JSON.stringify({s:KDP_SESSIONS,c:KDP_CFG})); }catch(e){}
+}
+function kdpFmt(s){ var m=Math.floor(s/60),r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0'); }
+
+// ── Audio / Vibra KDP ──────────────────────────────────────────
+function kdpGetAC(){ if(!KDP_AC) KDP_AC=new(window.AudioContext||window.webkitAudioContext)(); return KDP_AC; }
+function kdpBeep(f,v,d){
+  if(!KDP_CFG.beep) return;
+  try{
+    var ctx=kdpGetAC();
+    var o=ctx.createOscillator(); var g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(v,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d);
+    o.start(ctx.currentTime); o.stop(ctx.currentTime+d);
+  }catch(e){}
+}
+function kdpVib(p){ if(KDP_CFG.vib&&'vibrate'in navigator) navigator.vibrate(p); }
+
+// ── Timer ──────────────────────────────────────────────────────
+function kdpStartTID(){ kdpStopTID(); KDP_TID=setInterval(kdpTick,1000); }
+function kdpStopTID(){ if(KDP_TID){ clearInterval(KDP_TID); KDP_TID=null; } }
+
+function kdpTick(){
+  if(!KDP_ACTIVE||KDP_PAUSED) return;
+  KDP_TOTAL++;
+
+  if(KDP_PHASE==='emom'){
+    KDP_EMOM_SEC--;
+    kdpUpdateEmomDOM();
+    if(KDP_EMOM_SEC<=0){
+      KDP_EMOM_MIN++;
+      if(KDP_EMOM_MIN>=12){
+        kdpStopTID();
+        kdpBeep(660,0.4,0.5); kdpVib([300,100,300]);
+        kdpShowTrans('BLOCK B — AMRAP 10 MIN','As Many Rounds As Possible',function(){
+          KDP_PHASE='amrap'; KDP_AMRAP_SEC=600; KDP_AMRAP_RNDS=0; KDP_AMRAP_IDX=0;
+          kdpBuildAmrap(); kdpStartTID();
+        });
+        return;
+      }
+      KDP_EMOM_SEC=60;
+      KDP_EMOM_IDX=KDP_EMOM_MIN%3;
+      KDP_EMOM_ROUND=Math.floor(KDP_EMOM_MIN/3)+1;
+      kdpBeep(440,0.2,0.15); kdpVib([80]);
+      kdpUpdateEmomContent();
+    }
+  } else if(KDP_PHASE==='amrap'){
+    KDP_AMRAP_SEC--;
+    kdpUpdateAmrapDOM();
+    if(KDP_AMRAP_SEC<=0){
+      kdpStopTID();
+      kdpBeep(660,0.4,0.5); kdpVib([300,100,300]);
+      kdpShowTrans('BLOCK C — FINISHER',KDP_FIN_TYPE==='hold'?'Farmer Hold bilaterale':'Farmer Carry bilaterale',function(){
+        KDP_PHASE='finisher'; kdpBuildFinisher();
+        if(KDP_FIN_TYPE==='hold') kdpStartTID();
+      });
+      return;
+    }
+  } else if(KDP_PHASE==='finisher'&&KDP_FIN_TYPE==='hold'){
+    var done=(KDP_HOLD_SIDE==='dx')?KDP_HOLD_DONE_DX:KDP_HOLD_DONE_SX;
+    if(!done){
+      KDP_HOLD_SEC--;
+      kdpUpdateHoldDOM();
+      if(KDP_HOLD_SEC<=0){
+        kdpBeep(880,0.3,0.4); kdpVib([200,100,200]);
+        if(KDP_HOLD_SIDE==='dx') KDP_HOLD_DONE_DX=true; else KDP_HOLD_DONE_SX=true;
+        if(KDP_HOLD_DONE_DX&&KDP_HOLD_DONE_SX){ kdpStopTID(); kdpEndWorkout(); return; }
+        KDP_HOLD_SIDE=(KDP_HOLD_SIDE==='dx')?'sx':'dx';
+        KDP_HOLD_SEC=45; kdpBuildFinisher();
+      }
+    }
+  }
+}
+
+// ── Build Views ────────────────────────────────────────────────
+function kdpBuildEmom(){
+  var ex=KDP_EMOM[KDP_EMOM_IDX];
+  var nxt=KDP_EMOM[(KDP_EMOM_IDX+1)%3];
+  var el=document.getElementById('kdp-wk-content'); if(!el) return;
+  el.innerHTML=
+    '<div class="kdp-prog-bar"><div class="kdp-prog-fill" id="kdp-prog" style="width:0%"></div></div>'+
+    '<div class="flex justify-between items-start px-5 py-4 flex-shrink-0">'+
+      '<div><div class="kdp-block-label">BLOCK A — EMOM 12 MIN</div>'+
+      '<div class="kdp-round-label" id="kdp-round-lbl">Round '+KDP_EMOM_ROUND+' / 4</div></div>'+
+      '<div class="font-label text-[9px] uppercase tracking-widest px-2 py-1" style="border:1px solid rgba(122,154,58,.4);color:#7A9A3A">ACTIVE</div>'+
+    '</div>'+
+    '<div class="flex flex-col items-center py-4 flex-shrink-0">'+
+      '<div class="kdp-timer-num" id="kdp-timer">01:00</div>'+
+      '<div class="font-label text-[9px] tracking-widest text-gray-600 mt-2 uppercase">Esegui l&apos;esercizio</div>'+
+    '</div>'+
+    '<div class="px-5 py-4 flex-shrink-0">'+
+      '<div class="kdp-ex-name" id="kdp-ex-name">'+ex.name+'</div>'+
+      '<div class="kdp-ex-meta">'+
+        '<span class="kdp-ex-kg" id="kdp-ex-kg">'+ex.kg+'</span><span class="kdp-ex-unit">KG</span>'+
+        '<span class="kdp-ex-reps" id="kdp-ex-reps">'+ex.reps+'</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="kdp-next mx-5 mb-4 flex-shrink-0">'+
+      '<div class="kdp-next-lbl">UP NEXT</div>'+
+      '<div class="kdp-next-val" id="kdp-next-val">'+nxt.name+' — '+nxt.kg+' KG · '+nxt.reps+'</div>'+
+    '</div>'+
+    '<div class="kdp-ctrl mt-auto">'+
+      '<button class="kdp-pause-btn" id="kdp-btn-p" onclick="kdpTogglePause()">⏸ Pausa</button>'+
+      '<button class="kdp-skip-btn" onclick="kdpSkipEmom()" title="Salta minuto">'+
+        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>'+
+      '</button>'+
+    '</div>';
+  kdpUpdateEmomDOM();
+}
+
+function kdpBuildAmrap(){
+  var el=document.getElementById('kdp-wk-content'); if(!el) return;
+  var listHTML='';
+  for(var i=0;i<KDP_AMRAP.length;i++){
+    var ex=KDP_AMRAP[i];
+    var cls=i===KDP_AMRAP_IDX?'cur':i<KDP_AMRAP_IDX?'done':'';
+    listHTML+='<div class="kdp-amrap-item '+cls+'" onclick="kdpTapAmrap('+i+')">'+
+      '<div class="kdp-ai-chk">'+(i<KDP_AMRAP_IDX?'✓':(i===KDP_AMRAP_IDX?'→':''))+'</div>'+
+      '<div><div class="kdp-ai-name">'+ex.name+'</div><div class="kdp-ai-det">'+ex.det+'</div></div>'+
+    '</div>';
+  }
+  el.innerHTML=
+    '<div class="kdp-prog-bar"><div class="kdp-prog-fill" id="kdp-prog" style="width:0%"></div></div>'+
+    '<div class="flex justify-between items-start px-5 py-4 flex-shrink-0">'+
+      '<div><div class="kdp-block-label">BLOCK B — AMRAP 10 MIN</div>'+
+      '<div class="kdp-round-label">Quanti round riesci?</div></div>'+
+      '<div class="font-label text-[9px] uppercase tracking-widest px-2 py-1" style="border:1px solid rgba(122,154,58,.4);color:#7A9A3A">ACTIVE</div>'+
+    '</div>'+
+    '<div class="flex flex-col items-center py-2 flex-shrink-0">'+
+      '<div class="kdp-timer-num" id="kdp-timer">10:00</div>'+
+    '</div>'+
+    '<div class="kdp-amrap-bar mx-5 mb-3 flex-shrink-0">'+
+      '<div><div class="kdp-rnd-lbl">Rounds</div><div class="kdp-rnd-val" id="kdp-rnd">0</div></div>'+
+      '<button class="kdp-plus-btn" onclick="kdpAddRound()">+ ROUND</button>'+
+    '</div>'+
+    '<div id="kdp-amrap-list" class="flex-1 overflow-y-auto">'+listHTML+'</div>'+
+    '<div class="kdp-ctrl">'+
+      '<button class="kdp-pause-btn" id="kdp-btn-p" onclick="kdpTogglePause()">⏸ Pausa</button>'+
+      '<button class="kdp-skip-btn" onclick="kdpSkipAmrapEx()" title="Prossimo esercizio">'+
+        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>'+
+      '</button>'+
+      '<button class="kdp-skip-btn" onclick="kdpGoFinisher()" title="Vai al Finisher" style="border-color:rgba(217,79,61,.3)">'+
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D94F3D" stroke-width="2" stroke-linecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>'+
+      '</button>'+
+    '</div>';
+  kdpUpdateAmrapDOM();
+}
+
+function kdpBuildFinisher(){
+  var isHold=KDP_FIN_TYPE==='hold';
+  var el=document.getElementById('kdp-wk-content'); if(!el) return;
+  var dxDone=isHold?KDP_HOLD_DONE_DX:KDP_CARRY_DX;
+  var sxDone=isHold?KDP_HOLD_DONE_SX:KDP_CARRY_SX;
+  var holdBox=isHold?
+    '<div class="kdp-hold-box mb-4">'+
+      '<div class="kdp-hold-side" id="kdp-hold-side">'+(KDP_HOLD_SIDE==='dx'?'LATO DESTRO':'LATO SINISTRO')+'</div>'+
+      '<div class="kdp-hold-num" id="kdp-hold-num">'+kdpFmt(KDP_HOLD_SEC)+'</div>'+
+    '</div>':'';
+  el.innerHTML=
+    '<div class="flex justify-between items-start px-5 py-4 flex-shrink-0">'+
+      '<div><div class="kdp-block-label">BLOCK C — FINISHER</div>'+
+      '<div class="kdp-round-label">'+(isHold?'Farmer Hold':'Farmer Carry')+'</div></div>'+
+      '<div class="font-label text-[9px] uppercase tracking-widest px-2 py-1" style="border:1px solid rgba(122,154,58,.4);color:#7A9A3A">FINISHER</div>'+
+    '</div>'+
+    holdBox+
+    '<div class="kdp-fin-side '+(dxDone?'done':'')+' mx-0" onclick="kdpFinSide(&quot;dx&quot;)">'+
+      '<div class="kdp-fin-icon">'+(dxDone?'✓':'DX')+'</div>'+
+      '<div><div class="kdp-fin-name">'+(isHold?'Hold Destro':'Carry Destro')+'</div>'+
+      '<div class="kdp-fin-det">'+(isHold?'30–45 sec · KB 16 KG':'30–40 m · KB 16 KG')+'</div></div>'+
+    '</div>'+
+    '<div class="kdp-fin-side '+(sxDone?'done':'')+' mx-0" onclick="kdpFinSide(&quot;sx&quot;)">'+
+      '<div class="kdp-fin-icon">'+(sxDone?'✓':'SX')+'</div>'+
+      '<div><div class="kdp-fin-name">'+(isHold?'Hold Sinistro':'Carry Sinistro')+'</div>'+
+      '<div class="kdp-fin-det">'+(isHold?'30–45 sec · KB 16 KG':'30–40 m · KB 16 KG')+'</div></div>'+
+    '</div>'+
+    '<div class="kdp-ctrl mt-auto">'+
+      (isHold?'<button class="kdp-pause-btn" id="kdp-btn-p" onclick="kdpTogglePause()">⏸ Pausa</button>':'')+
+      '<button class="kdp-complete-btn" onclick="kdpEndWorkout()">✓ Completa</button>'+
+    '</div>';
+}
+
+// ── DOM Updates ────────────────────────────────────────────────
+function kdpUpdateEmomDOM(){
+  var el=document.getElementById('kdp-timer'); if(!el) return;
+  el.textContent=kdpFmt(KDP_EMOM_SEC);
+  el.className='kdp-timer-num'+(KDP_EMOM_SEC<=5?' warn':'');
+  var pr=document.getElementById('kdp-prog'); if(pr) pr.style.width=(KDP_EMOM_MIN/12*100)+'%';
+}
+function kdpUpdateEmomContent(){
+  var ex=KDP_EMOM[KDP_EMOM_IDX]; var nxt=KDP_EMOM[(KDP_EMOM_IDX+1)%3];
+  var n=document.getElementById('kdp-ex-name'); if(n) n.textContent=ex.name;
+  var k=document.getElementById('kdp-ex-kg');   if(k) k.textContent=ex.kg;
+  var r=document.getElementById('kdp-ex-reps'); if(r) r.textContent=ex.reps;
+  var v=document.getElementById('kdp-next-val');if(v) v.textContent=nxt.name+' — '+nxt.kg+' KG · '+nxt.reps;
+  var l=document.getElementById('kdp-round-lbl');if(l) l.textContent='Round '+KDP_EMOM_ROUND+' / 4';
+}
+function kdpUpdateAmrapDOM(){
+  var el=document.getElementById('kdp-timer'); if(!el) return;
+  el.textContent=kdpFmt(KDP_AMRAP_SEC);
+  el.className='kdp-timer-num'+(KDP_AMRAP_SEC<=10?' warn':'');
+  var pr=document.getElementById('kdp-prog'); if(pr) pr.style.width=((600-KDP_AMRAP_SEC)/600*100)+'%';
+}
+function kdpUpdateHoldDOM(){
+  var el=document.getElementById('kdp-hold-num'); if(!el) return;
+  el.textContent=kdpFmt(KDP_HOLD_SEC);
+  var sl=document.getElementById('kdp-hold-side');
+  if(sl) sl.textContent=KDP_HOLD_SIDE==='dx'?'LATO DESTRO':'LATO SINISTRO';
+}
+
+// ── Azioni utente ──────────────────────────────────────────────
+function kdpTogglePause(){
+  KDP_PAUSED=!KDP_PAUSED;
+  var btn=document.getElementById('kdp-btn-p'); if(!btn) return;
+  btn.classList.toggle('paused',KDP_PAUSED);
+  btn.textContent=KDP_PAUSED?'▶ Riprendi':'⏸ Pausa';
+}
+function kdpSkipEmom(){ if(KDP_PHASE==='emom') KDP_EMOM_SEC=1; }
+function kdpTapAmrap(i){ if(i===KDP_AMRAP_IDX) kdpSkipAmrapEx(); }
+function kdpSkipAmrapEx(){
+  if(KDP_PHASE!=='amrap') return;
+  if(KDP_AMRAP_IDX<KDP_AMRAP.length-1){ KDP_AMRAP_IDX++; }
+  else{ KDP_AMRAP_IDX=0; KDP_AMRAP_RNDS++; kdpBeep(880,0.15,0.15); kdpVib([80]); }
+  var rn=document.getElementById('kdp-rnd'); if(rn) rn.textContent=KDP_AMRAP_RNDS;
+  var listEl=document.getElementById('kdp-amrap-list');
+  if(listEl){
+    var items=listEl.querySelectorAll('.kdp-amrap-item');
+    items.forEach(function(it,i){
+      it.className='kdp-amrap-item'+(i===KDP_AMRAP_IDX?' cur':i<KDP_AMRAP_IDX?' done':'');
+      it.querySelector('.kdp-ai-chk').textContent=i<KDP_AMRAP_IDX?'✓':(i===KDP_AMRAP_IDX?'→':'');
+    });
+  }
+}
+function kdpAddRound(){
+  if(KDP_PHASE!=='amrap') return;
+  KDP_AMRAP_RNDS++; KDP_AMRAP_IDX=0;
+  var rn=document.getElementById('kdp-rnd'); if(rn) rn.textContent=KDP_AMRAP_RNDS;
+  kdpBeep(880,0.15,0.15); kdpVib([80]);
+}
+function kdpGoFinisher(){
+  if(KDP_PHASE!=='amrap') return;
+  if(!confirm('Saltare AMRAP e andare al Finisher?')) return;
+  kdpStopTID();
+  kdpShowTrans('BLOCK C — FINISHER',KDP_FIN_TYPE==='hold'?'Farmer Hold':'Farmer Carry',function(){
+    KDP_PHASE='finisher'; kdpBuildFinisher();
+    if(KDP_FIN_TYPE==='hold') kdpStartTID();
+  });
+}
+function kdpFinSide(side){
+  if(KDP_PHASE!=='finisher') return;
+  if(KDP_FIN_TYPE==='carry'){
+    if(side==='dx') KDP_CARRY_DX=true; else KDP_CARRY_SX=true;
+    kdpVib([100,50,100]);
+    if(KDP_CARRY_DX&&KDP_CARRY_SX){ kdpStopTID(); kdpEndWorkout(); return; }
+    kdpBuildFinisher();
+  } else {
+    if(side==='dx') KDP_HOLD_DONE_DX=true; else KDP_HOLD_DONE_SX=true;
+    kdpVib([100,50,100]);
+    if(KDP_HOLD_DONE_DX&&KDP_HOLD_DONE_SX){ kdpStopTID(); kdpEndWorkout(); return; }
+    KDP_HOLD_SIDE=(side==='dx')?'sx':'dx'; KDP_HOLD_SEC=45;
+    kdpBuildFinisher();
+  }
+}
+function kdpSelFin(t){
+  KDP_FIN_TYPE=t;
+  document.querySelectorAll('.kdp-fin-sel').forEach(function(b){
+    b.style.borderColor=b.dataset.fin===t?'#7A9A3A':'rgba(255,255,255,0.1)';
+    b.style.color=b.dataset.fin===t?'#7A9A3A':'#64748b';
+    b.style.background=b.dataset.fin===t?'rgba(122,154,58,0.1)':'transparent';
+  });
+}
+
+// ── Transizione ────────────────────────────────────────────────
+function kdpShowTrans(name,sub,cb){
+  if(KDP_TRANS_IV){ clearInterval(KDP_TRANS_IV); KDP_TRANS_IV=null; }
+  var ov=document.getElementById('kdp-trans'); if(!ov) return;
+  document.getElementById('kdp-trans-name').textContent=name;
+  document.getElementById('kdp-trans-sub').textContent=sub;
+  var n=5; document.getElementById('kdp-trans-count').textContent=n;
+  ov.classList.add('show');
+  kdpBeep(330,0.1,0.1);
+  KDP_TRANS_IV=setInterval(function(){
+    n--;
+    if(n<=0){ clearInterval(KDP_TRANS_IV); KDP_TRANS_IV=null; ov.classList.remove('show'); cb(); }
+    else { document.getElementById('kdp-trans-count').textContent=n; kdpBeep(330,0.1,0.1); }
+  },1000);
+}
+
+// ── Start / End ────────────────────────────────────────────────
+function kdpStartWorkout(){
+  kdpStopTID();
+  requestWakeLock();
+  KDP_ACTIVE=true; KDP_PHASE=''; KDP_PAUSED=false; KDP_TOTAL=0;
+  KDP_EMOM_SEC=60; KDP_EMOM_MIN=0; KDP_EMOM_IDX=0; KDP_EMOM_ROUND=1;
+  KDP_AMRAP_SEC=600; KDP_AMRAP_RNDS=0; KDP_AMRAP_IDX=0;
+  KDP_HOLD_SEC=45; KDP_HOLD_SIDE='dx'; KDP_HOLD_DONE_DX=false; KDP_HOLD_DONE_SX=false;
+  KDP_CARRY_DX=false; KDP_CARRY_SX=false;
+  state.tab='kdp-workout'; render();
+  kdpShowTrans('BLOCK A — EMOM 12 MIN','Every Minute On The Minute',function(){
+    KDP_PHASE='emom'; kdpBuildEmom(); kdpStartTID();
+  });
+}
+function kdpEndWorkout(){
+  kdpStopTID(); releaseWakeLock(); KDP_ACTIVE=false;
+  kdpBeep(523,0.3,0.15);
+  setTimeout(function(){ kdpBeep(659,0.3,0.15); },180);
+  setTimeout(function(){ kdpBeep(784,0.4,0.3);  },360);
+  kdpVib([200,100,200,100,400]);
+  const kdpEntry = { id:Date.now(), date:new Date().toISOString(), dur:Math.floor(KDP_TOTAL/60), rnd:KDP_AMRAP_RNDS, fin:KDP_FIN_TYPE, ok:true };
+  KDP_SESSIONS.unshift(kdpEntry);
+  kdpSave();
+  // Salva anche nel log unificato (state.externalHistory)
+  const kdpDate = new Date();
+  const kdpDateStr = kdpDate.getDate().toString().padStart(2,'0')+'/'+(kdpDate.getMonth()+1).toString().padStart(2,'0')+'/'+kdpDate.getFullYear();
+  const kdpLogEntry = {
+    type:'KDP-26',
+    date:kdpDateStr,
+    duration:Math.floor(KDP_TOTAL/60),
+    notes:'AMRAP '+KDP_AMRAP_RNDS+' rnd · finisher: '+KDP_FIN_TYPE,
+    _src:'ext',
+    _kdp:true
+  };
+  if(!state.externalHistory) state.externalHistory=[];
+  state.externalHistory.unshift(kdpLogEntry);
+  saveExternalHistory();
+  state.tab='kdp-done'; render();
+}
 
 </script>
 </body>
