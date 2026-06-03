@@ -763,6 +763,24 @@ let timerInterval=null;
 function fmtTime(s){return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;}
 function getTodaySuggested(){const d=new Date().getDay();return d===1?"A":d===3?"B":d===6?"C":null;}
 function dayLabel(){return["Lun","Mar","Mer","Gio","Ven","Sab","Dom"][(new Date().getDay()+6)%7];}
+// ── RECOVERY AXE Snatch 02/06/2026 ───────────────────────────────
+(function(){
+  try{
+    var already=(state.externalHistory||[]).some(function(e){
+      return e._axe && e.date==='02/06/2026';
+    });
+    if(!already){
+      if(!state.externalHistory) state.externalHistory=[];
+      state.externalHistory.unshift({
+        type:'AXE — Snatch', date:'02/06/2026', duration:20,
+        notes:'15 set · 4 reps/braccio',
+        _src:'ext', _axe:true, _recovered:true
+      });
+      try{localStorage.setItem('kb-external-history',JSON.stringify(state.externalHistory));}catch(e){}
+    }
+  }catch(e){}
+})();
+
 function saveHistory(){localStorage.setItem("kb-history-v2",JSON.stringify(state.history));}
 
 // ── RECOVERY: sessione 13 maggio 2026 ────────────────────────────
@@ -818,10 +836,11 @@ function ringHTML(total,remaining,color,countdown=false){
 
 function navHTML(active){
   const tabs=[
-    {id:"home",    icon:"home",           label:"HOME"},
-    {id:"train",   icon:"fitness_center", label:"TRAIN"},
-    {id:"morning", icon:"wb_sunny",       label:"MORNING"},
-    {id:"log",     icon:"query_stats",    label:"LOG"},
+    {id:"home",     icon:"home",           label:"HOME"},
+    {id:"train",    icon:"fitness_center", label:"TRAIN"},
+    {id:"morning",  icon:"wb_sunny",       label:"MORNING"},
+    {id:"log",      icon:"query_stats",    label:"LOG"},
+    {id:"settings", icon:"settings",       label:"SET"},
   ];
   return `<nav class="flex justify-between items-center px-5 py-3 w-full bg-background fixed top-0 z-50 max-w-[480px]"
     style="left:50%;transform:translateX(-50%);border-bottom:0.5px solid rgba(255,255,255,0.07);">
@@ -1391,7 +1410,12 @@ function renderLog(){
       <button onclick="state.showExtForm=!state.showExtForm;render()"
         class="ml-auto px-4 py-1.5 font-label text-[10px] font-bold tracking-widest uppercase transition-all"
         style="border-radius:2px;border:1px solid rgba(80,218,209,0.4);color:#50dad1;background:transparent">
-        ${state.showExtForm?"✕ Chiudi":"+ Aggiungi"}
+        ${state.showExtForm?"✕ Chiudi":"+ Sport"}
+      </button>
+      <button onclick="manualLogOpen()"
+        class="px-4 py-1.5 font-label text-[10px] font-bold tracking-widest uppercase transition-all"
+        style="border-radius:2px;border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;background:transparent">
+        ✏️ Manuale
       </button>
     </div>`;
 
@@ -1423,6 +1447,8 @@ function renderLog(){
         <button onclick="saveExternalSession()" style="flex:2;padding:12px;background:linear-gradient(135deg,#50dad1,#00aba2);color:#000;" class="font-headline text-lg tracking-widest">SALVA</button>
       </div>
     </div>`:"";
+
+    const manualForm=MANUAL_FORM&&MANUAL_FORM.open?renderManualLogForm():"";
 
     const list=visible.length===0
       ?`<div class="flex flex-col items-center py-16 text-gray-600">
@@ -1485,7 +1511,7 @@ function renderLog(){
         </div>`;
       }).join("");
 
-    return `${filterBar}${extForm}<div class="space-y-1">${list}</div>
+    return `${filterBar}${manualForm}${extForm}<div class="space-y-1">${list}</div>
     <!-- Backup -->
     <div class="mt-8 space-y-2">
       <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-600 mb-3">BACKUP</p>
@@ -5240,6 +5266,8 @@ function renderMorning(){
         <div class="w-12 h-1 mt-2" style="background:#e9c176"></div>
       </header>
 
+      ${renderMorningSuggestion()}
+
       <!-- Routine Risveglio -->
       <section>
         <div class="bg-surface-container ghost-border p-6 border-l-2" style="border-color:#e9c176">
@@ -6183,6 +6211,299 @@ function renderDpuWorkout(){
 
 function toggleAcc(id){state.plan.openAcc=state.plan.openAcc===id?null:id;render();}
 
+// ══════════════════════════════════════════════════════════════════
+// FORGE PROFILE — impostazioni utente
+// ══════════════════════════════════════════════════════════════════
+var FORGE_PROFILE = (function(){
+  try{ var s=localStorage.getItem('forge-profile-v1'); if(s) return JSON.parse(s); }catch(e){}
+  return {
+    objectives: ['fiato','dimagrimento'],
+    trainingDays: [2,4,6,0],
+  };
+})();
+function saveForgeProfile(){
+  try{ localStorage.setItem('forge-profile-v1',JSON.stringify(FORGE_PROFILE)); }catch(e){}
+}
+
+var FORGE_OBJ = [
+  {id:'fiato',        label:'Migliorare il fiato',   color:'#50dad1'},
+  {id:'dimagrimento', label:'Dimagrire',              color:'#e9c176'},
+  {id:'forza',        label:'Aumentare la forza',     color:'#ffb693'},
+  {id:'ipertrofia',   label:'Ipertrofia',             color:'#ffb4ab'},
+  {id:'mobilita',     label:'Mobilità e recupero',    color:'#7A9A3A'},
+];
+
+var DAY_LABELS = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+
+function getWorkoutSuggestion(){
+  var now = new Date();
+  var all = [].concat(
+    (state.history||[]).map(function(h){ return {date:h.date,type:'kb',sub:h.day,feel:h.feeling}; }),
+    (state.externalHistory||[]).map(function(h){ return {date:h.date,type:h.type,sub:h.type,feel:h.feeling,_axe:h._axe,_kdp:h._kdp,_morning:h._morning,_dpu:h._dpu}; })
+  );
+
+  function daysSince(fn){
+    for(var i=0;i<all.length;i++){
+      if(fn(all[i])){
+        try{
+          var p=all[i].date.split('/');
+          var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
+          return Math.floor((now-dt)/(1000*60*60*24));
+        }catch(e){}
+      }
+    }
+    return 99;
+  }
+
+  var daysAxe   = daysSince(function(h){ return h._axe; });
+  var daysKdp   = daysSince(function(h){ return h._kdp; });
+  var daysBP    = daysSince(function(h){ return h.type==='kb'&&h.sub&&h.sub.indexOf('BP')===0; });
+  var daysDpu   = daysSince(function(h){ return h._dpu; });
+  var daysMorn  = daysSince(function(h){ return h._morning; });
+
+  var week7 = all.filter(function(h){
+    try{var p=h.date.split('/');var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
+      return Math.floor((now-dt)/(1000*60*60*24))<7;}catch(e){return false;}
+  }).length;
+
+  var objs = FORGE_PROFILE.objectives||['fiato'];
+  var suggestions = [];
+
+  if(objs.indexOf('fiato')>=0 && daysAxe>2)
+    suggestions.push({title:'AXE Protocol',icon:'🪓',color:'#8b5cf6',
+      reason:'Non fai AXE da '+daysAxe+' giorni. Ottimo per il fiato.',
+      action:"state.tab='axe-setup';render();"});
+
+  if((objs.indexOf('dimagrimento')>=0||objs.indexOf('fiato')>=0) && daysKdp>3)
+    suggestions.push({title:'KDP-26',icon:'⚡',color:'#7A9A3A',
+      reason:'KDP-26 non fatto da '+daysKdp+' giorni. Sessione completa.',
+      action:"state.trainSubTab='kdp';state.tab='train';render();"});
+
+  if((objs.indexOf('forza')>=0||objs.indexOf('ipertrofia')>=0) && daysBP>4)
+    suggestions.push({title:'Bellplex',icon:'🔴',color:'#ffb4ab',
+      reason:'Bellplex non fatto da '+daysBP+' giorni. Ottimo per forza.',
+      action:"state.trainSubTab='bellplex';state.tab='train';render();"});
+
+  if((objs.indexOf('forza')>=0||objs.indexOf('ipertrofia')>=0) && daysDpu>3)
+    suggestions.push({title:'Deep Push-Up',icon:'💪',color:'#50dad1',
+      reason:'Deep Push-Up non fatto da '+daysDpu+' giorni.',
+      action:"openExtraDetail('DPU');"});
+
+  if(objs.indexOf('mobilita')>=0 && daysMorn>1)
+    suggestions.push({title:'Routine Mattutina',icon:'🌅',color:'#e9c176',
+      reason:'Non fatta da '+daysMorn+' giorni.',
+      action:"mrStart();"});
+
+  if(week7>=4)
+    suggestions.push({title:'Recupero attivo',icon:'😴',color:'#64748b',
+      reason:week7+' sessioni questa settimana. Considera di riposare.',
+      action:null});
+
+  suggestions.sort(function(a,b){
+    var pa = a.action?1:0, pb = b.action?1:0;
+    return pb-pa;
+  });
+
+  var obj = FORGE_OBJ.filter(function(o){ return o.id===objs[0]; })[0]||FORGE_OBJ[0];
+  if(suggestions.length>0) return suggestions[0];
+  return {title:'Allenati oggi',icon:'🔥',color:obj.color,
+    reason:'Obiettivo: '+obj.label+'. '+week7+' sessioni questa settimana.',
+    action:"state.tab='train';render();"};
+}
+
+function renderSettings(){
+  var objs=FORGE_PROFILE.objectives||[];
+  var days=FORGE_PROFILE.trainingDays||[];
+  var DAY_JS=[{l:'Lun',j:1},{l:'Mar',j:2},{l:'Mer',j:3},{l:'Gio',j:4},{l:'Ven',j:5},{l:'Sab',j:6},{l:'Dom',j:0}];
+  var FILL="font-variation-settings:'FILL' 1";
+  var h='<div class="screen bg-background" style="padding-top:56px;">';
+  h+='<main class="px-5 pt-8 pb-12 space-y-6">';
+  h+='<header class="mb-6"><h1 class="font-headline text-6xl tracking-tight leading-none">SETTINGS</h1><div class="w-12 h-1 bg-primary mt-2"></div></header>';
+  h+='<section><p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1">OBIETTIVI PRIORITARI</p>';
+  h+='<p class="font-label text-[9px] text-gray-600 mb-4">Il primo è il primario — guida il suggerimento</p>';
+  for(var i=0;i<FORGE_OBJ.length;i++){
+    var o=FORGE_OBJ[i];
+    var active=objs.indexOf(o.id)>=0;
+    var isPrimary=active&&objs.indexOf(o.id)===0;
+    h+='<div class="flex items-center justify-between p-3 ghost-border mb-1" style="background:'+(active?'rgba(255,255,255,0.04)':'transparent')+';border-left:2px solid '+(active?o.color:'transparent')+'">';
+    h+='<div class="flex items-center gap-3">';
+    h+='<span class="font-label text-sm '+(active?'text-on-surface':'text-gray-600')+'">'+o.label+'</span>';
+    if(isPrimary) h+='<span class="font-label text-[8px] uppercase tracking-widest px-2 py-0.5" style="background:'+o.color+'22;color:'+o.color+'">PRIMARIO</span>';
+    h+='</div>';
+    h+='<button onclick="forgeToggleObj(\''+o.id+'\')" class="w-8 h-8 flex items-center justify-center active:scale-90" style="background:'+(active?o.color+'22':'rgba(255,255,255,0.04)')+';border:1px solid '+(active?o.color+'44':'rgba(90,65,54,0.3)')+'">';
+    h+='<span class="material-symbols-outlined text-sm" style="color:'+(active?o.color:'#64748b')+';'+FILL+'">'+(active?'check':'add')+'</span></button></div>';
+  }
+  h+='</section>';
+  h+='<section><p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-3">GIORNI DI ALLENAMENTO</p>';
+  h+='<div class="flex gap-2 flex-wrap">';
+  for(var j=0;j<DAY_JS.length;j++){
+    var d=DAY_JS[j];
+    var act=days.indexOf(d.j)>=0;
+    h+='<button onclick="forgeToggleDay('+d.j+')" class="w-10 h-10 font-headline text-base active:scale-90" style="background:'+(act?'#ffb693':'transparent')+';color:'+(act?'#000':'#64748b')+';border:1px solid '+(act?'#ffb693':'rgba(90,65,54,0.4)')+'">'+d.l+'</button>';
+  }
+  h+='</div></section>';
+  h+='</main>'+navHTML('settings')+'</div>';
+  return h;
+}
+
+function forgeToggleObj(id){
+  var objs=FORGE_PROFILE.objectives||[];
+  var idx=objs.indexOf(id);
+  if(idx>=0){objs.splice(idx,1);}else{objs.unshift(id);}
+  FORGE_PROFILE.objectives=objs;
+  saveForgeProfile();render();
+}
+function forgeToggleDay(js){
+  var days=FORGE_PROFILE.trainingDays||[];
+  var idx=days.indexOf(js);
+  if(idx>=0){days.splice(idx,1);}else{days.push(js);}
+  FORGE_PROFILE.trainingDays=days;
+  saveForgeProfile();render();
+}
+
+function renderMorningSuggestion(){
+  var sug=getWorkoutSuggestion();
+  var FILL="font-variation-settings:'FILL' 1";
+  var h='<div class="bg-surface-container ghost-border p-5 border-l-2 mb-6" style="border-color:'+sug.color+'">';
+  h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-2" style="color:'+sug.color+'">SUGGERIMENTO OGGI</p>';
+  h+='<div class="flex items-center gap-2 mb-3"><span style="font-size:22px">'+sug.icon+'</span>';
+  h+='<span class="font-headline text-2xl leading-none">'+sug.title.toUpperCase()+'</span></div>';
+  h+='<p class="font-label text-xs text-gray-400 mb-4">'+sug.reason+'</p>';
+  if(sug.action){
+    h+='<button onclick="'+sug.action+'" class="w-full py-3.5 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform" style="background:linear-gradient(135deg,'+sug.color+','+sug.color+'bb);color:#000">';
+    h+='VAI <span class="material-symbols-outlined" style="'+FILL+'">bolt</span></button>';
+  }
+  h+='</div>';
+  return h;
+}
+
+// ── Recovery AXE Snatch 02/06/2026 ──────────────────────────────
+(function(){
+  try{
+    var already=(state.externalHistory||[]).some(function(e){
+      return e._axe && e.date==='02/06/2026';
+    });
+    if(!already){
+      if(!state.externalHistory) state.externalHistory=[];
+      state.externalHistory.unshift({
+        type:'AXE — Snatch', date:'02/06/2026', duration:20,
+        notes:'15 set · 4 reps/braccio',
+        _src:'ext', _axe:true
+      });
+      saveExternalHistory();
+    }
+  }catch(e){}
+})();
+
+// ── MANUAL LOG ───────────────────────────────────────────────────
+var MANUAL_FORM = {
+  open: false,
+  type: '',
+  date: '',
+  duration: '',
+  notes: '',
+  feeling: null,
+};
+
+function manualLogOpen(){
+  var now = new Date();
+  MANUAL_FORM.open = true;
+  MANUAL_FORM.date = String(now.getDate()).padStart(2,'0')+'/'
+    +String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+  MANUAL_FORM.type = '';
+  MANUAL_FORM.duration = '';
+  MANUAL_FORM.notes = '';
+  MANUAL_FORM.feeling = null;
+  render();
+}
+function manualLogClose(){ MANUAL_FORM.open=false; render(); }
+function manualLogSet(k,v){ MANUAL_FORM[k]=v; }
+function manualLogSave(){
+  if(!MANUAL_FORM.type){ alert('Inserisci il tipo di allenamento'); return; }
+  if(!MANUAL_FORM.date){ alert('Inserisci la data'); return; }
+  if(!state.externalHistory) state.externalHistory=[];
+  var isAxe = MANUAL_FORM.type.toLowerCase().indexOf('axe')>=0;
+  var isKdp = MANUAL_FORM.type.toLowerCase().indexOf('kdp')>=0;
+  state.externalHistory.unshift({
+    type: MANUAL_FORM.type,
+    date: MANUAL_FORM.date,
+    duration: MANUAL_FORM.duration ? Number(MANUAL_FORM.duration) : null,
+    notes: MANUAL_FORM.notes||'',
+    feeling: MANUAL_FORM.feeling||null,
+    _src: 'ext',
+    _axe: isAxe||false,
+    _kdp: isKdp||false,
+    _manual: true,
+  });
+  saveExternalHistory();
+  MANUAL_FORM.open = false;
+  render();
+}
+
+function renderManualLogForm(){
+  var FILL = "font-variation-settings:'FILL' 1";
+  var TYPES = ['AXE — Snatch','AXE — Swing','KDP-26','Bellplex','Giorno A','Giorno B','Giorno C',
+    'Deep Push-Up','Wim Hof','Corsa','Calisthenics','Yoga','Ciclismo','Nuoto','Altro'];
+  var FEELINGS = ['😫','😐','💪','🔥'];
+  var typeOpts = TYPES.map(function(t){
+    var sel = MANUAL_FORM.type===t;
+    return '<button onclick="manualLogSet(\'type\',\''+t+'\');render()" class="px-3 py-1 font-label text-[10px] font-bold uppercase tracking-wider active:scale-95 transition-transform" style="border:1px solid '+(sel?'#8b5cf6':'rgba(90,65,54,0.3)')+';color:'+(sel?'#8b5cf6':'#64748b')+';background:'+(sel?'rgba(139,92,246,0.12)':'transparent')+'">'+t+'</button>';
+  }).join('');
+  var feelOpts = FEELINGS.map(function(f){
+    var sel = MANUAL_FORM.feeling===f;
+    return '<button onclick="manualLogSet(\'feeling\',\''+f+'\');render()" class="py-2.5 flex-1 text-xl active:scale-90 transition-transform" style="background:'+(sel?'rgba(139,92,246,0.15)':'transparent')+';border:1px solid '+(sel?'#8b5cf6':'rgba(90,65,54,0.3)')+'">'+f+'</button>';
+  }).join('');
+  return '<div class="bg-surface-container ghost-border p-5 border-l-2 border-l-purple-500 mb-4" style="border-color:#8b5cf6">'
+    +'<p class="font-label text-[9px] uppercase tracking-widest mb-3" style="color:#8b5cf6">✏️ AGGIUNGI LOG MANUALE</p>'
+    +'<p class="font-label text-[9px] text-gray-500 mb-2">TIPO ALLENAMENTO</p>'
+    +'<div class="flex flex-wrap gap-1.5 mb-4">'+typeOpts+'</div>'
+    +'<div class="grid grid-cols-2 gap-3 mb-3">'
+    +'<div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">DATA (GG/MM/AAAA)</label>'
+    +'<input class="log-input w-full" type="text" placeholder="03/06/2026" value="'+MANUAL_FORM.date+'" oninput="manualLogSet(\'date\',this.value)"/></div>'
+    +'<div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">DURATA (min)</label>'
+    +'<input class="log-input w-full" type="number" placeholder="20" value="'+(MANUAL_FORM.duration||'')+'" oninput="manualLogSet(\'duration\',this.value)" inputmode="numeric"/></div>'
+    +'</div>'
+    +'<div class="mb-3"><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">NOTE</label>'
+    +'<input class="log-input w-full" type="text" placeholder="es. 15 set · 4 reps/braccio" value="'+MANUAL_FORM.notes+'" oninput="manualLogSet(\'notes\',this.value)"/></div>'
+    +'<div class="mb-4"><p class="font-label text-[8px] uppercase tracking-widest text-gray-500 mb-2">SENSAZIONE</p>'
+    +'<div class="flex gap-2">'+feelOpts+'</div></div>'
+    +'<div class="flex gap-2">'
+    +'<button onclick="manualLogClose()" class="flex-1 py-3 font-headline text-lg tracking-widest" style="background:transparent;border:1px solid rgba(90,65,54,0.3);color:#64748b">ANNULLA</button>'
+    +'<button onclick="manualLogSave()" class="flex-1 py-3 font-headline text-lg tracking-widest" style="background:#8b5cf6;color:#fff;border:none">SALVA</button>'
+    +'</div></div>';
+}
+
+function openManualLog(){
+  state.showManualLog = !state.showManualLog;
+  if(state.showManualLog){
+    state.manualEntry = {
+      type:'', date:'', duration:'', notes:'', feeling:null
+    };
+  }
+  render();
+}
+
+function saveManualLog(){
+  var e = state.manualEntry||{};
+  if(!e.type||!e.date){ alert('Inserisci almeno tipo e data'); return; }
+  // Valida data formato GG/MM/AAAA
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(e.date)){ alert('Data in formato GG/MM/AAAA'); return; }
+  if(!state.externalHistory) state.externalHistory=[];
+  state.externalHistory.unshift({
+    type: e.type,
+    date: e.date,
+    duration: Number(e.duration)||0,
+    notes: e.notes||'',
+    feeling: e.feeling||null,
+    _src: 'ext',
+    _manual: true
+  });
+  try{localStorage.setItem('kb-external-history',JSON.stringify(state.externalHistory));}catch(e2){}
+  state.showManualLog = false;
+  state.manualEntry = null;
+  render();
+}
+
 function render(){
   const app=document.getElementById("app");
   if(state.tab==="workout")          app.innerHTML=renderWorkout();
@@ -6195,6 +6516,7 @@ function render(){
   else if(state.tab==="kdp-workout") app.innerHTML=renderKdpWorkout();
   else if(state.tab==="finisher")     app.innerHTML=renderFinisher();
   else if(state.tab==="morning")      app.innerHTML=renderMorning();
+  else if(state.tab==="settings")    app.innerHTML=renderSettings();
   else if(state.tab==="dpu-workout")   app.innerHTML=renderDpuWorkout();
   else if(state.tab==="morning-go")   app.innerHTML=renderMorningWorkout();
   else if(state.tab==="wim-hof")      app.innerHTML=renderWimHof();
