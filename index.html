@@ -846,7 +846,7 @@ function navHTML(active){
     style="left:50%;transform:translateX(-50%);border-bottom:0.5px solid rgba(255,255,255,0.07);">
     <div class="flex items-center gap-2">
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIGZpbGw9IiMwOTBDMEYiLz48cmVjdCB4PSIxMiIgeT0iMTIiIHdpZHRoPSIxNjgiIGhlaWdodD0iMTY4IiBmaWxsPSIjMEYxNDE5Ii8+PHJlY3QgeD0iNTYiIHk9IjQ0IiB3aWR0aD0iMTQiIGhlaWdodD0iMTA0IiBmaWxsPSIjZmZiNjkzIi8+PHBvbHlnb24gcG9pbnRzPSI3MCw5NiAxMzAsNTIgMTMwLDY4IDg4LDk2IDEzMCwxMjQgMTMwLDE0MCIgZmlsbD0iI2ZmYjY5MyIvPjxyZWN0IHg9IjU2IiB5PSIxNDAiIHdpZHRoPSI4MCIgaGVpZ2h0PSIyIiBmaWxsPSIjZmZiNjkzIiBvcGFjaXR5PSIwLjQiLz48dGV4dCB4PSI5NiIgeT0iMTc1IiBmb250LWZhbWlseT0iQmViYXMgTmV1ZSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmaWxsPSIjZmZiNjkzIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBsZXR0ZXItc3BhY2luZz0iNiI+Rk9SR0U8L3RleHQ+PC9zdmc+" alt="FORGE" style="width:32px;height:32px;border-radius:6px;object-fit:cover;"/>
-      <span class="font-headline text-xl tracking-widest text-primary">FORGE</span>
+      
     </div>
     <div class="flex items-center gap-1">
       ${tabs.map(t=>`<button onclick="switchTab('${t.id}')"
@@ -1046,7 +1046,7 @@ function renderHome(){
     </section>`:"";
 
 
-  return `<div class="screen bg-background" style="padding-top:56px;">
+  return `<div class="screen bg-background" style="padding-top:64px;">
     <main class="px-5 pt-8 pb-12 space-y-8">
 
       <!-- Suggestion card -->
@@ -1696,7 +1696,7 @@ function renderLog(){
     </div>`;
   }
 
-  return `<div class="screen bg-background" style="padding-top:56px;">
+  return `<div class="screen bg-background" style="padding-top:64px;">
     <main class="px-5 pt-8 pb-12">
       <header class="mb-8">
         <h1 class="font-headline text-6xl tracking-tight leading-none">LOG</h1>
@@ -4795,7 +4795,7 @@ function renderTrain(){
     </div>`:''}`;
   }
 
-  return `<div class="screen bg-background" style="padding-top:56px;">
+  return `<div class="screen bg-background" style="padding-top:64px;">
     <main class="px-5 pt-8 pb-12">
       <header class="mb-8">
         <h1 class="font-headline text-6xl tracking-tight leading-none">TRAIN</h1>
@@ -5241,10 +5241,12 @@ var MR_STATE = {
   sec: 0,
   paused: false,
   tid: null,
+  exDuration: 60,  // 30 o 60 secondi per esercizio
 };
 function mrReset(){
+  var dur=MR_STATE.exDuration||60;
   if(MR_STATE.tid){clearInterval(MR_STATE.tid);MR_STATE.tid=null;}
-  MR_STATE={active:false,exIdx:0,sec:0,paused:false,tid:null};
+  MR_STATE={active:false,exIdx:0,sec:0,paused:false,tid:null,exDuration:dur};
 }
 
 
@@ -5258,7 +5260,7 @@ function renderMorning(){
   const mrLogs = (state.externalHistory||[]).filter(function(e){return e._morning;});
   const lastMR = mrLogs[0];
 
-  return `<div class="screen bg-background" style="padding-top:56px;">
+  return `<div class="screen bg-background" style="padding-top:64px;">
     <main class="px-5 pt-8 pb-12 space-y-6">
 
       <header class="mb-2">
@@ -5292,12 +5294,18 @@ function renderMorning(){
 
           ${lastMR?`<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: ${lastMR.date}</p>`:""}
 
-          <button onclick="mrStart()"
-            class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
-            style="background:linear-gradient(135deg,#e9c176,#c9a856);color:#000">
-            INIZIA ROUTINE
-            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">wb_sunny</span>
-          </button>
+          <div class="flex gap-2">
+            <button onclick="mrStart(60)"
+              class="flex-1 py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform"
+              style="background:linear-gradient(135deg,#e9c176,#c9a856);color:#000">
+              FULL 60&#34;
+            </button>
+            <button onclick="mrStart(30)"
+              class="flex-1 py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform"
+              style="background:linear-gradient(135deg,#c9a856,#9a7830);color:#000">
+              EXPRESS 30&#34;
+            </button>
+          </div>
         </div>
       </section>
 
@@ -5346,9 +5354,11 @@ function renderMorning(){
 // ══════════════════════════════════════════════════════════════════
 // MORNING ROUTINE — workout e logica
 // ══════════════════════════════════════════════════════════════════
-function mrStart(){
+function mrStart(dur){
   mrReset();
-  forgeShowTrans('ROUTINE MATTUTINA','8 esercizi · 1 min ciascuno', function(){
+  MR_STATE.exDuration=dur||60;
+  var label=dur===30?'8 esercizi · 30" ciascuno':'8 esercizi · 1 min ciascuno';
+  forgeShowTrans('ROUTINE MATTUTINA',label, function(){
     MR_STATE.active=true; MR_STATE.exIdx=0; MR_STATE.sec=0;
     requestWakeLock();
     state.tab='morning-go'; render();
@@ -5360,12 +5370,12 @@ function mrTick(){
   if(MR_STATE.paused) return;
   MR_STATE.sec++;
   var ex=MORNING_ROUTINE.exercises[MR_STATE.exIdx];
-  var remaining=ex.duration-MR_STATE.sec;
+  var remaining=MR_STATE.exDuration-MR_STATE.sec;
   // Aggiorna DOM direttamente se possibile
   var el=document.getElementById('mr-timer');
   if(el) el.textContent=remaining>0?remaining+'"':'✓';
   var prog=document.getElementById('mr-prog');
-  if(prog) prog.style.width=(MR_STATE.sec/ex.duration*100)+'%';
+  if(prog) prog.style.width=(MR_STATE.sec/MR_STATE.exDuration*100)+'%';
   if(remaining<=3&&remaining>0){
     try{var ctx=new(window.AudioContext||window.webkitAudioContext)();
       var o=ctx.createOscillator(),g=ctx.createGain();
@@ -5375,7 +5385,7 @@ function mrTick(){
       g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.1);
       o.start(ctx.currentTime);o.stop(ctx.currentTime+0.15);}catch(e){}
   }
-  if(MR_STATE.sec>=ex.duration){
+  if(MR_STATE.sec>=MR_STATE.exDuration){
     MR_STATE.sec=0;
     MR_STATE.exIdx++;
     if(MR_STATE.exIdx>=MORNING_ROUTINE.exercises.length){
@@ -5387,7 +5397,7 @@ function mrTick(){
       if(!state.externalHistory)state.externalHistory=[];
       state.externalHistory.unshift({
         type:'Routine Mattutina',date:dd+'/'+mm+'/'+now.getFullYear(),
-        duration:8,notes:'8 esercizi completati',_src:'ext',_morning:true
+        duration:Math.round(MORNING_ROUTINE.exercises.length*MR_STATE.exDuration/60)||8,notes:'8 esercizi · '+(MR_STATE.exDuration||60)+'" cad.',_src:'ext',_morning:true
       });
       saveExternalHistory();
       state.tab='morning'; render();
@@ -5442,7 +5452,7 @@ function mrExit(){
     if(exDone>0){
       if(!state.externalHistory) state.externalHistory=[];
       state.externalHistory.unshift({
-        type:'Routine Mattutina', date:fmtDateIT(now), duration:Math.ceil(exDone),
+        type:'Routine Mattutina', date:fmtDateIT(now), duration:Math.ceil(exDone*MR_STATE.exDuration/60)||1,
         notes:exDone+'/'+MORNING_ROUTINE.exercises.length+' esercizi · ⚠ interrotto',
         _src:'ext', _morning:true, _partial:true
       });
@@ -5463,7 +5473,7 @@ function mrExit(){
 function renderMorningWorkout(){
   var ex=MORNING_ROUTINE.exercises[MR_STATE.exIdx];
   var next=MORNING_ROUTINE.exercises[MR_STATE.exIdx+1];
-  var remaining=ex.duration-MR_STATE.sec;
+  var remaining=MR_STATE.exDuration-MR_STATE.sec;
   var prog=Math.round(MR_STATE.exIdx/MORNING_ROUTINE.exercises.length*100);
   return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
     <!-- Header -->
@@ -6316,7 +6326,7 @@ function renderSettings(){
   var days=FORGE_PROFILE.trainingDays||[];
   var DAY_JS=[{l:'Lun',j:1},{l:'Mar',j:2},{l:'Mer',j:3},{l:'Gio',j:4},{l:'Ven',j:5},{l:'Sab',j:6},{l:'Dom',j:0}];
   var FILL="font-variation-settings:'FILL' 1";
-  var h='<div class="screen bg-background" style="padding-top:56px;">';
+  var h='<div class="screen bg-background" style="padding-top:64px;">';
   h+='<main class="px-5 pt-8 pb-12 space-y-6">';
   h+='<header class="mb-6"><h1 class="font-headline text-6xl tracking-tight leading-none">SETTINGS</h1><div class="w-12 h-1 bg-primary mt-2"></div></header>';
   h+='<section><p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1">OBIETTIVI PRIORITARI</p>';
