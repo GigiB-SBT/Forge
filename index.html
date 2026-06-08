@@ -1852,6 +1852,7 @@ function renderAxe(){
     </div>
 
     <!-- Bottone start fisso sopra nav -->
+    <div style="display:flex;align-items:center;padding:8px 16px;margin-bottom:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#64748b">⌚ Amazfit: HIIT</span></div>
     <button class="axe-start-btn" onclick="startAxeSession()">🪓 INIZIA SESSIONE AXE</button>
     <div style="height:8px;"></div>
     ${navHTML("axe")}
@@ -3546,7 +3547,8 @@ function renderExtra(){
         </div>
         <!-- START -->
         <div style="padding:0 18px 18px;">
-          <button onclick="startExtraWorkout('${w.id}')"
+          ${amazfitBadge('cross')}
+      <button onclick="startExtraWorkout('${w.id}')"
             style="width:100%;padding:16px;border-radius:14px;background:${w.color};color:#000;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;border:none;">
             ▶ START ${w.label}
           </button>
@@ -3639,6 +3641,7 @@ function renderExtraDetail(){
       </div>`:""}
 
       <!-- START -->
+      ${amazfitBadge('cross')}
       <button onclick="startExtraWorkout('${w.id}')"
         class="w-full py-5 font-headline text-xl tracking-widest flex justify-between items-center group"
         style="background:linear-gradient(135deg,${accentHex},${accentHex}99);color:#000">
@@ -4765,7 +4768,8 @@ function renderTrain(){
       <button onclick="kdpStartWorkout()"
         class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
         style="background:linear-gradient(135deg,#7A9A3A,#5E7A28);color:#0D0D0F">
-        INIZIA KDP-26
+        <div style="display:flex;align-items:center;padding:8px 16px;margin-bottom:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#64748b">⌚ Amazfit: Cross Training</span></div>
+      INIZIA KDP-26
         <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
       </button>
     </div>
@@ -6248,8 +6252,8 @@ var DAY_LABELS = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
 function getWorkoutSuggestion(){
   var now = new Date();
   var all = [].concat(
-    (state.history||[]).map(function(h){ return {date:h.date,type:'kb',sub:h.day,feel:h.feeling}; }),
-    (state.externalHistory||[]).map(function(h){ return {date:h.date,type:h.type,sub:h.type,feel:h.feeling,_axe:h._axe,_kdp:h._kdp,_morning:h._morning,_dpu:h._dpu}; })
+    (state.history||[]).map(function(h){ return {date:h.date,type:'kb',sub:h.day,_kb:true}; }),
+    (state.externalHistory||[]).map(function(h){ return {date:h.date,type:h.type,_axe:h._axe,_kdp:h._kdp,_morning:h._morning,_dpu:h._dpu,_bp:h.sub&&h.sub&&h.sub.indexOf&&h.sub.indexOf('BP')===0}; })
   );
 
   function daysSince(fn){
@@ -6265,60 +6269,89 @@ function getWorkoutSuggestion(){
     return 99;
   }
 
-  var daysAxe   = daysSince(function(h){ return h._axe; });
-  var daysKdp   = daysSince(function(h){ return h._kdp; });
-  var daysBP    = daysSince(function(h){ return h.type==='kb'&&h.sub&&h.sub.indexOf('BP')===0; });
-  var daysDpu   = daysSince(function(h){ return h._dpu; });
-  var daysMorn  = daysSince(function(h){ return h._morning; });
+  var daysAxe  = daysSince(function(h){ return h._axe; });
+  var daysKdp  = daysSince(function(h){ return h._kdp; });
+  var daysBP   = daysSince(function(h){ return h._bp||(h.type==='kb'&&h.sub&&h.sub.indexOf('BP')===0); });
+  var daysKb   = daysSince(function(h){ return h._kb&&['A','B','C'].indexOf(h.sub)>=0; });
+  var daysDpu  = daysSince(function(h){ return h._dpu; });
+  var daysMorn = daysSince(function(h){ return h._morning; });
 
   var week7 = all.filter(function(h){
     try{var p=h.date.split('/');var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
       return Math.floor((now-dt)/(1000*60*60*24))<7;}catch(e){return false;}
   }).length;
 
+  // Identifica l'ultimo tipo di allenamento fatto
+  var lastType = all.length>0 ? (
+    all[0]._axe?'axe': all[0]._kdp?'kdp': all[0]._bp?'bp':
+    (all[0]._kb&&['A','B','C'].indexOf(all[0].sub)>=0)?'kb':'other'
+  ) : 'none';
+
   var objs = FORGE_PROFILE.objectives||['fiato'];
   var suggestions = [];
 
-  if(objs.indexOf('fiato')>=0 && daysAxe>2)
-    suggestions.push({title:'AXE Protocol',icon:'🪓',color:'#8b5cf6',
-      reason:'Non fai AXE da '+daysAxe+' giorni. Ottimo per il fiato.',
+  // ── AXE: max ogni 3 giorni, non se è stato l'ultimo ──────────────
+  if(objs.indexOf('fiato')>=0 && daysAxe>=3 && lastType!=='axe')
+    suggestions.push({title:'AXE Protocol',icon:'🪓',color:'#8b5cf6',priority:60,
+      reason:'AXE non fatto da '+daysAxe+' giorni — base aerobica.',
       action:"state.tab='axe-setup';render();"});
 
-  if((objs.indexOf('dimagrimento')>=0||objs.indexOf('fiato')>=0) && daysKdp>3)
-    suggestions.push({title:'KDP-26',icon:'⚡',color:'#7A9A3A',
-      reason:'KDP-26 non fatto da '+daysKdp+' giorni. Sessione completa.',
+  // ── KDP-26: ogni 4+ giorni ──────────────────────────────────────
+  if((objs.indexOf('dimagrimento')>=0||objs.indexOf('fiato')>=0) && daysKdp>=4 && lastType!=='kdp')
+    suggestions.push({title:'KDP-26',icon:'⚡',color:'#7A9A3A',priority:55,
+      reason:'KDP-26 non fatto da '+daysKdp+' giorni.',
       action:"state.trainSubTab='kdp';state.tab='train';render();"});
 
-  if((objs.indexOf('forza')>=0||objs.indexOf('ipertrofia')>=0) && daysBP>4)
-    suggestions.push({title:'Bellplex',icon:'🔴',color:'#ffb4ab',
-      reason:'Bellplex non fatto da '+daysBP+' giorni. Ottimo per forza.',
+  // ── KB classico: se non fatto da 3+ giorni ────────────────────────
+  if(daysKb>=3 && lastType!=='kb'){
+    var dayLabel=['A','B','C'][Math.floor(daysKb)%3]||'A';
+    suggestions.push({title:'Giorno KB',icon:'🔥',color:'#ffb693',priority:50,
+      reason:'KB classico non fatto da '+daysKb+' giorni.',
+      action:"startWorkout('"+dayLabel+"');"});
+  }
+
+  // ── Bellplex: forza/ipertrofia, ogni 5+ giorni ───────────────────
+  if((objs.indexOf('forza')>=0||objs.indexOf('ipertrofia')>=0) && daysBP>=5 && lastType!=='bp')
+    suggestions.push({title:'Bellplex',icon:'🔴',color:'#ffb4ab',priority:45,
+      reason:'Bellplex non fatto da '+daysBP+' giorni.',
       action:"state.trainSubTab='bellplex';state.tab='train';render();"});
 
-  if((objs.indexOf('forza')>=0||objs.indexOf('ipertrofia')>=0) && daysDpu>3)
-    suggestions.push({title:'Deep Push-Up',icon:'💪',color:'#50dad1',
-      reason:'Deep Push-Up non fatto da '+daysDpu+' giorni.',
+  // ── Deep Push-Up: ogni 3+ giorni ────────────────────────────────
+  if((objs.indexOf('forza')>=0||objs.indexOf('ipertrofia')>=0) && daysDpu>=3)
+    suggestions.push({title:'Deep Push-Up',icon:'💪',color:'#50dad1',priority:40,
+      reason:'Non fatto da '+daysDpu+' giorni.',
       action:"openExtraDetail('DPU');"});
 
-  if(objs.indexOf('mobilita')>=0 && daysMorn>1)
-    suggestions.push({title:'Routine Mattutina',icon:'🌅',color:'#e9c176',
+  // ── Routine mattutina: mobilità ──────────────────────────────────
+  if(objs.indexOf('mobilita')>=0 && daysMorn>=2)
+    suggestions.push({title:'Routine Mattutina',icon:'🌅',color:'#e9c176',priority:35,
       reason:'Non fatta da '+daysMorn+' giorni.',
-      action:"mrStart();"});
+      action:"mrStart(60);"});
 
-  if(week7>=4)
-    suggestions.push({title:'Recupero attivo',icon:'😴',color:'#64748b',
-      reason:week7+' sessioni questa settimana. Considera di riposare.',
+  // ── Recupero: >4 sessioni in 7gg ────────────────────────────────
+  if(week7>=5)
+    suggestions.push({title:'Recupero attivo',icon:'😴',color:'#64748b',priority:80,
+      reason:week7+' sessioni questa settimana. Riposa oggi.',
       action:null});
 
-  suggestions.sort(function(a,b){
-    var pa = a.action?1:0, pb = b.action?1:0;
-    return pb-pa;
-  });
+  // Ordina per priorità (più alta = più urgente)
+  suggestions.sort(function(a,b){ return (b.priority||0)-(a.priority||0); });
 
   var obj = FORGE_OBJ.filter(function(o){ return o.id===objs[0]; })[0]||FORGE_OBJ[0];
   if(suggestions.length>0) return suggestions[0];
-  return {title:'Allenati oggi',icon:'🔥',color:obj.color,
-    reason:'Obiettivo: '+obj.label+'. '+week7+' sessioni questa settimana.',
-    action:"state.tab='train';render();"};
+
+  // Fallback: ruota tra i workout in base al giorno della settimana
+  var dayOfWeek = now.getDay();
+  var fallbacks = [
+    {title:'AXE Protocol',icon:'🪓',color:'#8b5cf6',reason:'Suggerimento del giorno.',action:"state.tab='axe-setup';render();"},
+    {title:'Giorno A',icon:'🔥',color:'#ffb693',reason:'Mantieni la routine.',action:"startWorkout('A');"},
+    {title:'Bellplex',icon:'🔴',color:'#ffb4ab',reason:'Varietà e forza.',action:"state.trainSubTab='bellplex';state.tab='train';render();"},
+    {title:'KDP-26',icon:'⚡',color:'#7A9A3A',reason:'Sessione completa.',action:"state.trainSubTab='kdp';state.tab='train';render();"},
+    {title:'Giorno B',icon:'🔥',color:'#e9c176',reason:'Mantieni la routine.',action:"startWorkout('B');"},
+    {title:'AXE Protocol',icon:'🪓',color:'#8b5cf6',reason:'Lavoro aerobico.',action:"state.tab='axe-setup';render();"},
+    {title:'Giorno C',icon:'🔥',color:'#ffb693',reason:'Chiudi la settimana.',action:"startWorkout('C');"},
+  ];
+  return fallbacks[dayOfWeek]||fallbacks[0];
 }
 
 function renderSettings(){
@@ -6512,6 +6545,19 @@ function saveManualLog(){
   state.showManualLog = false;
   state.manualEntry = null;
   render();
+}
+
+// ── Badge Amazfit ─────────────────────────────────────────────────
+function amazfitBadge(mode){
+  var labels = {
+    'cross':   '⌚ Amazfit: Cross Training',
+    'hiit':    '⌚ Amazfit: HIIT',
+    'resist':  '⌚ Amazfit: Allenamento Resistenza',
+  };
+  var txt = labels[mode]||labels['cross'];
+  return '<div class="flex items-center gap-2 px-4 py-2 mb-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:4px">'
+    +'<span class="font-label text-[10px] uppercase tracking-widest text-gray-500">'+txt+'</span>'
+    +'</div>';
 }
 
 function render(){
