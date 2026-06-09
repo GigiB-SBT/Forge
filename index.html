@@ -882,6 +882,37 @@ function renderManualLogForm(){
   return h;
 }
 
+// ── Recovery DFW lunedì 09/06/2026 ──────────────────────────────
+(function(){
+  try{
+    var already=(state.externalHistory||[]).some(function(e){
+      return e.date==='09/06/2026'&&e._manual&&e._category==='forza';
+    });
+    if(!already){
+      if(!state.externalHistory) state.externalHistory=[];
+      state.externalHistory.push({
+        type:'DFW — Dry Fighting Weight (Forza)',
+        date:'09/06/2026',
+        duration:30,
+        notes:'W1D1 o simile',
+        _src:'ext',
+        _manual:true,
+        _category:'forza',
+        _catColor:'#ffb693',
+      });
+      state.externalHistory.sort(function(a,b){
+        try{
+          var pa=a.date.split('/'),pb=b.date.split('/');
+          var da=new Date(Number(pa[2]),Number(pa[1])-1,Number(pa[0]));
+          var db=new Date(Number(pb[2]),Number(pb[1])-1,Number(pb[0]));
+          return db-da;
+        }catch(e){return 0;}
+      });
+      try{localStorage.setItem('kb-external-history',JSON.stringify(state.externalHistory));}catch(e){}
+    }
+  }catch(e){}
+})();
+
 function saveExternalHistory(){localStorage.setItem("kb-external-history",JSON.stringify(state.externalHistory));}
 function saveHealthHistory(){localStorage.setItem("kb-health-history",JSON.stringify(state.healthHistory));}
 function saveHealthProfile(){localStorage.setItem("kb-health-profile",JSON.stringify(state.healthProfile));}
@@ -1483,7 +1514,6 @@ function renderLog(){
         class="px-4 py-1.5 font-label text-[10px] font-bold tracking-widest uppercase transition-all"
         style="border-radius:2px;background:${filter===f.id?'#ffb693':'transparent'};border:1px solid ${filter===f.id?'#ffb693':'rgba(90,65,54,0.4)'};color:${filter===f.id?'#351000':'#64748b'}">${f.l}</button>`).join("")}
       <button onclick="state.showExtForm=!state.showExtForm;render()"
-        class="font-label text-[9px] uppercase tracking-widest px-3 py-2 mr-2" style="border:1px solid rgba(90,65,54,0.4);color:#64748b">
         class="ml-auto px-4 py-1.5 font-label text-[10px] font-bold tracking-widest uppercase transition-all"
         style="border-radius:2px;border:1px solid rgba(80,218,209,0.4);color:#50dad1;background:transparent">
         ${state.showExtForm?"✕ Chiudi":"+ Sport"}
@@ -5348,6 +5378,15 @@ function renderMorning(){
         <div class="w-12 h-1 mt-2" style="background:#e9c176"></div>
       </header>
 
+      ${FORGE_AI_RESULT?`<div class="mb-4">
+        <button onclick="goAiPlan()"
+          class="w-full py-3 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
+          style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;background:rgba(139,92,246,0.06)">
+          📋 PIANO AI SETTIMANA
+          <span class="material-symbols-outlined" style="color:#8b5cf6;font-variation-settings:'FILL' 1">calendar_month</span>
+        </button>
+      </div>`:''}
+
       ${renderMorningSuggestion()}
 
       <!-- Routine Risveglio -->
@@ -6346,6 +6385,14 @@ function getWorkoutSuggestion(){
   var daysKdp  =daysSince(function(h){return h._kdp;});
   var daysBP   =daysSince(function(h){return h._kb&&h.sub&&h.sub.indexOf('BP')===0;});
   var daysKb   =daysSince(function(h){return h._kb&&['A','B','C'].indexOf(h.sub)>=0;});
+  // Rotazione A→B→C basata sull'ultimo giorno fatto
+  var lastKbDay=(function(){
+    for(var i=0;i<all.length;i++){
+      if(all[i]._kb&&['A','B','C'].indexOf(all[i].sub)>=0) return all[i].sub;
+    }
+    return null;
+  })();
+  var nextKbDay=lastKbDay==null?'A':lastKbDay==='A'?'B':lastKbDay==='B'?'C':'A';
   var daysDpu  =daysSince(function(h){return h._dpu;});
   var daysMorn =daysSince(function(h){return h._morning;});
   var daysCore7=daysSince(function(h){return h._core7;});
@@ -6378,19 +6425,22 @@ function getWorkoutSuggestion(){
 
   // ── Mappa obiettivo primario → workout preferiti ──────────────
   var primaryMap={
-    fiato:       [{fn:function(){return daysAxe>=3;},  w:{title:'AXE Protocol',  icon:'🪓',color:'#8b5cf6',action:"state.tab='axe-setup';render();",priority:70}},
-                  {fn:function(){return daysKdp>=4;},  w:{title:'KDP-26',        icon:'⚡',color:'#7A9A3A',action:"state.trainSubTab='kdp';state.tab='train';render();",priority:60}}],
-    dimagrimento:[{fn:function(){return daysKdp>=3;},  w:{title:'KDP-26',        icon:'⚡',color:'#7A9A3A',action:"state.trainSubTab='kdp';state.tab='train';render();",priority:70}},
-                  {fn:function(){return daysAxe>=3;},  w:{title:'AXE Protocol',  icon:'🪓',color:'#8b5cf6',action:"state.tab='axe-setup';render();",priority:60}}],
-    forza:       [{fn:function(){return daysKb>=3;},   w:{title:'Giorno KB',     icon:'🔥',color:'#ffb693',action:"startWorkout('A');",priority:70}},
-                  {fn:function(){return daysBP>=5;},   w:{title:'Bellplex',      icon:'🔴',color:'#ffb4ab',action:"state.trainSubTab='bellplex';state.tab='train';render();",priority:65}},
-                  {fn:function(){return daysCore7>=4;},w:{title:'Core & Forza',  icon:'💥',color:'#ffb693',action:"openExtraDetail('CORE7');",priority:60}},
-                  {fn:function(){return daysDpu>=3;},  w:{title:'Deep Push-Up',  icon:'💪',color:'#50dad1',action:"openExtraDetail('DPU');",priority:55}}],
-    ipertrofia:  [{fn:function(){return daysBP>=4;},   w:{title:'Bellplex',      icon:'🔴',color:'#ffb4ab',action:"state.trainSubTab='bellplex';state.tab='train';render();",priority:70}},
-                  {fn:function(){return daysDpu>=3;},  w:{title:'Deep Push-Up',  icon:'💪',color:'#50dad1',action:"openExtraDetail('DPU');",priority:65}},
-                  {fn:function(){return daysCore7>=3;},w:{title:'Core & Forza',  icon:'💥',color:'#ffb693',action:"openExtraDetail('CORE7');",priority:60}}],
+    fiato:       [{fn:function(){return daysAxe>=3;},  w:{title:'AXE Protocol',  icon:'🪓',color:'#8b5cf6',action:"forgeAxe();",priority:70}},
+                  {fn:function(){return daysKdp>=4;},  w:{title:'KDP-26',        icon:'⚡',color:'#7A9A3A',action:"forgeKdp();",priority:60}},
+                  {fn:function(){return daysKb>=4;},   w:{title:'Giorno '+nextKbDay,icon:'🔥',color:'#ffb693',action:"forgeStartKb();",priority:45}}],
+    dimagrimento:[{fn:function(){return daysKdp>=3;},  w:{title:'KDP-26',        icon:'⚡',color:'#7A9A3A',action:"forgeKdp();",priority:70}},
+                  {fn:function(){return daysAxe>=3;},  w:{title:'AXE Protocol',  icon:'🪓',color:'#8b5cf6',action:"forgeAxe();",priority:60}},
+                  {fn:function(){return daysKb>=4;},   w:{title:'Giorno '+nextKbDay,icon:'🔥',color:'#ffb693',action:"forgeStartKb();",priority:40}}],
+    forza:       [{fn:function(){return daysKb>=3;},   w:{title:'Giorno '+nextKbDay,icon:'🔥',color:'#ffb693',action:"forgeStartKb();",priority:70}},
+                  {fn:function(){return daysBP>=5;},   w:{title:'Bellplex',      icon:'🔴',color:'#ffb4ab',action:"forgeBellplex();",priority:65}},
+                  {fn:function(){return daysCore7>=4;},w:{title:'Core & Forza',  icon:'💥',color:'#ffb693',action:"forgeCore7();",priority:60}},
+                  {fn:function(){return daysDpu>=3;},  w:{title:'Deep Push-Up',  icon:'💪',color:'#50dad1',action:"forgeDpu();",priority:55}}],
+    ipertrofia:  [{fn:function(){return daysKb>=3;},   w:{title:'Giorno '+nextKbDay,icon:'🔥',color:'#ffb693',action:"forgeStartKb();",priority:72}},
+                  {fn:function(){return daysBP>=4;},   w:{title:'Bellplex',      icon:'🔴',color:'#ffb4ab',action:"forgeBellplex();",priority:70}},
+                  {fn:function(){return daysDpu>=3;},  w:{title:'Deep Push-Up',  icon:'💪',color:'#50dad1',action:"forgeDpu();",priority:65}},
+                  {fn:function(){return daysCore7>=3;},w:{title:'Core & Forza',  icon:'💥',color:'#ffb693',action:"forgeCore7();",priority:60}}],
     mobilita:    [{fn:function(){return daysMorn>=2;}, w:{title:'Routine Mattutina',icon:'🌅',color:'#e9c176',action:"mrStart(60);",priority:70}},
-                  {fn:function(){return daysAxe>=4;},  w:{title:'AXE (leggero)', icon:'🪓',color:'#8b5cf6',action:"state.tab='axe-setup';render();",priority:60}}],
+                  {fn:function(){return daysAxe>=4;},  w:{title:'AXE (leggero)', icon:'🪓',color:'#8b5cf6',action:"forgeAxe();",priority:60}}],
   };
 
   // Aggiunge suggerimenti da obiettivo primario (peso doppio)
@@ -6427,7 +6477,7 @@ function getWorkoutSuggestion(){
     if(suggestions.length===0){
       return {title:'Recupero / AXE leggero',icon:'😐',color:'#7A9A3A',
         reason:'Feeling basso o HRV ridotta — lavoro aerobico leggero.',
-        action:"state.tab='axe-setup';render();"};
+        action:"forgeAxe();"};
     }
   }
 
@@ -6663,7 +6713,8 @@ function amazfitBadge(mode){
 // ── Export/Import settimanale AI ─────────────────────────────────
 var FORGE_AI_RESULT=(function(){
   try{var s=localStorage.getItem('forge-ai-result');if(s)return JSON.parse(s);}catch(e){}
-  return null;
+  // Piano pre-caricato
+  return {"analisi": "Settimana solida con routine mattutina costante e buoni segnali aerobici (AXE HR 121, feeling forte). Il Deep Push-Up EMOM è stato interrotto due volte: segnale di recupero incompleto o carico eccessivo sulla spinta. Nessun dato HRV disponibile.", "piano_settimana": [{"giorno": "Martedì", "workout": "AXE (aerobico anti-glicolitico)", "intensita": "Media", "motivo": "Obiettivo dimagrimento: AXE in zona aerobica è il driver principale. Dopo il DFW domenica, inizia la settimana con volume controllato — 14-16 set, 4 reps/lato."}, {"giorno": "Giovedì", "workout": "KDP-26 (EMOM+AMRAP)", "intensita": "Alta", "motivo": "Sessione metabolica intensa: EMOM+AMRAP brucia glicogeno e stimola il metabolismo. Hai già tollerato bene HR 143 — punta a mantenere o superare i 3 round."}, {"giorno": "Sabato", "workout": "Bellplex BP1-BP20", "intensita": "Media", "motivo": "Complesso continuo senza posare il KB: ottimo per conditioning e consumo calorico sostenuto. Scegli un BP di difficoltà media (BP3-BP6) per non sovraccaricare dopo il giovedì pesante."}, {"giorno": "Domenica", "workout": "AXE (aerobico anti-glicolitico)", "intensita": "Bassa", "motivo": "Seconda sessione AXE della settimana in chiave recupero attivo: tieni HR sotto 130, 12-14 set. Favorisce il sistema aerobico senza accumulare fatica prima della settimana successiva."}], "consiglio": "Sospendi temporaneamente il Deep Push-Up EMOM: due interruzioni consecutive indicano che la spinta orizzontale è un limite attuale — riprenderlo solo dopo aver recuperato forza sulla spinta verticale. Mantieni la routine mattutina ogni giorno come base: è il tuo anchor habit più solido."};
 })();
 
 function goAiPlan(){state.tab='ai-plan';render();}
@@ -6838,6 +6889,26 @@ function renderAIPlan(){
   h+='</main>'+navHTML('morning')+'</div>';
   return h;
 }
+
+// ── Helper navigazione per suggestion actions ────────────────────
+function forgeStartKb(){
+  var all=[].concat(
+    (state.history||[]).map(function(h){return {_kb:true,sub:h.day};}),
+    (state.externalHistory||[]).map(function(h){return h;})
+  );
+  var lastKb=null;
+  for(var i=0;i<all.length;i++){
+    if(all[i]._kb&&['A','B','C'].indexOf(all[i].sub)>=0){lastKb=all[i].sub;break;}
+  }
+  var next=lastKb==null?'A':lastKb==='A'?'B':lastKb==='B'?'C':'A';
+  startWorkout(next);
+}
+function forgeBellplex(){state.trainSubTab='bellplex';state.tab='train';render();}
+function forgeKdp(){state.trainSubTab='kdp';state.tab='train';render();}
+function forgeAxe(){state.tab='axe-setup';render();}
+function forgeTrain(){state.tab='train';render();}
+function forgeDpu(){openExtraDetail('DPU');}
+function forgeCore7(){openExtraDetail('CORE7');}
 
 function render(){
   const app=document.getElementById("app");
