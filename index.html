@@ -6355,11 +6355,11 @@ function getWorkoutSuggestion(){
 
   var week7=all.filter(function(h){
     try{var p=h.date.split('/');var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
-      return Math.floor((now-dt)/(1000*60*60*24))<7;}catch(e){return false;}
+      return Math.floor((now-dt)/(1000*60*60*24))<7&&!h._morning;}catch(e){return false;}
   }).length;
 
   // Dati fisiologici recenti
-  var lastEntry=all[0]||{};
+  var lastEntry=all.filter(function(h){return !h._morning;})[0]||{};
   var lastFeel=lastEntry.feel||null;
   var recentHRV=(state.healthHistory||[]).slice(0,3).map(function(h){return h.hrv;}).filter(Boolean);
   var avgHRV=recentHRV.length?recentHRV.reduce(function(a,b){return a+b;},0)/recentHRV.length:null;
@@ -6666,6 +6666,8 @@ var FORGE_AI_RESULT=(function(){
   return null;
 })();
 
+function goAiPlan(){state.tab='ai-plan';render();}
+function goMorning(){state.tab='morning';render();}
 function forgeRemoveAI(){
   FORGE_AI_RESULT=null;
   try{localStorage.removeItem('forge-ai-result');}catch(e){}
@@ -6776,7 +6778,64 @@ function renderAIResult(){
     h+='</div>';
   }
   if(r.consiglio) h+='<p class="font-label text-[10px] text-gray-500 italic leading-relaxed">'+r.consiglio+'</p>';
+  h+='<button onclick="goAiPlan()" class="w-full py-2.5 font-headline text-base tracking-widest mt-3 active:scale-95" style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;background:rgba(139,92,246,0.06)">VEDI PIANO COMPLETO →</button>';
   h+='</div>';
+  return h;
+}
+
+// ── Visualizzazione Piano AI ──────────────────────────────────────
+function renderAIPlan(){
+  var r=FORGE_AI_RESULT;
+  if(!r){ state.tab='morning'; render(); return ''; }
+
+  var intensityColors={'Alta':'#ffb4ab','Media':'#e9c176','Bassa':'#7A9A3A'};
+  var h='<div class="screen bg-background" style="padding-top:64px;">';
+  h+='<main class="px-5 pt-6 pb-12">';
+  h+='<div class="flex items-center justify-between mb-6">';
+  h+='<div><h1 class="font-headline text-5xl tracking-tight leading-none">PIANO AI</h1>';
+  h+='<div class="w-12 h-1 mt-2" style="background:#8b5cf6"></div></div>';
+  h+='<button onclick="goMorning()" class="font-label text-[9px] uppercase tracking-widest px-3 py-2" style="border:1px solid rgba(90,65,54,0.4);color:#64748b">✕ chiudi</button>';
+  h+='</div>';
+
+  // Analisi
+  if(r.analisi){
+    h+='<div class="bg-surface-container ghost-border p-5 border-l-2 mb-6" style="border-color:#8b5cf6">';
+    h+='<p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:#8b5cf6">ANALISI SETTIMANA</p>';
+    h+='<p class="font-label text-sm text-gray-300 leading-relaxed">'+r.analisi+'</p>';
+    h+='</div>';
+  }
+
+  // Piano settimanale
+  if(r.piano_settimana&&r.piano_settimana.length){
+    h+='<p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-3">PROGRAMMA SETTIMANA</p>';
+    h+='<div class="space-y-2 mb-6">';
+    for(var i=0;i<r.piano_settimana.length;i++){
+      var w=r.piano_settimana[i];
+      var ic=intensityColors[w.intensita]||'#64748b';
+      h+='<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:'+ic+'">';
+      h+='<div class="flex items-start justify-between mb-2">';
+      h+='<div>';
+      h+='<p class="font-label text-[9px] uppercase tracking-widest mb-1" style="color:'+ic+'">'+w.giorno+'</p>';
+      h+='<p class="font-headline text-2xl leading-none">'+w.workout+'</p>';
+      h+='</div>';
+      h+='<span class="font-label text-[8px] uppercase tracking-widest px-2 py-1 mt-1" style="background:'+ic+'22;color:'+ic+'">'+w.intensita+'</span>';
+      h+='</div>';
+      if(w.motivo) h+='<p class="font-label text-xs text-gray-400 leading-relaxed">'+w.motivo+'</p>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+
+  // Consiglio
+  if(r.consiglio){
+    h+='<div class="bg-surface-container ghost-border p-5 border-l-2 mb-6" style="border-color:#50dad1">';
+    h+='<p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:#50dad1">CONSIGLIO COACH</p>';
+    h+='<p class="font-label text-sm text-gray-300 leading-relaxed">'+r.consiglio+'</p>';
+    h+='</div>';
+  }
+
+  h+='<button onclick="goMorning()" class="w-full py-3 font-headline text-xl tracking-widest" style="border:1px solid rgba(255,182,147,0.3);color:#ffb693">← TORNA A MORNING</button>';
+  h+='</main>'+navHTML('morning')+'</div>';
   return h;
 }
 
@@ -6793,6 +6852,7 @@ function render(){
   else if(state.tab==="finisher")     app.innerHTML=renderFinisher();
   else if(state.tab==="morning")      app.innerHTML=renderMorning();
   else if(state.tab==="settings")    app.innerHTML=renderSettings();
+  else if(state.tab==="ai-plan")      app.innerHTML=renderAIPlan();
   else if(state.tab==="dpu-workout")   app.innerHTML=renderDpuWorkout();
   else if(state.tab==="morning-go")   app.innerHTML=renderMorningWorkout();
   else if(state.tab==="wim-hof")      app.innerHTML=renderWimHof();
