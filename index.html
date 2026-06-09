@@ -807,6 +807,81 @@ function saveHistory(){localStorage.setItem("kb-history-v2",JSON.stringify(state
   }catch(e){}
 })();
 
+// ── Log manuale ───────────────────────────────────────────────────
+var WORKOUT_TYPES=[
+  {id:'forza',    label:'Forza',         icon:'💪', color:'#ffb693'},
+  {id:'fiato',    label:'Fiato/Cardio',  icon:'🫁', color:'#50dad1'},
+  {id:'hiit',     label:'HIIT',          icon:'🔥', color:'#ffb4ab'},
+  {id:'mobilita', label:'Mobilità',      icon:'🧘', color:'#7A9A3A'},
+  {id:'sport',    label:'Sport/Altro',   icon:'🏄', color:'#e9c176'},
+];
+function setManualCategory(id){
+  if(state.manualEntry) state.manualEntry.category=id;
+  render();
+}
+function setManualFeeling(v){
+  if(state.manualEntry) state.manualEntry.feeling=v;
+  render();
+}
+function openManualLog(){
+  state.showManualLog=!state.showManualLog;
+  if(state.showManualLog) state.manualEntry={type:'',category:'',date:'',duration:'',notes:'',feeling:null};
+  render();
+}
+function saveManualLog(){
+  var e=state.manualEntry||{};
+  if(!e.type){showToast('⚠️ Inserisci il nome','err');return;}
+  if(!e.date){showToast('⚠️ Inserisci la data','err');return;}
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(e.date)){showToast('⚠️ Data: GG/MM/AAAA','err');return;}
+  var cat=(WORKOUT_TYPES||[]).filter(function(x){return x.id===e.category;})[0]||{};
+  if(!state.externalHistory) state.externalHistory=[];
+  state.externalHistory.unshift({
+    type:e.type+(cat.label?' ('+cat.label+')':''),
+    date:e.date, duration:Number(e.duration)||0,
+    notes:e.notes||'', feeling:e.feeling||null,
+    _src:'ext', _manual:true,
+    _category:e.category||'sport',
+    _catColor:cat.color||'#64748b',
+  });
+  saveExternalHistory();
+  state.showManualLog=false; state.manualEntry=null;
+  showToast('✅ Allenamento salvato','ok'); render();
+}
+function renderManualLogForm(){
+  if(!state.showManualLog) return '';
+  var e=state.manualEntry||{};
+  var today=new Date().toLocaleDateString('it-IT');
+  var h='<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:#e9c176">';
+  h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-4">AGGIUNGI SESSIONE</p>';
+  h+='<div class="mb-3"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">ALLENAMENTO</p>';
+  h+='<input type="text" placeholder="DFW, SUP, Corsa..." class="log-input w-full" value="'+(e.type||'')+'" oninput="state.manualEntry.type=this.value"/></div>';
+  h+='<div class="mb-3"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">CATEGORIA</p><div class="flex gap-2 flex-wrap">';
+  for(var i=0;i<WORKOUT_TYPES.length;i++){
+    var t=WORKOUT_TYPES[i]; var active=e.category===t.id;
+    h+='<button data-cat="'+t.id+'" onclick="setManualCategory(this.dataset.cat)" class="px-3 py-1.5 font-label text-xs active:scale-90" style="background:'+(active?t.color:'transparent')+';color:'+(active?'#000':t.color)+';border:1px solid '+t.color+'44">'+t.icon+' '+t.label+'</button>';
+  }
+  h+='</div></div>';
+  h+='<div class="grid grid-cols-2 gap-2 mb-3">';
+  h+='<div><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">DATA (GG/MM/AAAA)</p>';
+  h+='<input type="text" placeholder="'+today+'" class="log-input w-full" value="'+(e.date||'')+'" oninput="state.manualEntry.date=this.value"/></div>';
+  h+='<div><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">DURATA (min)</p>';
+  h+='<input type="number" placeholder="30" class="log-input w-full" value="'+(e.duration||'')+'" oninput="state.manualEntry.duration=this.value" inputmode="numeric"/></div></div>';
+  h+='<div class="mb-4"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">NOTE</p>';
+  h+='<input type="text" placeholder="15 set snatch, W1D1..." class="log-input w-full" value="'+(e.notes||'')+'" oninput="state.manualEntry.notes=this.value"/></div>';
+  h+='<div class="mb-4"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">FEELING</p><div class="flex gap-2">';
+  var ff=[{v:1,e:'😫'},{v:2,e:'😐'},{v:3,e:'💪'},{v:4,e:'🔥'}];
+  for(var j=0;j<ff.length;j++){
+    var f=ff[j]; var sel=e.feeling===f.v;
+    h+='<button data-feel="'+f.v+'" onclick="setManualFeeling(parseInt(this.dataset.feel))" class="w-10 h-10 text-lg active:scale-90" style="background:'+(sel?'rgba(255,182,147,0.2)':'transparent')+';border:1px solid '+(sel?'#ffb693':'rgba(90,65,54,0.3)')+'">'+f.e+'</button>';
+  }
+  h+='</div></div>';
+  h+='<div class="flex gap-2">';
+  h+='<button onclick="saveManualLog()" class="flex-1 py-3 font-headline text-xl tracking-widest active:scale-95" style="background:#ffb693;color:#000">SALVA</button>';
+  h+='<button onclick="state.showManualLog=false;render()" class="w-16 py-3 font-headline text-lg active:scale-95" style="border:1px solid rgba(90,65,54,0.4);color:#64748b">✕</button>';
+  h+='</div></div>';
+  return h;
+}
+
 function saveExternalHistory(){localStorage.setItem("kb-external-history",JSON.stringify(state.externalHistory));}
 function saveHealthHistory(){localStorage.setItem("kb-health-history",JSON.stringify(state.healthHistory));}
 function saveHealthProfile(){localStorage.setItem("kb-health-profile",JSON.stringify(state.healthProfile));}
@@ -1408,6 +1483,7 @@ function renderLog(){
         class="px-4 py-1.5 font-label text-[10px] font-bold tracking-widest uppercase transition-all"
         style="border-radius:2px;background:${filter===f.id?'#ffb693':'transparent'};border:1px solid ${filter===f.id?'#ffb693':'rgba(90,65,54,0.4)'};color:${filter===f.id?'#351000':'#64748b'}">${f.l}</button>`).join("")}
       <button onclick="state.showExtForm=!state.showExtForm;render()"
+        class="font-label text-[9px] uppercase tracking-widest px-3 py-2 mr-2" style="border:1px solid rgba(90,65,54,0.4);color:#64748b">
         class="ml-auto px-4 py-1.5 font-label text-[10px] font-bold tracking-widest uppercase transition-all"
         style="border-radius:2px;border:1px solid rgba(80,218,209,0.4);color:#50dad1;background:transparent">
         ${state.showExtForm?"✕ Chiudi":"+ Sport"}
@@ -6250,110 +6326,128 @@ var FORGE_OBJ = [
 var DAY_LABELS = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
 
 function getWorkoutSuggestion(){
-  var now = new Date();
-  var all = [].concat(
-    (state.history||[]).map(function(h){ return {date:h.date,type:'kb',sub:h.day,_kb:true}; }),
-    (state.externalHistory||[]).map(function(h){ return {date:h.date,type:h.type,_axe:h._axe,_kdp:h._kdp,_morning:h._morning,_dpu:h._dpu,_bp:h.sub&&h.sub&&h.sub.indexOf&&h.sub.indexOf('BP')===0}; })
+  var now=new Date();
+  var all=[].concat(
+    (state.history||[]).map(function(h){return {date:h.date,_kb:true,sub:h.day,feel:h.feeling,hrAvg:h.hrAvg};}),
+    (state.externalHistory||[]).map(function(h){return {date:h.date,type:h.type,_axe:h._axe,_kdp:h._kdp,_morning:h._morning,_dpu:h._dpu,_core7:h._core7,_manual:h._manual,_category:h._category,feel:h.feeling,hrAvg:h.hrAvg};})
   );
 
   function daysSince(fn){
     for(var i=0;i<all.length;i++){
       if(fn(all[i])){
-        try{
-          var p=all[i].date.split('/');
-          var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
-          return Math.floor((now-dt)/(1000*60*60*24));
-        }catch(e){}
+        try{var p=all[i].date.split('/');var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
+          return Math.floor((now-dt)/(1000*60*60*24));}catch(e){}
       }
     }
     return 99;
   }
 
-  var daysAxe  = daysSince(function(h){ return h._axe; });
-  var daysKdp  = daysSince(function(h){ return h._kdp; });
-  var daysBP   = daysSince(function(h){ return h._bp||(h.type==='kb'&&h.sub&&h.sub.indexOf('BP')===0); });
-  var daysKb   = daysSince(function(h){ return h._kb&&['A','B','C'].indexOf(h.sub)>=0; });
-  var daysDpu  = daysSince(function(h){ return h._dpu; });
-  var daysMorn = daysSince(function(h){ return h._morning; });
+  var daysAxe  =daysSince(function(h){return h._axe;});
+  var daysKdp  =daysSince(function(h){return h._kdp;});
+  var daysBP   =daysSince(function(h){return h._kb&&h.sub&&h.sub.indexOf('BP')===0;});
+  var daysKb   =daysSince(function(h){return h._kb&&['A','B','C'].indexOf(h.sub)>=0;});
+  var daysDpu  =daysSince(function(h){return h._dpu;});
+  var daysMorn =daysSince(function(h){return h._morning;});
+  var daysCore7=daysSince(function(h){return h._core7;});
+  // Allenamenti manuali per categoria
+  var daysForza=daysSince(function(h){return h._manual&&h._category==='forza';});
+  var daysFiato=daysSince(function(h){return h._manual&&(h._category==='fiato'||h._category==='hiit');});
 
-  var week7 = all.filter(function(h){
+  var week7=all.filter(function(h){
     try{var p=h.date.split('/');var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
       return Math.floor((now-dt)/(1000*60*60*24))<7;}catch(e){return false;}
   }).length;
 
-  // Identifica l'ultimo tipo di allenamento fatto
-  var lastType = all.length>0 ? (
-    all[0]._axe?'axe': all[0]._kdp?'kdp': all[0]._bp?'bp':
-    (all[0]._kb&&['A','B','C'].indexOf(all[0].sub)>=0)?'kb':'other'
-  ) : 'none';
+  // Dati fisiologici recenti
+  var lastEntry=all[0]||{};
+  var lastFeel=lastEntry.feel||null;
+  var recentHRV=(state.healthHistory||[]).slice(0,3).map(function(h){return h.hrv;}).filter(Boolean);
+  var avgHRV=recentHRV.length?recentHRV.reduce(function(a,b){return a+b;},0)/recentHRV.length:null;
 
-  var objs = FORGE_PROFILE.objectives||['fiato'];
-  var suggestions = [];
-
-  // ── AXE: max ogni 3 giorni, non se è stato l'ultimo ──────────────
-  if(objs.indexOf('fiato')>=0 && daysAxe>=3 && lastType!=='axe')
-    suggestions.push({title:'AXE Protocol',icon:'🪓',color:'#8b5cf6',priority:60,
-      reason:'AXE non fatto da '+daysAxe+' giorni — base aerobica.',
-      action:"state.tab='axe-setup';render();"});
-
-  // ── KDP-26: ogni 4+ giorni ──────────────────────────────────────
-  if((objs.indexOf('dimagrimento')>=0||objs.indexOf('fiato')>=0) && daysKdp>=4 && lastType!=='kdp')
-    suggestions.push({title:'KDP-26',icon:'⚡',color:'#7A9A3A',priority:55,
-      reason:'KDP-26 non fatto da '+daysKdp+' giorni.',
-      action:"state.trainSubTab='kdp';state.tab='train';render();"});
-
-  // ── KB classico: se non fatto da 3+ giorni ────────────────────────
-  if(daysKb>=3 && lastType!=='kb'){
-    var dayLabel=['A','B','C'][Math.floor(daysKb)%3]||'A';
-    suggestions.push({title:'Giorno KB',icon:'🔥',color:'#ffb693',priority:50,
-      reason:'KB classico non fatto da '+daysKb+' giorni.',
-      action:"startWorkout('"+dayLabel+"');"});
+  // Recupero forzato se >4 sessioni in 7gg o feeling pessimo
+  if(week7>=5||(lastFeel===1&&daysAxe===0)){
+    return {title:'Recupero attivo',icon:'😴',color:'#64748b',priority:100,
+      reason:week7>=5?week7+' sessioni questa settimana — riposa.':'Feeling basso ieri — recupera oggi.',
+      action:null};
   }
 
-  // ── Bellplex: forza/ipertrofia, ogni 5+ giorni ───────────────────
-  if((objs.indexOf('forza')>=0||objs.indexOf('ipertrofia')>=0) && daysBP>=5 && lastType!=='bp')
-    suggestions.push({title:'Bellplex',icon:'🔴',color:'#ffb4ab',priority:45,
-      reason:'Bellplex non fatto da '+daysBP+' giorni.',
-      action:"state.trainSubTab='bellplex';state.tab='train';render();"});
+  var objs=FORGE_PROFILE.objectives||['fiato'];
+  var primary=objs[0]||'fiato';
+  var secondary=objs.slice(1);
+  var suggestions=[];
 
-  // ── Deep Push-Up: ogni 3+ giorni ────────────────────────────────
-  if((objs.indexOf('forza')>=0||objs.indexOf('ipertrofia')>=0) && daysDpu>=3)
-    suggestions.push({title:'Deep Push-Up',icon:'💪',color:'#50dad1',priority:40,
-      reason:'Non fatto da '+daysDpu+' giorni.',
-      action:"openExtraDetail('DPU');"});
+  // ── Mappa obiettivo primario → workout preferiti ──────────────
+  var primaryMap={
+    fiato:       [{fn:function(){return daysAxe>=3;},  w:{title:'AXE Protocol',  icon:'🪓',color:'#8b5cf6',action:"state.tab='axe-setup';render();",priority:70}},
+                  {fn:function(){return daysKdp>=4;},  w:{title:'KDP-26',        icon:'⚡',color:'#7A9A3A',action:"state.trainSubTab='kdp';state.tab='train';render();",priority:60}}],
+    dimagrimento:[{fn:function(){return daysKdp>=3;},  w:{title:'KDP-26',        icon:'⚡',color:'#7A9A3A',action:"state.trainSubTab='kdp';state.tab='train';render();",priority:70}},
+                  {fn:function(){return daysAxe>=3;},  w:{title:'AXE Protocol',  icon:'🪓',color:'#8b5cf6',action:"state.tab='axe-setup';render();",priority:60}}],
+    forza:       [{fn:function(){return daysKb>=3;},   w:{title:'Giorno KB',     icon:'🔥',color:'#ffb693',action:"startWorkout('A');",priority:70}},
+                  {fn:function(){return daysBP>=5;},   w:{title:'Bellplex',      icon:'🔴',color:'#ffb4ab',action:"state.trainSubTab='bellplex';state.tab='train';render();",priority:65}},
+                  {fn:function(){return daysCore7>=4;},w:{title:'Core & Forza',  icon:'💥',color:'#ffb693',action:"openExtraDetail('CORE7');",priority:60}},
+                  {fn:function(){return daysDpu>=3;},  w:{title:'Deep Push-Up',  icon:'💪',color:'#50dad1',action:"openExtraDetail('DPU');",priority:55}}],
+    ipertrofia:  [{fn:function(){return daysBP>=4;},   w:{title:'Bellplex',      icon:'🔴',color:'#ffb4ab',action:"state.trainSubTab='bellplex';state.tab='train';render();",priority:70}},
+                  {fn:function(){return daysDpu>=3;},  w:{title:'Deep Push-Up',  icon:'💪',color:'#50dad1',action:"openExtraDetail('DPU');",priority:65}},
+                  {fn:function(){return daysCore7>=3;},w:{title:'Core & Forza',  icon:'💥',color:'#ffb693',action:"openExtraDetail('CORE7');",priority:60}}],
+    mobilita:    [{fn:function(){return daysMorn>=2;}, w:{title:'Routine Mattutina',icon:'🌅',color:'#e9c176',action:"mrStart(60);",priority:70}},
+                  {fn:function(){return daysAxe>=4;},  w:{title:'AXE (leggero)', icon:'🪓',color:'#8b5cf6',action:"state.tab='axe-setup';render();",priority:60}}],
+  };
 
-  // ── Routine mattutina: mobilità ──────────────────────────────────
-  if(objs.indexOf('mobilita')>=0 && daysMorn>=2)
-    suggestions.push({title:'Routine Mattutina',icon:'🌅',color:'#e9c176',priority:35,
-      reason:'Non fatta da '+daysMorn+' giorni.',
-      action:"mrStart(60);"});
+  // Aggiunge suggerimenti da obiettivo primario (peso doppio)
+  var primaryList=primaryMap[primary]||primaryMap['fiato'];
+  for(var i=0;i<primaryList.length;i++){
+    var item=primaryList[i];
+    if(item.fn()){
+      var w=Object.assign({},item.w);
+      w.reason='Obiettivo: '+((FORGE_OBJ||[]).filter(function(o){return o.id===primary;})[0]||{label:primary}).label+'.';
+      w.priority=(w.priority||50)+20; // boost primario
+      suggestions.push(w);
+    }
+  }
 
-  // ── Recupero: >4 sessioni in 7gg ────────────────────────────────
-  if(week7>=5)
-    suggestions.push({title:'Recupero attivo',icon:'😴',color:'#64748b',priority:80,
-      reason:week7+' sessioni questa settimana. Riposa oggi.',
-      action:null});
+  // Aggiunge suggerimenti da obiettivi secondari (peso normale)
+  for(var s=0;s<secondary.length;s++){
+    var secList=primaryMap[secondary[s]]||[];
+    for(var j=0;j<secList.length;j++){
+      if(secList[j].fn()){
+        var ws=Object.assign({},secList[j].w);
+        ws.reason='Secondario: '+((FORGE_OBJ||[]).filter(function(o){return o.id===secondary[s];})[0]||{label:secondary[s]}).label+'.';
+        suggestions.push(ws);
+        break; // max 1 per obiettivo secondario
+      }
+    }
+  }
 
-  // Ordina per priorità (più alta = più urgente)
-  suggestions.sort(function(a,b){ return (b.priority||0)-(a.priority||0); });
+  // Considera feeling e HRV per modulare l'intensità
+  if(lastFeel===1||lastFeel===2||(avgHRV&&avgHRV<45)){
+    // Stanco → preferisci workout leggeri
+    suggestions=suggestions.filter(function(w){
+      return w.title!=='KDP-26'&&w.title!=='Bellplex';
+    });
+    if(suggestions.length===0){
+      return {title:'Recupero / AXE leggero',icon:'😐',color:'#7A9A3A',
+        reason:'Feeling basso o HRV ridotta — lavoro aerobico leggero.',
+        action:"state.tab='axe-setup';render();"};
+    }
+  }
 
-  var obj = FORGE_OBJ.filter(function(o){ return o.id===objs[0]; })[0]||FORGE_OBJ[0];
-  if(suggestions.length>0) return suggestions[0];
+  // Fallback: ruota per giorno della settimana se nessun suggerimento
+  if(suggestions.length===0){
+    var dows=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+    var today=dows[now.getDay()];
+    var trainingDays=FORGE_PROFILE.trainingDays||[2,4,6,0];
+    var isTrainingDay=trainingDays.indexOf(now.getDay())>=0;
+    var obj=(FORGE_OBJ||[]).filter(function(o){return o.id===primary;})[0]||{label:primary,color:'#ffb693'};
+    return {title:isTrainingDay?'Allenati oggi':'Giorno di riposo',
+      icon:isTrainingDay?'🔥':'😴',color:obj.color,
+      reason:isTrainingDay?'Obiettivo: '+obj.label+'. Scegli il workout del giorno.':'Non è un giorno di allenamento — recupero o routine mattutina.',
+      action:isTrainingDay?"state.tab='train';render();":'mrStart(60);'};
+  }
 
-  // Fallback: ruota tra i workout in base al giorno della settimana
-  var dayOfWeek = now.getDay();
-  var fallbacks = [
-    {title:'AXE Protocol',icon:'🪓',color:'#8b5cf6',reason:'Suggerimento del giorno.',action:"state.tab='axe-setup';render();"},
-    {title:'Giorno A',icon:'🔥',color:'#ffb693',reason:'Mantieni la routine.',action:"startWorkout('A');"},
-    {title:'Bellplex',icon:'🔴',color:'#ffb4ab',reason:'Varietà e forza.',action:"state.trainSubTab='bellplex';state.tab='train';render();"},
-    {title:'KDP-26',icon:'⚡',color:'#7A9A3A',reason:'Sessione completa.',action:"state.trainSubTab='kdp';state.tab='train';render();"},
-    {title:'Giorno B',icon:'🔥',color:'#e9c176',reason:'Mantieni la routine.',action:"startWorkout('B');"},
-    {title:'AXE Protocol',icon:'🪓',color:'#8b5cf6',reason:'Lavoro aerobico.',action:"state.tab='axe-setup';render();"},
-    {title:'Giorno C',icon:'🔥',color:'#ffb693',reason:'Chiudi la settimana.',action:"startWorkout('C');"},
-  ];
-  return fallbacks[dayOfWeek]||fallbacks[0];
+  // Ordina per priorità e ritorna il migliore
+  suggestions.sort(function(a,b){return (b.priority||0)-(a.priority||0);});
+  return suggestions[0];
 }
-
 function renderSettings(){
   var objs=FORGE_PROFILE.objectives||[];
   var days=FORGE_PROFILE.trainingDays||[];
@@ -6385,6 +6479,12 @@ function renderSettings(){
     h+='<button onclick="forgeToggleDay('+d.j+')" class="w-10 h-10 font-headline text-base active:scale-90" style="background:'+(act?'#ffb693':'transparent')+';color:'+(act?'#000':'#64748b')+';border:1px solid '+(act?'#ffb693':'rgba(90,65,54,0.4)')+'">'+d.l+'</button>';
   }
   h+='</div></section>';
+  h+='<section class="space-y-2 mt-2">';
+  h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-2">PIANO AI SETTIMANALE</p>';
+  h+='<p class="font-label text-[9px] text-gray-600 mb-4">Esporta i dati, incollali su Claude/ChatGPT, reimporta il piano.</p>';
+  h+='<button onclick="forgeExportWeekly()" class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 mb-2" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;display:block">&#11015; ESPORTA DATI SETTIMANA</button>';
+  h+='<button onclick="forgeImportAI()" class="w-full py-3.5 font-headline text-xl tracking-widest active:scale-95" style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;background:rgba(139,92,246,0.06);display:block">&#11014; IMPORTA PIANO AI</button>';
+  h+='</section>';
   h+='</main>'+navHTML('settings')+'</div>';
   return h;
 }
@@ -6558,6 +6658,126 @@ function amazfitBadge(mode){
   return '<div class="flex items-center gap-2 px-4 py-2 mb-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:4px">'
     +'<span class="font-label text-[10px] uppercase tracking-widest text-gray-500">'+txt+'</span>'
     +'</div>';
+}
+
+// ── Export/Import settimanale AI ─────────────────────────────────
+var FORGE_AI_RESULT=(function(){
+  try{var s=localStorage.getItem('forge-ai-result');if(s)return JSON.parse(s);}catch(e){}
+  return null;
+})();
+
+function forgeRemoveAI(){
+  FORGE_AI_RESULT=null;
+  try{localStorage.removeItem('forge-ai-result');}catch(e){}
+  render();
+}
+
+function forgeExportWeekly(){
+  var now=new Date();
+  var DAY_NAMES=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  var all=[].concat(
+    (state.history||[]).map(function(h){return {data:h.date,tipo:'KB Giorno '+h.day,durata:h.duration,feeling:h.feeling,hrMedia:h.hrAvg||null,note:h.notes||''};}),
+    (state.externalHistory||[]).map(function(h){return {data:h.date,tipo:h.type,durata:h.duration,feeling:h.feeling,hrMedia:h.hrAvg||null,note:h.notes||''};})
+  ).filter(function(h){
+    try{var p=h.data.split('/');var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));return (now-dt)<8*86400000;}catch(e){return false;}
+  });
+
+  var health7=(state.healthHistory||[]).filter(function(h){
+    try{var p=h.date.split('/');var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));return (now-dt)<8*86400000;}catch(e){return false;}
+  });
+
+  var objs=(FORGE_PROFILE.objectives||[]).map(function(id){
+    var o=(FORGE_OBJ||[]).filter(function(x){return x.id===id;})[0];
+    return o?o.label:id;
+  });
+
+  var dataBlock={
+    data_export:now.toLocaleDateString('it-IT'),
+    giorno_settimana:DAY_NAMES[now.getDay()],
+    obiettivi:{primario:objs[0]||'non impostato',secondari:objs.slice(1)},
+    giorni_allenamento:(FORGE_PROFILE.trainingDays||[]).map(function(d){return DAY_NAMES[d];}),
+    allenamenti_ultimi_7_giorni:all,
+    dati_salute_ultimi_7_giorni:health7.map(function(h){return {data:h.date,peso_kg:h.weight||null,hrv:h.hrv||null,ore_sonno:h.sleep||null,qualita_sonno:h.sleepQ||null};}),
+    workout_disponibili:['AXE (aerobico anti-glicolitico)','KDP-26 (EMOM+AMRAP)','Giorno A (EMOM forza)','Giorno B (HIIT)','Giorno C (Ladder+AMRAP)','Bellplex BP1-BP20','Core & Forza 7R','Deep Push-Up EMOM','Condizionamento B4-B9','Routine Mattutina 8min','Wim Hof']
+  };
+
+  var prompt='Sei un coach di kettlebell. Analizza i dati e fornisci raccomandazioni per la settimana prossima.\n\n'+
+    'ISTRUZIONI:\n1. Analizza allenamenti, feeling e dati fisiologici\n'+
+    '2. Obiettivo PRIMARIO come driver principale\n'+
+    '3. Suggerisci 3-4 workout specifici (dalla lista workout_disponibili)\n'+
+    '4. Per ogni workout: giorno consigliato, intensità, motivo\n'+
+    '5. Aggiungi consiglio su recupero e progressione\n'+
+    '6. Rispondi SOLO con JSON nel formato esatto:\n\n'+
+    '{\n  "analisi": "breve analisi settimana (max 2 righe)",\n'+
+    '  "piano_settimana": [\n'+
+    '    {"giorno": "Martedì", "workout": "Nome", "intensita": "Alta|Media|Bassa", "motivo": "perché"}\n'+
+    '  ],\n  "consiglio": "recupero e progressione (max 2 righe)"\n}\n\n'+
+    'DATI SETTIMANA:\n';
+
+  var exportObj={
+    _istruzioni:'Copia tutto questo file e incollalo su Claude.ai o ChatGPT. La risposta JSON va reimportata in FORGE → SETTINGS → Importa Piano AI.',
+    prompt:prompt,
+    dati:dataBlock
+  };
+
+  var json=JSON.stringify(exportObj,null,2);
+  var blob=new Blob([json],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  var dd=String(now.getDate()).padStart(2,'0'),mm=String(now.getMonth()+1).padStart(2,'0');
+  a.download='forge-weekly-'+dd+mm+now.getFullYear()+'.json';
+  a.href=url; a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ File esportato','ok');
+}
+
+function forgeImportAI(){
+  var input=document.createElement('input');
+  input.type='file'; input.accept='.json,application/json';
+  input.onchange=function(e){
+    var file=e.target.files[0]; if(!file) return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var data=JSON.parse(ev.target.result);
+        var result=data.analisi?data:(data.risposta||data);
+        if(!result.analisi&&!result.piano_settimana){
+          showToast('⚠️ Formato non riconosciuto','err'); return;
+        }
+        FORGE_AI_RESULT=result;
+        localStorage.setItem('forge-ai-result',JSON.stringify(result));
+        showToast('✅ Piano AI importato','ok'); render();
+      }catch(err){showToast('⚠️ Errore: '+err.message,'err');}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function renderAIResult(){
+  if(!FORGE_AI_RESULT) return '';
+  var r=FORGE_AI_RESULT;
+  var h='<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:#8b5cf6">';
+  h+='<div class="flex items-center justify-between mb-3">';
+  h+='<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:#8b5cf6">🤖 PIANO AI SETTIMANALE</p>';
+  h+='<button onclick="forgeRemoveAI()" style="color:#64748b;font-size:11px;background:none;border:none;cursor:pointer">✕</button></div>';
+  if(r.analisi) h+='<p class="font-label text-xs text-gray-400 mb-4 leading-relaxed">'+r.analisi+'</p>';
+  if(r.piano_settimana&&r.piano_settimana.length){
+    h+='<div class="space-y-2 mb-3">';
+    for(var i=0;i<r.piano_settimana.length;i++){
+      var w=r.piano_settimana[i];
+      var ic=w.intensita==='Alta'?'#ffb4ab':w.intensita==='Media'?'#e9c176':'#7A9A3A';
+      h+='<div class="flex items-start gap-3 py-2 border-b border-white/5">';
+      h+='<span class="font-label text-[9px] uppercase tracking-wider text-gray-500 w-14 flex-shrink-0 pt-0.5">'+w.giorno+'</span>';
+      h+='<div class="flex-1"><p class="font-headline text-base leading-none">'+w.workout+'</p>';
+      h+='<p class="font-label text-[9px] text-gray-500 mt-0.5">'+w.motivo+'</p></div>';
+      h+='<span class="font-label text-[8px] uppercase tracking-widest px-2 py-0.5" style="background:'+ic+'22;color:'+ic+'">'+w.intensita+'</span></div>';
+    }
+    h+='</div>';
+  }
+  if(r.consiglio) h+='<p class="font-label text-[10px] text-gray-500 italic leading-relaxed">'+r.consiglio+'</p>';
+  h+='</div>';
+  return h;
 }
 
 function render(){
