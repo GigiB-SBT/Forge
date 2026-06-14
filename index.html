@@ -6098,6 +6098,16 @@ var DPU_STATE = {
   repsLog: [],       // reps per round
   startTime: 0,
 };
+function dpuSaveNext(rounds){
+  DPU_STATE.nextTarget=rounds;
+  try{localStorage.setItem('dpu-next-rounds',rounds);}catch(e){}
+  showToast('✅ Obiettivo salvato: '+rounds+' round','ok');
+  dpuReset();
+  state.tab='extra-detail';
+  state.extraDetailId='DPU';
+  render();
+}
+
 function dpuReset(){
   if(DPU_STATE.tid){clearInterval(DPU_STATE.tid);DPU_STATE.tid=null;}
   DPU_STATE={phase:'test',maxReps:0,repsPerMin:0,round:0,totalRounds:10,
@@ -6219,17 +6229,15 @@ function renderDpuWorkout(){
       <div class="w-full bg-surface-container ghost-border p-5 border-l-2 mb-6" style="border-color:#e9c176">
         <p class="font-label text-[9px] uppercase tracking-widest mb-3" style="color:#e9c176">PROSSIMA SESSIONE</p>
         <div class="flex gap-3">
-          <div class="flex-1 text-center p-3" style="background:rgba(233,193,118,0.08);border:1px solid rgba(233,193,118,0.3)">
+          <button onclick="dpuSaveNext(${nextEasy})" class="flex-1 text-center p-3 active:scale-95 transition-transform" style="background:rgba(233,193,118,0.08);border:1px solid rgba(233,193,118,0.3)">
             <p class="font-label text-[9px] text-gray-500 mb-1">Era facile</p>
             <p class="font-headline text-2xl" style="color:#e9c176">+4 round</p>
-            <p class="font-label text-[9px] text-gray-600">${nextEasy} round</p>
-          </div>
-          <div class="flex-1 text-center p-3" style="background:rgba(233,193,118,0.04);border:1px solid rgba(90,65,54,0.3)">
+            <p class="font-label <button onclick="dpuSaveNext(${nextHard})" class="flex-1 text-center p-3 active:scale-95 transition-transform" style="background:rgba(233,193,118,0.04)div class="flex-1 text-center p-3" style="background:rgba(233,193,118,0.04);border:1px solid rgba(90,65,54,0.3)">
             <p class="font-label text-[9px] text-gray-500 mb-1">Era duro</p>
             <p class="font-headline text-2xl text-gray-400">+2 round</p>
             <p class="font-label text-[9px] text-gray-600">${nextHard} round</p>
-          </div>
-        </div>
+          </button>
+        </button>
       </div>
       <button onclick="dpuReset();state.tab='extra-detail';state.extraDetailId='DPU';render()"
         class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform"
