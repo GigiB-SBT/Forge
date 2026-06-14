@@ -4261,20 +4261,27 @@ function renderHealth(){
 }
 
 function saveHealthEntry(){
-  // Legge direttamente dal DOM per evitare perdita valori dopo render()
-  const wEl=document.getElementById('health-input-weight');
-  const hEl=document.getElementById('health-input-hrv');
-  const sEl=document.getElementById('health-input-sleep');
-  const weight=wEl?wEl.value.trim():"";
-  const hrv=hEl?hEl.value.trim():"";
-  const sleep=sEl?sEl.value.trim():"";
-  const sleepQ=state.healthForm.sleepQ||null;
+  var f=state.healthForm||{};
+  var weight=String(f.weight||'').trim();
+  var hrv=String(f.hrv||'').trim();
+  var sleep=String(f.sleep||'').trim();
+  var sleepQ=f.sleepQ||null;
+  // Fallback dal DOM se gli ID esistono
+  var wEl=document.getElementById('health-input-weight');
+  var hEl=document.getElementById('health-input-hrv');
+  var sEl=document.getElementById('health-input-sleep');
+  if(wEl&&wEl.value.trim()) weight=wEl.value.trim();
+  if(hEl&&hEl.value.trim()) hrv=hEl.value.trim();
+  if(sEl&&sEl.value.trim()) sleep=sEl.value.trim();
 
-  if(!weight&&!hrv&&!sleep){
+  if(!weight&&!hrv&&!sleep&&!sleepQ){
     showToast("⚠️ Inserisci almeno un valore","err");return;
   }
+  var _now=new Date();
+  var _dd=String(_now.getDate()).padStart(2,'0');
+  var _mm=String(_now.getMonth()+1).padStart(2,'0');
   const entry={
-    date:new Date().toLocaleDateString("it-IT"),
+    date:_dd+'/'+_mm+'/'+_now.getFullYear(),
     weight:weight?Number(weight):null,
     hrv:hrv?Number(hrv):null,
     sleep:sleep?Number(sleep):null,
@@ -6364,8 +6371,57 @@ var FORGE_OBJ = [
 
 var DAY_LABELS = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
 
+// Mappa workout AI → action FORGE
+function aiWorkoutToAction(workoutName){
+  var n=(workoutName||'').toLowerCase();
+  if(n.indexOf('axe')>=0) return {action:'forgeAxe();',icon:'🪓',color:'#8b5cf6'};
+  if(n.indexOf('kdp')>=0) return {action:'forgeKdp();',icon:'⚡',color:'#7A9A3A'};
+  if(n.indexOf('bellplex')>=0) return {action:'forgeBellplex();',icon:'🔴',color:'#ffb4ab'};
+  if(n.indexOf('core')>=0) return {action:'forgeCore7();',icon:'💥',color:'#ffb693'};
+  if(n.indexOf('push')>=0||n.indexOf('dpu')>=0) return {action:'forgeDpu();',icon:'💪',color:'#50dad1'};
+  if(n.indexOf('mattutina')>=0||n.indexOf('morning')>=0) return {action:'mrStart(60);',icon:'🌅',color:'#e9c176'};
+  if(n.indexOf('wim')>=0) return {action:'whStart();',icon:'🫁',color:'#50dad1'};
+  if(n.indexOf('giorno a')>=0||n.indexOf(' a ')>=0||n==='a') return {action:'forgeStartKb();',icon:'🔥',color:'#ffb693'};
+  if(n.indexOf('giorno b')>=0||n==='b') return {action:'forgeStartKb();',icon:'🔥',color:'#e9c176'};
+  if(n.indexOf('giorno c')>=0||n==='c') return {action:'forgeStartKb();',icon:'🔥',color:'#50dad1'};
+  if(n.indexOf('riposo')>=0||n.indexOf('recupero')>=0||n.indexOf('rest')>=0) return {action:null,icon:'😴',color:'#64748b'};
+  return {action:'forgeTrain();',icon:'🔥',color:'#ffb693'};
+}
+
 function getWorkoutSuggestion(){
   var now=new Date();
+
+  // ── PRIORITÀ AL PIANO AI ────────────────────────────────────────
+  if(FORGE_AI_RESULT&&FORGE_AI_RESULT.piano_settimana&&FORGE_AI_RESULT.piano_settimana.length){
+    var GIORNI_IT=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+    var ABBR={'lun':'lunedì','mar':'martedì','mer':'mercoledì','gio':'giovedì','ven':'venerdì','sab':'sabato','dom':'domenica'};
+    var oggiNome=GIORNI_IT[now.getDay()].toLowerCase();
+    function normG(g){var l=(g||'').trim().toLowerCase();return ABBR[l]||l;}
+    var wOggi=FORGE_AI_RESULT.piano_settimana.filter(function(w){
+      return normG(w.giorno)===oggiNome;
+    })[0];
+    if(wOggi){
+      var map=aiWorkoutToAction(wOggi.workout);
+      return {
+        title:wOggi.workout,
+        icon:map.icon,
+        color:map.color,
+        reason:'📋 Piano AI · '+(wOggi.intensita||'')+(wOggi.motivo?' — '+wOggi.motivo:''),
+        action:map.action,
+        _fromAI:true
+      };
+    }
+    // Oggi non c'è workout nel piano AI → giorno di riposo pianificato
+    return {
+      title:'Riposo pianificato',
+      icon:'😴',
+      color:'#64748b',
+      reason:'📋 Piano AI — oggi non è previsto allenamento. Recupero o routine mattutina.',
+      action:'mrStart(60);',
+      _fromAI:true
+    };
+  }
+
   var all=[].concat(
     (state.history||[]).map(function(h){return {date:h.date,_kb:true,sub:h.day,feel:h.feeling,hrAvg:h.hrAvg};}),
     (state.externalHistory||[]).map(function(h){return {date:h.date,type:h.type,_axe:h._axe,_kdp:h._kdp,_morning:h._morning,_dpu:h._dpu,_core7:h._core7,_manual:h._manual,_category:h._category,feel:h.feeling,hrAvg:h.hrAvg};})
@@ -6736,7 +6792,13 @@ function forgeExportWeekly(){
   });
 
   var health7=(state.healthHistory||[]).filter(function(h){
-    try{var p=h.date.split('/');var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));return (now-dt)<8*86400000;}catch(e){return false;}
+    try{
+      var p=h.date.split('/');
+      if(p.length!==3) return false;
+      var dt=new Date(Number(p[2]),Number(p[1])-1,Number(p[0]));
+      var diff=(now-dt)/86400000;
+      return diff>=0&&diff<8;
+    }catch(e){return false;}
   });
 
   var objs=(FORGE_PROFILE.objectives||[]).map(function(id){
@@ -7461,7 +7523,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v58';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v60';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
