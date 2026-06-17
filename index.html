@@ -850,7 +850,7 @@ function saveManualLog(){
 function renderManualLogForm(){
   if(!state.showManualLog) return '';
   var e=state.manualEntry||{};
-  var today=new Date().toLocaleDateString('it-IT');
+  var today=(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})();
   var h='<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:#e9c176">';
   h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-4">AGGIUNGI SESSIONE</p>';
   h+='<div class="mb-3"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">ALLENAMENTO</p>';
@@ -1129,27 +1129,45 @@ function renderHome(){
     ...(state.axeHistory||[]).map(h=>({...h,_t:"axe",day:"AXE"})),
   ].slice(-4).reverse();
 
-  const recentHTML=allRecent.length?`
+  const warmupChips=MORNING_ROUTINE.exercises.map((ex,i)=>
+    `<button onclick="startSingleEx('warmup',${i})"
+      class="flex-shrink-0 px-4 py-3 text-left active:scale-95 transition-transform"
+      style="background:rgba(233,193,118,0.06);border:1px solid rgba(233,193,118,0.25);min-width:120px">
+      <p class="font-headline text-sm leading-tight" style="color:#e9c176">${ex.name}</p>
+      <p class="font-label text-[8px] text-gray-500 mt-0.5">${ex.duration}s</p>
+    </button>`
+  ).join("");
+
+  const core7Def=getExtraById("CORE7");
+  const coreChips=(core7Def?core7Def.exercises:[]).map((ex,i)=>
+    `<button onclick="startSingleEx('core',${i})"
+      class="flex-shrink-0 px-4 py-3 text-left active:scale-95 transition-transform"
+      style="background:rgba(255,182,147,0.06);border:1px solid rgba(255,182,147,0.25);min-width:120px">
+      <p class="font-headline text-sm leading-tight" style="color:#ffb693">${ex.name}</p>
+      <p class="font-label text-[8px] text-gray-500 mt-0.5">${ex.t} reps</p>
+    </button>`
+  ).join("");
+
+  const recentHTML=`
     <section>
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-headline text-2xl tracking-wide">ULTIME SESSIONI</h3>
-        <button onclick="switchTab('log')" class="font-label text-[10px] text-primary uppercase tracking-widest">Vedi tutto</button>
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-headline text-2xl tracking-wide">ACCESSO RAPIDO</h3>
+        <button onclick="switchTab('log')" class="font-label text-[10px] text-primary uppercase tracking-widest">Log →</button>
       </div>
-      <div class="space-y-1">
-        ${allRecent.map(h=>{
-          const col=h._t==="axe"?"#8b5cf6":(KPhex[h.day]||"#ffb693");
-          const label=h._t==="axe"?`AXE — ${h.sets||'?'} set`:h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):`Giorno ${h.day}`;
-          return `<div class="flex items-center gap-4 p-4 bg-surface-container ghost-border hover:bg-surface-container-high transition-colors group">
-            <div class="w-1 self-stretch rounded-full flex-shrink-0" style="background:${col}"></div>
-            <div class="flex-1 min-w-0">
-              <p class="font-headline text-lg leading-none" style="color:${col}">${label.toUpperCase()}</p>
-              <p class="font-label text-[9px] text-gray-500 mt-1">${h.date||''}${h.duration?' · '+h.duration+"'":''}${h.feeling?' · '+h.feeling:''}</p>
-            </div>
-            ${h.hrAvg?`<span class="font-headline text-base text-gray-600">❤️ ${h.hrAvg}</span>`:''}
-          </div>`;
-        }).join("")}
-      </div>
-    </section>`:"";
+
+      <button onclick="state.finisherReturnTab='home';finStart()"
+        class="w-full py-3.5 mb-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
+        style="background:linear-gradient(135deg,#e9c176,#c9a856);color:#000">
+        ⚡ FINISHER — 5 MIN AMRAP
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
+      </button>
+
+      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">RISCALDAMENTO — singolo esercizio</p>
+      <div class="flex gap-2 overflow-x-auto pb-2 mb-4" style="scrollbar-width:none">${warmupChips}</div>
+
+      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">CORE — singolo esercizio</p>
+      <div class="flex gap-2 overflow-x-auto pb-2" style="scrollbar-width:none">${coreChips}</div>
+    </section>`;
 
 
   return `<div class="screen bg-background" style="padding-top:64px;">
@@ -3468,6 +3486,35 @@ const EXTRA_WORKOUTS=[
 
   // ── BP20: Worst Complex Ever (2 KB) ──────────────────────────────────────
   {
+    id:"CORE7",
+    label:"Core & Forza 7R",
+    emoji:"💥",
+    color:"#ffb693",
+    title:"Core & Forza — 7 Round",
+    meta:"7 round · 5 esercizi · KB · Forza + Core",
+    subtitle:"Circuito forza e core con kettlebell",
+    totalMin:25,
+    focus:"Core, spalle, bicipiti, mobilità",
+    description:"7 round di 5 esercizi KB. Wood Chop e Hip Halo: 5 reps per lato. Gli altri: 5 reps. Recupero libero tra i round.",
+    structure:[["Round","7"],["Esercizi","5"],["Reps","5 (x2 bilaterali)"],["Tipo","Forza + Core"]],
+    tips:[
+      "Wood Chop: movimento diagonale fluido, ruota il tronco",
+      "High Pull: gomiti alti, esplosivo dalla posizione di swing",
+      "Curl e Press: curl lento, press esplosivo",
+      "Head Halo: cerchio attorno alla testa, controllo totale",
+      "Hip Halo: cerchio attorno ai fianchi, mobilità anca"
+    ],
+    exercises:[
+      {name:"Wood Chop",    detail:"5 reps SX + 5 reps DX · diagonale basso-alto", t:"5+5"},
+      {name:"High Pull",    detail:"5 reps · esplosivo, gomiti alti",               t:"5"},
+      {name:"Curl e Press", detail:"5 reps · curl + press continuo",                t:"5"},
+      {name:"Head Halo",    detail:"5 reps · cerchio attorno alla testa",           t:"5"},
+      {name:"Hip Halo",     detail:"5 reps SX + 5 reps DX · cerchio ai fianchi",   t:"5+5"},
+    ],
+    isCircuit:true,
+    rounds:7,
+  },
+  {
     id:"BP20",yt:"https://youtu.be/JVazUjG1tgk",label:"Worst Complex Ever",emoji:"☠️",color:"#212121",
     title:"Worst Complex Ever",
     meta:"Bellplex · ~25 min · 5 serie · DOPPIA KB",
@@ -3772,6 +3819,7 @@ function startExtraWorkout(id){
 
 function startExtraWorkoutImmediate(id){
   if(id==='DPU'){ dpuReset(); startDpuWorkout(); return; }
+  if(id==='CORE7'){ startCore7Workout(); return; }
   // eslint-disable-next-line no-unreachable
 
   unlockAudio();
@@ -4093,7 +4141,7 @@ function saveBellplexDone(){
   const w=getExtraById(id);
   const entry={
     day:"extra_"+id,
-    date:new Date().toLocaleDateString("it-IT"),
+    date:(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})(),
     duration:w?.totalMin||20,
     feeling:state.logForm.feeling,
     hrAvg:state.logForm.hrAvg?Number(state.logForm.hrAvg):null,
@@ -4660,7 +4708,7 @@ function renderTrain(){
   const sub=state.trainSubTab||"base";
 
   const CATEGORIE={
-    forza:{label:"⚡ Forza",color:"#ffb693",ids:["D1","B2","B3","B8","DPU"]},
+    forza:{label:"⚡ Forza",color:"#ffb693",ids:["D1","B2","B3","B8","DPU","CORE7"]},
     condizionamento:{label:"🔥 Condizionamento",color:"#e9c176",ids:["B4","B5","B6","B7","B9"]},
     tecnica:{label:"🎯 Tecnica & Circuiti",color:"#50dad1",ids:["C2","C3","C4","C5","C6","C7"]},
   };
@@ -5179,6 +5227,19 @@ function finExit(returnTab){
     var dateStr=dd+'/'+mm+'/'+yyyy;
     var minDone=Math.round((300-FIN_SEC)/60);
     if(!state.externalHistory) state.externalHistory=[];
+    // Se il finisher è stato avviato dal KDP, salva la sessione KDP completa
+    if(KDP_ACTIVE){
+      KDP_ACTIVE=false;
+      var kdpTotal=Math.floor((KDP_TOTAL||0)/60);
+      state.externalHistory.unshift({
+        type:'KDP-26',
+        date:dateStr,
+        duration:kdpTotal||20,
+        notes:'EMOM '+KDP_EMOM_RNDS+' rnd · AMRAP '+KDP_AMRAP_RNDS+' rnd · Finisher '+FIN_REPS+' reps',
+        _src:'ext',
+        _kdp:true
+      });
+    } else {
     state.externalHistory.unshift({
       type:'Finisher',
       date:dateStr,
@@ -5188,6 +5249,7 @@ function finExit(returnTab){
       _src:'ext',
       _finisher:true
     });
+    } // end else
     saveExternalHistory();
   }
   state.tab=returnTab||'home'; render();
@@ -6980,6 +7042,215 @@ function forgeTrain(){state.tab='train';render();}
 function forgeDpu(){openExtraDetail('DPU');}
 function forgeCore7(){openExtraDetail('CORE7');}
 
+// ══════════════════════════════════════════════════════════════════
+// CORE7 WORKOUT
+// ══════════════════════════════════════════════════════════════════
+var CORE7_STATE = {round:0, totalRounds:7, phase:'idle'};
+
+function startCore7Workout(){
+  CORE7_STATE = {round:1, totalRounds:7, phase:'active'};
+  forgeShowTrans('CORE & FORZA','7 Round · Forza + Core', function(){
+    state.tab='core7-workout'; render();
+  });
+}
+
+function core7NextRound(){
+  if(CORE7_STATE.round>=CORE7_STATE.totalRounds){
+    CORE7_STATE.phase='done';
+    var now=new Date();
+    var dd=String(now.getDate()).padStart(2,'0'),mm=String(now.getMonth()+1).padStart(2,'0');
+    if(!state.externalHistory) state.externalHistory=[];
+    state.externalHistory.unshift({
+      type:'Core & Forza 7R', date:dd+'/'+mm+'/'+now.getFullYear(),
+      duration:25, notes:'7 round completati · 5 esercizi',
+      _src:'ext', _core7:true
+    });
+    saveExternalHistory();
+  } else {
+    CORE7_STATE.round++;
+  }
+  render();
+}
+
+function core7Done(){CORE7_STATE.phase='idle';CORE7_STATE.round=0;state.tab='extra-detail';state.extraDetailId='CORE7';render();}
+
+function core7Exit(){
+  function doSave(){
+    var r=CORE7_STATE.round;
+    if(r>0){
+      var now=new Date();
+      var dd=String(now.getDate()).padStart(2,'0'),mm=String(now.getMonth()+1).padStart(2,'0');
+      if(!state.externalHistory) state.externalHistory=[];
+      state.externalHistory.unshift({
+        type:'Core & Forza 7R', date:dd+'/'+mm+'/'+now.getFullYear(),
+        duration:Math.round(r/7*25)||5,
+        notes:r+'/7 round · ⚠ interrotto', _src:'ext', _core7:true, _partial:true
+      });
+      saveExternalHistory();
+    }
+    doExit();
+  }
+  function doExit(){
+    CORE7_STATE={round:0,totalRounds:7,phase:'idle'};
+    state.tab='extra-detail'; state.extraDetailId='CORE7'; render();
+  }
+  if(CORE7_STATE.round>0) showExitDialog(doSave, doExit);
+  else doExit();
+}
+
+function renderCore7Workout(){
+  var s = CORE7_STATE;
+  var w = getExtraById('CORE7');
+  var FILL = "font-variation-settings:'FILL' 1";
+
+  if(s.phase==='done'){
+    var h='<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;">';
+    h+='<div class="w-16 h-16 flex items-center justify-center mb-6" style="background:rgba(255,182,147,0.1);border:2px solid #ffb693">';
+    h+='<span class="material-symbols-outlined text-4xl" style="color:#ffb693;'+FILL+'">check_circle</span></div>';
+    h+='<p class="font-label text-[9px] uppercase tracking-[0.25em] mb-2" style="color:#ffb693">COMPLETATO</p>';
+    h+='<h2 class="font-headline text-4xl mb-1">CORE & FORZA</h2>';
+    h+='<p class="font-label text-sm text-gray-500 mb-8">7 round · 5 esercizi</p>';
+    h+='<button onclick="core7Done()"';
+    h+=' class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform"';
+    h+=' style="background:#ffb693;color:#000">TORNA AL MENU</button>';
+    h+='</div>';
+    return h;
+  }
+
+  var exs = w.exercises;
+  var prog = Math.round((s.round-1)/s.totalRounds*100);
+  var h='<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">';
+  h+='<div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(255,182,147,0.15)">';
+  h+='<div><p class="font-label text-[9px] uppercase tracking-widest text-gray-500">CORE & FORZA</p>';
+  h+='<p class="font-headline text-xl" style="color:#ffb693">ROUND '+s.round+' / '+s.totalRounds+'</p></div>';
+  h+='<button onclick="core7Exit()" class="w-8 h-8 flex items-center justify-center" style="background:rgba(255,255,255,0.05)">';
+  h+='<span class="material-symbols-outlined text-gray-500 text-base">close</span></button></div>';
+  h+='<div class="h-0.5 flex-shrink-0" style="background:rgba(255,255,255,0.06)">';
+  h+='<div style="height:100%;width:'+prog+'%;background:#ffb693;transition:width 0.4s"></div></div>';
+  h+='<div class="flex-shrink-0 flex items-center gap-2 px-5 py-2" style="background:rgba(255,182,147,0.06);border-bottom:1px solid rgba(255,182,147,0.1)">';
+  h+='<p class="font-label text-[10px] uppercase tracking-widest" style="color:#ffb693">Esegui tutti gli esercizi senza posare la KB</p></div>';
+  h+='<div class="flex-1 overflow-hidden px-5 py-3"><div class="space-y-1">';
+  for(var i=0;i<exs.length;i++){
+    var ex=exs[i];
+    h+='<div class="flex items-center gap-4 py-2.5 border-b border-white/5">';
+    h+='<span class="font-headline text-2xl w-6 flex-shrink-0" style="color:#ffb693">'+(i+1)+'</span>';
+    h+='<div class="flex-1 min-w-0"><p class="font-headline text-xl leading-none">'+ex.name+'</p>';
+    h+='<p class="font-label text-[10px] text-gray-500 mt-0.5">'+ex.detail+'</p></div>';
+    h+='<span class="font-headline text-lg text-gray-400 flex-shrink-0">'+ex.t+'</span></div>';
+  }
+  h+='</div></div>';
+  h+='<div class="flex-shrink-0 px-5 pb-6 pt-3" style="background:#0C1017;box-shadow:0 -8px 24px rgba(0,0,0,0.6)">';
+  h+='<button onclick="core7NextRound()" class="w-full py-5 font-headline text-2xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"';
+  h+=' style="background:linear-gradient(135deg,#ffb693,#ff6b00);color:#000">';
+  h+=(s.round>=s.totalRounds?'✓ ULTIMO ROUND — FINE':'✓ ROUND '+s.round+' COMPLETATO')+'<span class="material-symbols-outlined">arrow_forward</span></button>';
+  h+='</div>';
+  h+='</div>';
+  return h;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SINGOLO ESERCIZIO — quick start da HOME
+// ══════════════════════════════════════════════════════════════════
+var SINGLE_EX_STATE = {active:false, source:null, ex:null, remaining:0, tid:null};
+
+function startSingleEx(source, idx){
+  var ex;
+  if(source==='warmup'){
+    ex = MORNING_ROUTINE.exercises[idx];
+    SINGLE_EX_STATE = {active:true, source:'warmup', ex:ex, remaining:ex.duration, tid:null};
+  } else {
+    var core7Def = getExtraById('CORE7');
+    ex = core7Def.exercises[idx];
+    SINGLE_EX_STATE = {active:true, source:'core', ex:ex, remaining:0, tid:null};
+  }
+  requestWakeLock();
+  state.tab='single-ex';
+  render();
+  if(source==='warmup'){
+    SINGLE_EX_STATE.tid = setInterval(singleExTick, 1000);
+  }
+}
+
+function singleExTick(){
+  var s = SINGLE_EX_STATE;
+  if(!s.active) return;
+  s.remaining--;
+  var elEl = document.getElementById('single-ex-time');
+  if(elEl) elEl.textContent = s.remaining;
+  var barEl = document.getElementById('single-ex-bar');
+  if(barEl) barEl.style.width = (100 - (s.remaining/s.ex.duration*100)) + '%';
+  if(s.remaining<=0){
+    clearInterval(s.tid); s.tid=null;
+    try{
+      var ctx = new (window.AudioContext||window.webkitAudioContext)();
+      var o = ctx.createOscillator(); var g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value=660; g.gain.value=0.3;
+      o.start(); o.stop(ctx.currentTime+0.4);
+    }catch(e){}
+    if(navigator.vibrate) navigator.vibrate([200,100,200]);
+    singleExDone();
+  }
+}
+
+function singleExDone(){
+  releaseWakeLock();
+  var s=SINGLE_EX_STATE;
+  var exName=s.ex?s.ex.name:'';
+  var label=(s.source==='warmup'?'Riscaldamento — ':'Core — ')+exName;
+  if(SINGLE_EX_STATE.tid) clearInterval(SINGLE_EX_STATE.tid);
+  SINGLE_EX_STATE = {active:false, source:null, ex:null, remaining:0, tid:null};
+
+  // Apre il form manuale pre-compilato per loggare l'esercizio (opzionale)
+  var now=new Date();
+  MANUAL_FORM.open=true;
+  MANUAL_FORM.type=label;
+  MANUAL_FORM.date=String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+  MANUAL_FORM.duration=s.source==='warmup'?'1':'';
+  MANUAL_FORM.notes='';
+  MANUAL_FORM.feeling=null;
+
+  state.tab='log';
+  render();
+  showToast('✅ Esercizio completato — salvalo nel log se vuoi','ok');
+}
+
+function singleExExit(){
+  releaseWakeLock();
+  if(SINGLE_EX_STATE.tid) clearInterval(SINGLE_EX_STATE.tid);
+  SINGLE_EX_STATE = {active:false, source:null, ex:null, remaining:0, tid:null};
+  state.tab='home';
+  render();
+}
+
+function renderSingleEx(){
+  var s = SINGLE_EX_STATE;
+  if(!s.ex){ state.tab='home'; render(); return ''; }
+  var isWarmup = s.source==='warmup';
+  var accent = isWarmup ? '#e9c176' : '#ffb693';
+  var h='<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;position:relative;">';
+  h+='<button onclick="singleExExit()" class="absolute top-6 right-6 w-9 h-9 flex items-center justify-center" style="background:rgba(255,255,255,0.05)">';
+  h+='<span class="material-symbols-outlined text-gray-500">close</span></button>';
+  h+='<p class="font-label text-[9px] uppercase tracking-[0.25em] mb-3" style="color:'+accent+'">'+(isWarmup?'RISCALDAMENTO':'CORE')+'</p>';
+  h+='<h2 class="font-headline text-4xl text-center leading-tight mb-2">'+s.ex.name+'</h2>';
+
+  if(isWarmup){
+    h+='<p class="font-label text-sm text-gray-500 text-center mb-8">'+(s.ex.sub||'')+'</p>';
+    h+='<div class="font-headline" style="font-size:88px;color:'+accent+';line-height:1">'+'<span id="single-ex-time">'+s.remaining+'</span>'+'</div>';
+    h+='<p class="font-label text-xs text-gray-600 mb-8">secondi</p>';
+    h+='<div class="w-full h-1 mb-8" style="background:rgba(255,255,255,0.06)"><div id="single-ex-bar" style="height:100%;width:0%;background:'+accent+';transition:width 1s linear"></div></div>';
+    if(s.ex.cue) h+='<div class="bg-surface-container ghost-border p-4 mb-4 w-full"><p class="font-label text-xs text-gray-400 leading-relaxed">'+s.ex.cue+'</p></div>';
+    h+='<button onclick="singleExDone()" class="w-full py-3 font-headline text-lg tracking-widest" style="border:1px solid rgba(90,65,54,0.4);color:#64748b">SALTA</button>';
+  } else {
+    h+='<p class="font-label text-sm text-gray-500 text-center mb-8">'+(s.ex.detail||'')+'</p>';
+    h+='<div class="font-headline" style="font-size:64px;color:'+accent+';line-height:1">'+s.ex.t+'</div>';
+    h+='<p class="font-label text-xs text-gray-600 mb-10">reps</p>';
+    h+='<button onclick="singleExDone()" class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform" style="background:'+accent+';color:#000">✓ FATTO</button>';
+  }
+  h+='</div>';
+  return h;
+}
+
 function render(){
   const app=document.getElementById("app");
   if(state.tab==="workout")          app.innerHTML=renderWorkout();
@@ -6995,6 +7266,8 @@ function render(){
   else if(state.tab==="settings")    app.innerHTML=renderSettings();
   else if(state.tab==="ai-plan")      app.innerHTML=renderAIPlan();
   else if(state.tab==="dpu-workout")   app.innerHTML=renderDpuWorkout();
+  else if(state.tab==="core7-workout") app.innerHTML=renderCore7Workout();
+  else if(state.tab==="single-ex")     app.innerHTML=renderSingleEx();
   else if(state.tab==="morning-go")   app.innerHTML=renderMorningWorkout();
   else if(state.tab==="wim-hof")      app.innerHTML=renderWimHof();
   else if(state.tab==="kdp-done")    app.innerHTML=renderKdpDone();
@@ -7162,7 +7435,7 @@ function saveSession(){
   const isExtra=state.dayKey&&state.dayKey.startsWith("extra_");
   const entry={
     day:state.dayKey,
-    date:new Date().toLocaleDateString("it-IT"),
+    date:(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})(),
     duration:state.workoutMins,
     completedSteps:state.workoutSteps,
     weight:f.weight||"10",
@@ -7310,7 +7583,7 @@ function saveAxeSession(){
   const f=state.logForm;
   const mins=ax.sessionStart?Math.round((Date.now()-ax.sessionStart)/60000):0;
   const entry={
-    date:new Date().toLocaleDateString("it-IT"),
+    date:(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})(),
     sets:ax.setsDone,
     reps:ax.repsPerSet,
     restSec:ax.restSec,
@@ -7371,7 +7644,7 @@ function saveExternalSession(){
   if(!ef.duration){showToast("⚠️ Inserisci almeno la durata","err");return;}
   const entry={
     type:ef.type||"Altro",
-    date:new Date().toLocaleDateString("it-IT"),
+    date:(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})(),
     duration:Number(ef.duration)||null,
     hrAvg:ef.hrAvg?Number(ef.hrAvg):null,
     hrMax:ef.hrMax?Number(ef.hrMax):null,
@@ -7531,7 +7804,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v60';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v62';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()));});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
