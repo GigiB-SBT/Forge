@@ -1516,9 +1516,20 @@ function renderLog(){
 
   // ══ SESSIONI ══
   function tabSessioni(){
+    const axeAsExt=(state.axeHistory||[]).map(h=>({
+      type:'AXE Protocol',
+      date:h.date,
+      duration:h.duration,
+      notes:(h.sets||0)+' set × '+(h.reps||0)+' rip · recupero '+(h.restSec||0)+'s',
+      feeling:h.feeling||null,
+      hrAvg:h.hrAvg||null,
+      _src:'ext',
+      _axe:true,
+    }));
     const allSessions=[
       ...hist.map(h=>({...h,_src:"kb"})),
       ...extHist.map(h=>({...h,_src:"ext"})),
+      ...axeAsExt,
     ].sort((a,b)=>{
       const p=s=>{try{const[d,m,y]=s.date.split("/").map(Number);return new Date(y,m-1,d);}catch(e){return new Date(0);}};
       return p(b)-p(a);
@@ -1588,13 +1599,14 @@ function renderLog(){
         const isBP=!isExt&&h.day&&h.day.startsWith("extra_BP");
         const isKDP=isExt&&h._kdp;
         const isFinisher=isExt&&h._finisher;
+        const isAxeEntry=isExt&&h._axe;
         const col=isExt
-          ?(isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#64748b"))
+          ?(isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#64748b"))
           :(isBP?"#ffb4ab":(KPhex[h.day]||"#ffb693"));
         const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
         const bpW=rawId.startsWith("BP")?getExtraById(rawId):null;
         const label=isExt
-          ?(isKDP?"KDP-26":isFinisher?"Finisher Snatch":h.type)
+          ?(isAxeEntry?"AXE Protocol":isKDP?"KDP-26":isFinisher?"Finisher Snatch":h.type)
           :(bpW?(bpW.label+" — "+bpW.title):rawId?rawId:`Giorno ${h.day}`);
         const [dayN,...rest]=h.date?h.date.split("/"):["—"];
         const mo=rest.length?["","GEN","FEB","MAR","APR","MAG","GIU","LUG","AGO","SET","OTT","NOV","DIC"][Number(rest[0])]||"":"";
@@ -7375,6 +7387,21 @@ function closeMuscleSummary(){
   render();
 }
 
+function applyMuscleClassesToSvg(svgStr, result){
+  Object.keys(result).forEach(function(id){
+    var cls = result[id]==='primary' ? 'muscle--primary' : 'muscle--secondary';
+    // Caso elemento singolo: class="muscle" ... data-muscle="ID"
+    var reA = new RegExp('class="muscle"([^>]*data-muscle="'+id+'")', 'g');
+    svgStr = svgStr.replace(reA, 'class="muscle '+cls+'"$1');
+    // Caso gruppo: <g data-muscle="ID">...children class="muscle"...</g>
+    var reG = new RegExp('(<g data-muscle="'+id+'">)([\\s\\S]*?)(</g>)');
+    svgStr = svgStr.replace(reG, function(full, open, inner, close){
+      return open + inner.split('class="muscle"').join('class="muscle '+cls+'"') + close;
+    });
+  });
+  return svgStr;
+}
+
 function renderMuscleSummaryScreen(){
   var s = MUSCLE_SCREEN_STATE;
   var result = getSessionMuscleSummary(s.categories);
@@ -7382,6 +7409,7 @@ function renderMuscleSummaryScreen(){
   entries.sort(function(a,b){ return (a.level==='primary'?0:1)-(b.level==='primary'?0:1); });
 
   var svgInner = s.view==='front' ? BODY_MAP_SVG_FRONT : BODY_MAP_SVG_BACK;
+  svgInner = applyMuscleClassesToSvg(svgInner, result);
 
   var h = '<div class="screen" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;background:#090C0F;">';
 
@@ -8019,7 +8047,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v67';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v68';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
