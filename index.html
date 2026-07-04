@@ -1100,114 +1100,144 @@ function getSmartSuggestion(){
 }
 
 // ── RENDER HOME ───────────────────────────────────────────────────────────────
+function hex2rgb(hex){hex=hex.replace("#","");return parseInt(hex.substring(0,2),16)+","+parseInt(hex.substring(2,4),16)+","+parseInt(hex.substring(4,6),16);}
+
 function renderHome(){
-  const sug=getSmartSuggestion();
-  const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
-  const suggested=getTodaySuggested();
+  var sug = getSmartSuggestion();
+  var KPhex = {A:"#ffb693", B:"#e9c176", C:"#50dad1"};
+  var suggested = getTodaySuggested();
 
-  const dayCards=Object.entries(DAYS).filter(([k])=>["A","B","C"].includes(k)).map(([key,day])=>{
-    const accent=KPhex[key]||"#ffb693";
-    const isToday=suggested===key;
-    return `<button onclick="startWorkout('${key}')"
-      class="relative bg-surface-container ghost-border p-6 text-left group overflow-hidden active:scale-95 transition-transform"
-      style="${isToday?`border-left:2px solid ${accent}`:''}">
-      <div class="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-        style="background:radial-gradient(ellipse at top right,${accent}14,transparent 70%)"></div>
-      ${isToday?`<span class="absolute top-2 right-3 font-label text-[8px] font-bold tracking-widest uppercase" style="color:${accent}">OGGI</span>`:''}
-      <div class="font-headline text-4xl leading-none mb-3" style="color:${accent}">GG ${key}</div>
-      <div class="font-label text-[10px] font-bold uppercase tracking-wide text-gray-400">${day.subtitle}</div>
-      <div class="font-label text-[9px] text-gray-600 mt-1">${day.focus}</div>
-      <div class="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
-        <span class="font-label text-[9px] uppercase text-gray-600">~${day.totalMin} min</span>
-        <span class="material-symbols-outlined text-sm text-gray-700 group-hover:translate-x-0.5 transition-transform" style="color:${isToday?accent:''}">arrow_forward</span>
-      </div>
-    </button>`;
-  }).join("");
+  // ── Piano AI del giorno (se importato) ──────────────────────────
+  var aiCard = '';
+  if(FORGE_AI_RESULT && FORGE_AI_RESULT.piano_settimana){
+    var GIORNI_IT=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+    var ABBR={lun:'lunedì',mar:'martedì',mer:'mercoledì',gio:'giovedì',ven:'venerdì',sab:'sabato',dom:'domenica'};
+    var oggiNome=GIORNI_IT[new Date().getDay()].toLowerCase();
+    var normG=function(g){var l=(g||'').trim().toLowerCase();return ABBR[l]||l;};
+    var todayAI=FORGE_AI_RESULT.piano_settimana.filter(function(w){return normG(w.giorno)===oggiNome;})[0]||null;
+    var intensColor={'Alta':'#ffb4ab','Media':'#e9c176','Bassa':'#7A9A3A'};
+    var ic = todayAI ? (intensColor[todayAI.intensita]||'#8b5cf6') : '#8b5cf6';
+    aiCard =
+      '<div class="bg-surface-container ghost-border p-4 border-l-2 mb-3" style="border-color:#8b5cf6">'+
+        '<div class="flex justify-between items-center mb-1">'+
+          '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:#8b5cf6">📋 PIANO SETTIMANA</p>'+
+          '<button onclick="goAiPlan()" class="font-label text-[9px] uppercase tracking-widest px-2 py-1 active:scale-95" style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6">APRI</button>'+
+        '</div>'+
+        (todayAI ?
+          '<div class="flex items-center justify-between">'+
+            '<div>'+
+              '<p class="font-headline text-xl leading-none" style="color:'+ic+'">'+todayAI.workout+'</p>'+
+              '<p class="font-label text-[9px] text-gray-500 mt-0.5">'+todayAI.motivo+'</p>'+
+            '</div>'+
+            (sug.action ?
+              '<button onclick="'+sug.action+'" class="ml-3 flex-shrink-0 w-10 h-10 flex items-center justify-center active:scale-90" style="background:'+ic+';color:#000">'+
+                '<span class="material-symbols-outlined text-lg" style="font-variation-settings:\'FILL\' 1">play_arrow</span>'+
+              '</button>' : '')+
+          '</div>'
+        : '<p class="font-label text-[10px] text-gray-500">Nessun allenamento previsto oggi</p>')+
+      '</div>';
+  } else {
+    aiCard =
+      '<button onclick="switchTab(\'settings\')" class="w-full flex items-center justify-between p-4 ghost-border mb-3 active:scale-[0.98]" style="border:1px solid rgba(139,92,246,0.25);background:rgba(139,92,246,0.04)">'+
+        '<div class="flex items-center gap-3">'+
+          '<span class="material-symbols-outlined text-base" style="color:#8b5cf6;font-variation-settings:\'FILL\' 1">calendar_month</span>'+
+          '<div class="text-left">'+
+            '<p class="font-headline text-base leading-none" style="color:#8b5cf6">Piano settimanale AI</p>'+
+            '<p class="font-label text-[9px] text-gray-600">Esporta dati e importa piano</p>'+
+          '</div>'+
+        '</div>'+
+        '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
+      '</button>';
+  }
 
-  const allRecent=[
-    ...state.history.map(h=>({...h,_t:"kb"})),
-    ...(state.axeHistory||[]).map(h=>({...h,_t:"axe",day:"AXE"})),
-  ].slice(-4).reverse();
+  // ── Suggerimento algoritmo (compatto) ─────────────────────────
+  var sugCard =
+    '<div class="bg-surface-container ghost-border p-4 border-l-2 mb-4" style="border-color:'+(sug.color||'#ffb693')+'">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1.5">Suggerimento del giorno</p>'+
+      '<div class="flex items-center justify-between">'+
+        '<div class="flex items-center gap-3">'+
+          '<span style="font-size:20px">'+sug.icon+'</span>'+
+          '<div>'+
+            '<p class="font-headline text-xl leading-none" style="color:'+(sug.color||'#ffb693')+'">'+sug.title.toUpperCase()+'</p>'+
+            '<p class="font-label text-[9px] text-gray-500 mt-0.5 leading-snug">'+sug.reason+'</p>'+
+          '</div>'+
+        '</div>'+
+        (sug.action?'<button onclick="'+sug.action+'" class="ml-4 flex-shrink-0 w-10 h-10 flex items-center justify-center active:scale-90" style="background:'+(sug.color||'#ffb693')+';color:#000">'+
+          '<span class="material-symbols-outlined text-lg">arrow_forward</span>'+
+        '</button>':'')+
+      '</div>'+
+    '</div>';
 
-  const warmupChips=MORNING_ROUTINE.exercises.map((ex,i)=>
-    `<button onclick="startSingleEx('warmup',${i})"
-      class="flex-shrink-0 px-4 py-3 text-left active:scale-95 transition-transform"
-      style="background:rgba(233,193,118,0.06);border:1px solid rgba(233,193,118,0.25);min-width:120px">
-      <p class="font-headline text-sm leading-tight" style="color:#e9c176">${ex.name}</p>
-      <p class="font-label text-[8px] text-gray-500 mt-0.5">${ex.duration}s</p>
-    </button>`
-  ).join("");
+  // Giorni KB (chip compatte)
+  var dayChips = ['A','B','C'].map(function(key){
+    var accent = KPhex[key]; var day = DAYS[key];
+    var isToday = suggested===key;
+    return '<button data-k="'+key+'" onclick="startWorkout(this.dataset.k)"'+
+      ' class="flex-1 py-3 text-center active:scale-95 transition-transform"'+
+      ' style="background:'+(isToday?'rgba('+hex2rgb(accent)+',0.15)':'transparent')+';border:1px solid '+(isToday?accent:'rgba(90,65,54,0.4)')+'">'+
+      '<div class="font-headline text-2xl" style="color:'+accent+'">'+key+'</div>'+
+      '<div class="font-label text-[8px] text-gray-500 mt-0.5">'+day.subtitle+'</div>'+
+      (isToday?'<div class="font-label text-[7px] mt-0.5" style="color:'+accent+'">OGGI</div>':'')+
+    '</button>';
+  }).join('');
 
-  const core7Def=getExtraById("CORE7");
-  const coreChips=(core7Def?core7Def.exercises:[]).map((ex,i)=>
-    `<button onclick="startSingleEx('core',${i})"
-      class="flex-shrink-0 px-4 py-3 text-left active:scale-95 transition-transform"
-      style="background:rgba(255,182,147,0.06);border:1px solid rgba(255,182,147,0.25);min-width:120px">
-      <p class="font-headline text-sm leading-tight" style="color:#ffb693">${ex.name}</p>
-      <p class="font-label text-[8px] text-gray-500 mt-0.5">${ex.t} reps</p>
-    </button>`
-  ).join("");
+  // Link rapidi alle sezioni principali
+  var links = [
+    {label:'Morning',      sub:'Routine + Wim Hof',     icon:'wb_sunny',        color:'#e9c176', action:"switchTab('morning')"},
+    {label:'Tutti i workout', sub:'Train · AXE · KDP · BP', icon:'fitness_center', color:'#ffb693', action:"switchTab('train')"},
+    {label:'⚡ Finisher',   sub:'5 min AMRAP Snatch',   icon:'bolt',            color:'#e9c176', action:"state.finisherReturnTab='home';finStart()"},
+  ].map(function(l){
+    return '<button onclick="'+l.action+'"'+
+      ' class="flex items-center gap-4 py-4 px-4 active:scale-[0.98] transition-transform w-full"'+
+      ' style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06)">'+
+      '<span class="material-symbols-outlined text-xl flex-shrink-0" style="color:'+l.color+';font-variation-settings:\'FILL\' 1">'+l.icon+'</span>'+
+      '<div class="text-left flex-1">'+
+        '<p class="font-headline text-base leading-none" style="color:'+l.color+'">'+l.label+'</p>'+
+        '<p class="font-label text-[9px] text-gray-600 mt-0.5">'+l.sub+'</p>'+
+      '</div>'+
+      '<span class="material-symbols-outlined text-gray-700">chevron_right</span>'+
+    '</button>';
+  }).join('');
 
-  const recentHTML=`
-    <section>
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="font-headline text-2xl tracking-wide">ACCESSO RAPIDO</h3>
-        <button onclick="switchTab('log')" class="font-label text-[10px] text-primary uppercase tracking-widest">Log →</button>
-      </div>
+  // Riscaldamento chip (accesso rapido esercizi singoli)
+  var warmupChips = MORNING_ROUTINE.exercises.map(function(ex,i){
+    return '<button onclick="startSingleEx(\'warmup\','+i+')"'+
+      ' class="flex-shrink-0 px-3 py-2 text-left active:scale-95"'+
+      ' style="background:rgba(233,193,118,0.06);border:1px solid rgba(233,193,118,0.2);min-width:100px">'+
+      '<p class="font-headline text-sm leading-tight" style="color:#e9c176">'+ex.name+'</p>'+
+      '<p class="font-label text-[8px] text-gray-500 mt-0.5">'+ex.duration+'s</p>'+
+    '</button>';
+  }).join('');
 
-      <button onclick="state.finisherReturnTab='home';finStart()"
-        class="w-full py-3.5 mb-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
-        style="background:linear-gradient(135deg,#e9c176,#c9a856);color:#000">
-        ⚡ FINISHER — 5 MIN AMRAP
-        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
-      </button>
+  return '<div class="screen bg-background" style="padding-top:64px;">'+
+    '<main class="px-5 pt-5 pb-24">'+
 
-      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">RISCALDAMENTO — singolo esercizio</p>
-      <div class="flex gap-2 overflow-x-auto pb-2 mb-4" style="scrollbar-width:none">${warmupChips}</div>
+      aiCard+
 
-      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">CORE — singolo esercizio</p>
-      <div class="flex gap-2 overflow-x-auto pb-2" style="scrollbar-width:none">${coreChips}</div>
-    </section>`;
+      // Giorni KB
+      '<div class="mb-5">'+
+        '<div class="flex justify-between items-center mb-2">'+
+          '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500">GIORNI KB</p>'+
+          '<button onclick="switchTab(\'train\')" class="font-label text-[9px] uppercase tracking-widest text-gray-600">Tutti →</button>'+
+        '</div>'+
+        '<div class="grid grid-cols-3 gap-2">'+dayChips+'</div>'+
+      '</div>'+
 
+      // Link sezioni
+      '<div class="space-y-1.5 mb-5">'+links+'</div>'+
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
-    <main class="px-5 pt-8 pb-12 space-y-8">
+      // Riscaldamento rapido
+      '<div>'+
+        '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">RISCALDAMENTO RAPIDO</p>'+
+        '<div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none">'+warmupChips+'</div>'+
+      '</div>'+
 
-      <!-- Suggestion card -->
-      <section class="bg-surface-container ghost-border p-7 relative overflow-hidden border-l-2" style="border-left-color:${sug.color||'#ffb693'}">
-        <div class="absolute top-0 right-0 w-32 h-full pointer-events-none opacity-5">
-          <span class="material-symbols-outlined" style="font-size:120px;color:${sug.color||'#ffb693'}">fitness_center</span>
-        </div>
-        <p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-3">Prossima sessione suggerita</p>
-        <div class="flex items-center gap-3 mb-4">
-          <span style="font-size:28px">${sug.icon}</span>
-          <h2 class="font-headline text-3xl leading-none" style="color:${sug.color||'#ffb693'}">${sug.title.toUpperCase()}</h2>
-        </div>
-        <p class="font-label text-sm text-on-surface-variant leading-relaxed mb-6">${sug.reason}</p>
-        ${sug.action?`<button onclick="${sug.action}"
-          class="bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed px-7 py-3.5 font-headline text-xl tracking-widest flex items-center gap-3 active:scale-95 transition-transform">
-          ${sug.actionLabel}
-          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
-        </button>`:''}
-      </section>
-
-      <!-- Giorni A/B/C -->
-      <section>
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-headline text-2xl tracking-wide">SELEZIONA FASE</h3>
-          <span class="font-label text-[9px] text-gray-600 uppercase tracking-widest">${dayLabel()}</span>
-        </div>
-        <div class="grid grid-cols-3 gap-3">${dayCards}</div>
-      </section>
-
-      ${recentHTML}
-    </main>
-    ${navHTML("home")}
-  </div>`;
+    '</main>'+
+    navHTML('home')+
+  '</div>';
 }
 
 
-// ── RENDER WORKOUT ────────────────────────────────────────────────────────────
 function renderWorkout(){
   const day=DAYS[state.dayKey],seq=day.seq,step=seq[state.stepIdx];
   const ex=EXERCISES[step.name]||{};
@@ -1997,137 +2027,103 @@ function renderAxe(){
 
 // ── RENDER AXE WORKOUT ────────────────────────────────────────────────────────
 function renderAxeWorkout(){
-  const ax=state.axe;
-  const isWork=ax.phase==="work";
-  const isRest=ax.phase==="rest";
-  const isIdle=ax.phase==="idle";
+  var ax=state.axe;
+  var isWork=ax.phase==="work";
+  var isRest=ax.phase==="rest";
+  var isIdle=ax.phase==="idle";
+  var pct=ax.targetSets>0?Math.round(ax.setsDone/ax.targetSets*100):0;
 
-  const accentCol=isWork?"#9C27B0":isRest?"#1565C0":"#607080";
+  var accent=isWork?"#8b5cf6":isRest?"#50dad1":"#64748b";
+  var phaseLabel=isWork?"ESEGUI IL SET":isRest?"RIPOSO":"PRONTO";
+  var phaseHint=isWork?(ax.repsPerSet+" reps · tecnica pulita"):isRest?"Prossimo set automatico tra...":"Premi SET FATTO quando hai finito";
 
-  // Ring timer (solo durante rest OTM)
-  let ringSection="";
+  // Ring timer riposo
+  var ringSection="";
   if(isRest){
-    ringSection=`<div class="axe-ring-wrap">${ringHTML(ax.restSec,ax.restRemaining,"#1565C0",ax.restRemaining<=3&&ax.restRemaining>0)}</div>`;
+    ringSection='<div class="flex flex-col items-center py-6">'+
+      '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-3">RIPOSO</p>'+
+      ringHTML(ax.restSec,ax.restRemaining,"#50dad1",ax.restRemaining<=3&&ax.restRemaining>0)+
+      '<p class="font-label text-[10px] text-gray-500 mt-3">Il set parte automaticamente</p>'+
+    '</div>';
   } else if(isWork){
-    ringSection=`<div class="axe-ring-wrap">
-      <svg width="160" height="160" style="filter:drop-shadow(0 0 18px #9C27B055)">
-        <circle cx="80" cy="80" r="68" fill="none" stroke="#2A0040" stroke-width="9"/>
-        <circle cx="80" cy="80" r="68" fill="none" stroke="#9C27B0" stroke-width="9"/>
-        <text x="80" y="94" text-anchor="middle" fill="#CE93D8" font-family="'Bebas Neue',sans-serif" font-size="32">EXECUTE</text>
-      </svg>
-    </div>`;
+    ringSection='<div class="flex flex-col items-center py-6">'+
+      '<div style="width:160px;height:160px;border-radius:50%;background:rgba(139,92,246,0.1);border:3px solid #8b5cf6;display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px rgba(139,92,246,0.3)">'+
+        '<div class="text-center">'+
+          '<div class="font-headline" style="font-size:48px;color:#8b5cf6;line-height:1">'+ax.repsPerSet+'</div>'+
+          '<div class="font-label text-[9px] uppercase tracking-widest" style="color:rgba(139,92,246,0.6)">REPS</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
   } else {
-    ringSection=`<div class="axe-ring-wrap">
-      <div class="no-timer-circle" style="border-color:#2A0040;">🪓</div>
-    </div>`;
+    ringSection='<div class="flex flex-col items-center py-6">'+
+      '<div style="width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.03);border:2px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center">'+
+        '<span class="font-headline" style="font-size:64px">🪓</span>'+
+      '</div>'+
+    '</div>';
   }
 
-  // Talk test banner (appare dopo metà sessione, una volta sola)
-  const halfWay=ax.setsDone>=Math.floor(ax.targetSets/2);
-  const talkBanner=(halfWay&&!ax.talkAnswered&&isRest)?`
-    <div class="axe-talk-banner">
-      <span class="axe-talk-icon">💬</span>
-      <span class="axe-talk-text">Riesci a parlare in frasi brevi? Se sì, sei in zona AGT.</span>
-      <button class="axe-talk-ok" onclick="axeTalkAnswer('ok')">Sì</button>
-      <button class="axe-talk-ko" onclick="axeTalkAnswer('fail')">No</button>
-    </div>`:"";
+  // Talk test banner
+  var halfWay=ax.setsDone>=Math.floor(ax.targetSets/2);
+  var talkBanner=(halfWay&&!ax.talkAnswered&&isRest)?
+    '<div class="mx-5 mb-4 p-4 border-l-2" style="background:rgba(255,182,147,0.06);border-color:#ffb693">'+
+      '<p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:#ffb693">💬 TALK TEST — sei in zona AGT?</p>'+
+      '<p class="font-label text-xs text-gray-500 mb-3">Riesci a parlare in frasi brevi?</p>'+
+      '<div class="flex gap-2">'+
+        '<button onclick="axeTalkAnswer(\"ok\")" class="flex-1 py-2 font-headline text-base tracking-widest" style="background:rgba(80,218,209,0.1);border:1px solid #50dad1;color:#50dad1">Sì ✅</button>'+
+        '<button onclick="axeTalkAnswer(\"fail\")" class="flex-1 py-2 font-headline text-base tracking-widest" style="background:rgba(255,180,171,0.1);border:1px solid #ffb4ab;color:#ffb4ab">No ❌</button>'+
+      '</div>'+
+    '</div>':'';
 
-  // Fase display
-  const phaseName=isWork?"SET":isRest?"RIPOSO":"PRONTO";
-  const phaseHint=isWork
-    ?`${ax.repsPerSet} reps · tecnica pulita · velocità costante`
-    :isRest
-    ?`Recupero — prossimo set al suono`
-    :`Premi START per iniziare il primo set`;
-
-  // Bottone principale
-  let actionRow="";
-  if(isIdle){
-    actionRow=`<div class="axe-action-row">
-      <button class="axe-btn-go" style="background:#9C27B0;" onclick="axeStartSet()">▶ START — esegui il set</button>
-      <button class="axe-btn-abort" onclick="axeFinishSession()">Fine sessione</button>
-    </div>`;
-  } else if(isWork){
-    actionRow=`<div class="axe-action-row" style="flex-direction:column;gap:10px;">
-      <button class="axe-btn-go" style="background:#00BFA5;font-size:22px;padding:22px;" onclick="axeSetDone()">✅ SET FATTO</button>
-      <div style="display:flex;gap:10px;">
-        <button class="axe-btn-abort" style="flex:1;" onclick="axeAbortSet()">🛑 Stop anticipato</button>
-        <button class="axe-btn-abort" style="flex:1;" onclick="axeFinishSession()">Fine sessione</button>
-      </div>
-    </div>`;
+  // Bottone azione principale
+  var actionBtn="";
+  if(isIdle||isWork){
+    actionBtn='<button onclick="axeSetDone()" class="w-full py-6 font-headline text-2xl tracking-widest flex justify-between items-center px-6 active:scale-95 transition-transform" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff">'+
+      '✅ SET FATTO'+
+      '<span class="font-headline text-xl">'+ax.setsDone+' / '+ax.targetSets+'</span>'+
+    '</button>';
   } else {
-    // REST
-    actionRow=`<div class="axe-action-row">
-      <button class="axe-btn-go" style="background:#1565C0;opacity:0.7;font-size:15px;" onclick="axeSkipRest()">⏭ Salta rest</button>
-      <button class="axe-btn-abort" onclick="axeFinishSession()">Fine sessione</button>
-    </div>`;
+    // Durante il riposo: skip
+    actionBtn='<button onclick="axeSkipRest()" class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform" style="border:1px solid rgba(80,218,209,0.3);color:#50dad1;background:transparent">'+
+      '⏭ Salta riposo'+
+    '</button>';
   }
 
-  return `<div class="screen axe-wk-screen">
+  return '<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">'+
 
-    <!-- HUD superiore -->
-    <div class="axe-hud">
-      <div class="axe-hud-item">
-        <div class="axe-hud-val" style="color:var(--axeGlow)">${ax.setsDone}</div>
-        <div class="axe-hud-lbl">SET FATTI</div>
-      </div>
-      <div class="axe-hud-item">
-        <div class="axe-hud-val" style="color:var(--muted)">${ax.targetSets}</div>
-        <div class="axe-hud-lbl">TARGET</div>
-      </div>
-      <div class="axe-hud-item">
-        <div class="axe-hud-val" style="color:#FFC107">${ax.repsPerSet}</div>
-        <div class="axe-hud-lbl">REPS</div>
-      </div>
-      <div class="axe-hud-item">
-        <div class="axe-hud-val" style="color:#2196F3">${ax.restSec}"</div>
-        <div class="axe-hud-lbl">REST OTM</div>
-      </div>
-    </div>
+    // Header
+    '<div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(139,92,246,0.15)">'+
+      '<div>'+
+        '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500">AXE — SET '+ax.setsDone+' / '+ax.targetSets+'</p>'+
+        '<p class="font-headline text-xl" style="color:'+accent+'">'+phaseLabel+'</p>'+
+      '</div>'+
+      '<button onclick="axeFinishSession()" class="font-label text-[9px] uppercase tracking-widest px-3 py-2" style="border:1px solid rgba(90,65,54,0.4);color:#64748b">FINE</button>'+
+    '</div>'+
 
-    <!-- Progress bar sets -->
-    <div class="progress-wrap" style="margin:0;">
-      <div class="progress-bar" style="width:${Math.min(100,ax.setsDone/ax.targetSets*100).toFixed(1)}%;background:var(--axe);"></div>
-    </div>
+    // Barra progresso
+    '<div class="h-1 flex-shrink-0" style="background:rgba(255,255,255,0.06)">'+
+      '<div style="height:100%;width:'+pct+'%;background:#8b5cf6;transition:width 0.4s"></div>'+
+    '</div>'+
 
-    <!-- Fase -->
-    <div class="axe-phase-display">
-      <div class="axe-phase-name" style="color:${accentCol};${isRest?'':''}${isRest?'class="axe-rest-pulse"':''}">${phaseName}</div>
-      <div class="axe-phase-hint">${phaseHint}</div>
-    </div>
+    // Ring timer / stato
+    '<div class="flex-1 flex flex-col justify-between overflow-hidden">'+
+      ringSection+
+      '<div class="px-5 text-center">'+
+        '<p class="font-label text-xs text-gray-500 mb-1">'+ax.exercise.toUpperCase()+' · '+ax.repsPerSet+' reps · recupero '+ax.restSec+'"</p>'+
+      '</div>'+
 
-    ${ringSection}
+      // Talk test
+      talkBanner+
 
-    <!-- Reps display -->
-    <div class="axe-reps-display">
-      <div class="axe-reps-num" style="color:${accentCol}">${ax.repsPerSet}</div>
-      <div class="axe-reps-lbl">${AXE_EX[ax.exercise||"swing"].emoji} ${AXE_EX[ax.exercise||"swing"].label}</div>
-    </div>
-
-    ${talkBanner}
-
-    <!-- Cue tecnica + Video -->
-    <div style="background:#0A0010;border-radius:12px;margin:0 18px 12px;padding:12px 16px;border:1px solid #2A0035;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <div style="font-size:11px;letter-spacing:2px;color:var(--muted);">CUE TECNICA</div>
-        <a href="${AXE_EX[ax.exercise||"swing"].yt}" target="_blank"
-          style="font-size:12px;font-weight:700;color:var(--axeGlow);background:#1A0025;border:1px solid var(--axe);border-radius:8px;padding:4px 10px;text-decoration:none;">
-          ▶️ Video
-        </a>
-      </div>
-      <div style="font-size:13px;color:var(--text);line-height:1.6;">
-        ${AXE_EX[ax.exercise||"swing"].cue}<br>
-        <span style="color:var(--muted);">Fermati se la velocità cala</span>
-      </div>
-    </div>
-
-    <!-- Bottone principale -->
-    ${actionRow}
-
-  </div>`;
+      // Pulsante
+      '<div class="px-5 pb-6 space-y-2">'+
+        actionBtn+
+        (isWork?'<button onclick="axeFinishSession()" class="w-full py-2 font-label text-[9px] uppercase tracking-widest" style="color:#64748b">Fine sessione</button>':'')+
+      '</div>'+
+    '</div>'+
+  '</div>';
 }
 
-// ── RENDER AXE DONE ───────────────────────────────────────────────────────────
+
 function renderAxeDone(){
   const ax=state.axe;
   const mins=ax.sessionStart?Math.round((Date.now()-ax.sessionStart)/60000):0;
@@ -4717,282 +4713,261 @@ function renderPlan(){
 }
 // ── RENDER TRAIN ─────────────────────────────────────────────────────────────
 function renderTrain(){
-  const sub=state.trainSubTab||"base";
-
-  const CATEGORIE={
+  var sub = state.trainSubTab||"base";
+  var CATEGORIE={
     forza:{label:"⚡ Forza",color:"#ffb693",ids:["D1","B2","B3","B8","DPU","CORE7"]},
     condizionamento:{label:"🔥 Condizionamento",color:"#e9c176",ids:["B4","B5","B6","B7","B9"]},
     tecnica:{label:"🎯 Tecnica & Circuiti",color:"#50dad1",ids:["C2","C3","C4","C5","C6","C7"]},
   };
-
-  const BP_LEVELS=[
-    {label:"🟢 Entry",     color:"#ffb4ab", ids:["BP1","BP3","BP6","BP7","BP10","BP13","BP14"]},
-    {label:"🟡 Intermediate",color:"#e9c176",ids:["BP2","BP4","BP5","BP8","BP9","BP15","BP18"]},
-    {label:"🔴 Advanced",  color:"#ffb693", ids:["BP11","BP12","BP16","BP17","BP19","BP20"]},
+  var BP_LEVELS=[
+    {label:"🟢 Entry",      color:"#ffb4ab", ids:["BP1","BP3","BP6","BP7","BP10","BP13","BP14"]},
+    {label:"🟡 Intermedio", color:"#e9c176", ids:["BP2","BP4","BP5","BP8","BP9","BP15","BP18"]},
+    {label:"🔴 Avanzato",   color:"#ffb693", ids:["BP11","BP12","BP16","BP17","BP19","BP20"]},
   ];
 
-  const tabs=[
-    {id:"base",     label:"Giorni",      activeColor:"#ffb693", activeText:"#351000"},
-    {id:"alt",      label:"Alternativi", activeColor:"#ffb693", activeText:"#351000"},
-    {id:"bellplex", label:"Bellplex",    activeColor:"#ffb4ab", activeText:"#690005"},
-    {id:"axe",      label:"AXE",         activeColor:"#8b5cf6", activeText:"#fff"},
-    {id:"kdp",      label:"KDP-26",      activeColor:"#7A9A3A", activeText:"#0D0D0F"},
+  // ── Tab bar 2 righe 3+2 ────────────────────────────────────────
+  var TABS=[
+    {id:"base",     label:"KB A·B·C",  color:"#ffb693"},
+    {id:"alt",      label:"Extra",     color:"#ffb693"},
+    {id:"bellplex", label:"Bellplex",  color:"#ffb4ab"},
+    {id:"axe",      label:"AXE",       color:"#8b5cf6"},
+    {id:"kdp",      label:"KDP-26",    color:"#7A9A3A"},
   ];
+  function tBtn(t){
+    var on=sub===t.id;
+    return '<button onclick="state.trainSubTab=\''+t.id+'\';render()"'+
+      ' class="flex-1 py-2.5 font-headline text-sm tracking-widest active:scale-95"'+
+      ' style="background:'+(on?t.color:'transparent')+';color:'+(on?'#000':'#64748b')+';border:1px solid '+(on?t.color:'rgba(90,65,54,0.3)')+'">'+
+      t.label+'</button>';
+  }
+  var tabBar=
+    '<div class="flex gap-1.5 mb-1.5">'+TABS.slice(0,3).map(tBtn).join('')+'</div>'+
+    '<div class="flex gap-1.5 mb-5">'+TABS.slice(3).map(tBtn).join('')+'</div>';
 
-  const row1=tabs.slice(0,3);
-  const row2=tabs.slice(3);
-  function tabBtn(t){return `<button onclick="state.trainSubTab='${t.id}';render()"
-    class="flex-1 py-2.5 font-headline text-base tracking-widest uppercase active:scale-95 transition-transform"
-    style="${sub===t.id?`background:${t.activeColor};color:${t.activeText}`:'border:1px solid rgba(90,65,54,0.4);color:#64748b;background:transparent'}">${t.label}</button>`;}
-  const tabBar=`<div class="flex flex-col gap-1 mb-8">
-    <div class="flex gap-1">${row1.map(tabBtn).join("")}</div>
-    <div class="flex gap-1">${row2.map(tabBtn).join("")}</div>
-  </div>`;
-
-  // ── BASE: A/B/C grandi ──
+  // ── TAB KB A·B·C ───────────────────────────────────────────────
   function tabBase(){
-    const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
-    const KPicon={A:"bolt",B:"rebase_edit",C:"architecture"};
-    const sug=getSmartSuggestion();
-    return `
-    ${["A","B","C"].map(k=>{
-      const hex=KPhex[k];
-      const isSug=sug.type==="abc"&&sug.key===k;
-      return `<div class="relative bg-surface-container ghost-border overflow-hidden mb-3" style="border-left:2px solid ${hex}">
-        <div class="absolute -right-4 -top-4 opacity-5 pointer-events-none">
-          <span class="material-symbols-outlined text-[100px]" style="color:${hex}">${KPicon[k]}</span>
-        </div>
-        <div class="p-6 relative z-10">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <div class="font-headline text-5xl leading-none" style="color:${hex}">GG ${k}</div>
-              <div class="font-label text-xs font-bold uppercase tracking-wide text-gray-400 mt-1">${DAYS[k].subtitle}</div>
-            </div>
-            <div class="text-right">
-              <div class="font-headline text-xl text-gray-500">~${DAYS[k].totalMin} MIN</div>
-              ${isSug?`<div class="font-label text-[9px] uppercase tracking-widest mt-1" style="color:${hex}">SUGGERITO</div>`:''}
-            </div>
-          </div>
-          <p class="font-label text-xs text-on-surface-variant mb-5">${DAYS[k].focus}</p>
-          <button onclick="startWorkout('${k}')"
-            class="w-full py-3.5 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
-            style="background:linear-gradient(135deg,${hex},${hex}bb);color:#000">
-            START GIORNO ${k}
-            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">play_arrow</span>
-          </button>
-        </div>
-      </div>`;
-    }).join("")}`;
+    var KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
+    var sug=getSmartSuggestion();
+    return ["A","B","C"].map(function(k){
+      var hex=KPhex[k]; var day=DAYS[k];
+      var isSug=sug.type==="abc"&&sug.key===k;
+      var isOpen=state.plan.openAcc===("day-"+k);
+      var exNames=[...new Set((day.seq||[]).filter(function(e){return e.type!=="rest"&&e.name!=="Rest";}).map(function(e){return e.name;}))];
+      return '<div class="mb-2" style="border-left:2px solid '+hex+'">'+
+        '<div class="flex justify-between items-center px-4 py-3.5 bg-surface-container ghost-border active:scale-[0.99]"'+
+          ' data-day="'+k+'" onclick="toggleDayAcc(this.dataset.day)">'+
+          '<div>'+
+            '<span class="font-headline text-3xl" style="color:'+hex+'">GIORNO '+k+'</span>'+
+            '<span class="font-label text-[9px] text-gray-500 ml-2">'+day.subtitle+' · '+day.totalMin+"'</span>"+
+          '</div>'+
+          '<div class="flex items-center gap-2">'+
+            (isSug?'<span class="font-label text-[7px] uppercase tracking-widest px-1.5 py-0.5" style="background:'+hex+'22;color:'+hex+'">OGGI</span>':'')+
+            '<span class="material-symbols-outlined text-gray-600 text-sm" style="transition:transform .2s;transform:'+(isOpen?'rotate(180deg)':'none')+'">expand_more</span>'+
+          '</div>'+
+        '</div>'+
+        (isOpen?
+          '<div class="bg-surface-container-low border-t border-white/5">'+
+            '<div class="px-4 pt-3 pb-2">'+
+              exNames.map(function(n){return '<div class="flex items-center gap-2 py-1 border-b border-white/5">'+
+                '<span class="w-1 h-1 rounded-full flex-shrink-0" style="background:'+hex+'"></span>'+
+                '<span class="font-label text-sm text-gray-300">'+n+'</span></div>';}).join('')+
+            '</div>'+
+            '<div class="px-4 pb-4">'+
+              '<button data-wk="'+k+'" onclick="startWorkout(this.dataset.wk)"'+
+                ' class="w-full py-3.5 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95"'+
+                ' style="background:linear-gradient(135deg,'+hex+','+hex+'bb);color:#000">'+
+                'START '+k+'<span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1">play_arrow</span>'+
+              '</button>'+
+            '</div>'+
+          '</div>':'')+
+      '</div>';
+    }).join('');
   }
 
-  // ── ALTERNATIVI: 3 categorie collassabili ──
+  // ── TAB EXTRA (Alternativi) ─────────────────────────────────────
   function tabAlt(){
-    return Object.entries(CATEGORIE).map(([catId,cat])=>{
-      const wks=EXTRA_WORKOUTS.filter(w=>cat.ids.includes(w.id));
-      const isOpen=(state.plan.openAcc===catId);
-      return `<div class="mb-2">
-        <button onclick="toggleAcc('${catId}')"
-          class="w-full flex justify-between items-center p-5 bg-surface-container ghost-border border-l-2 active:scale-[0.99] transition-transform"
-          style="border-left-color:${cat.color}">
-          <div>
-            <span class="font-headline text-xl tracking-wide">${cat.label}</span>
-            <span class="font-label text-[9px] uppercase text-gray-600 ml-3">${wks.length} workout</span>
-          </div>
-          <span class="material-symbols-outlined text-gray-500 transition-transform ${isOpen?'rotate-180':''}"
-            style="transition:transform 0.2s">expand_more</span>
-        </button>
-        ${isOpen?`<div class="space-y-px">
-          ${wks.map(w=>`<div onclick="openExtraDetail('${w.id}')"
-            class="flex items-center gap-4 p-4 bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer group">
-            <div class="w-0.5 self-stretch rounded-full flex-shrink-0" style="background:${cat.color}"></div>
-            <div class="flex-1">
-              <p class="font-headline text-lg leading-none" style="color:${cat.color}">${w.label}</p>
-              <p class="font-label text-[10px] text-gray-500 mt-1">${w.title} · ${w.meta}</p>
-            </div>
-            <span class="material-symbols-outlined text-gray-700 group-hover:text-gray-400 transition-colors">chevron_right</span>
-          </div>`).join("")}
-        </div>`:''}
-      </div>`;
-    }).join("");
+    return Object.entries(CATEGORIE).map(function(e){
+      var catId=e[0],cat=e[1];
+      var wks=EXTRA_WORKOUTS.filter(function(w){return cat.ids.includes(w.id);});
+      var isOpen=state.plan.openAcc===catId;
+      return '<div class="mb-2">'+
+        '<button onclick="toggleAcc(\''+catId+'\')"'+
+          ' class="w-full flex justify-between items-center p-4 bg-surface-container ghost-border border-l-2 active:scale-[0.99]"'+
+          ' style="border-left-color:'+cat.color+'">'+
+          '<div>'+
+            '<span class="font-headline text-lg tracking-wide">'+cat.label+'</span>'+
+            '<span class="font-label text-[9px] text-gray-600 ml-2">'+wks.length+' workout</span>'+
+          '</div>'+
+          '<span class="material-symbols-outlined text-gray-500 text-sm" style="transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s">expand_more</span>'+
+        '</button>'+
+        (isOpen?'<div class="space-y-px">'+
+          wks.map(function(w){return '<div onclick="openExtraDetail(\''+w.id+'\')"'+
+            ' class="flex items-center gap-3 p-4 bg-surface-container-low cursor-pointer active:bg-surface-container">'+
+            '<div class="w-0.5 self-stretch rounded-full" style="background:'+cat.color+'"></div>'+
+            '<div class="flex-1 min-w-0">'+
+              '<p class="font-headline text-base leading-none" style="color:'+cat.color+'">'+w.label+'</p>'+
+              '<p class="font-label text-[9px] text-gray-500 mt-0.5">'+w.meta+'</p>'+
+            '</div>'+
+            '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
+          '</div>';}).join('')+
+        '</div>':'')+
+      '</div>';
+    }).join('');
   }
 
-  // ── BELLPLEX: per difficoltà collassabile ──
+  // ── TAB BELLPLEX ───────────────────────────────────────────────
   function tabBellplex(){
-    const bpAll=EXTRA_WORKOUTS.filter(w=>w.id.startsWith("BP"));
-    return BP_LEVELS.map(lv=>{
-      const wks=bpAll.filter(w=>lv.ids.includes(w.id));
-      const isOpen=(state.plan.openAcc===lv.label);
-      return `<div class="mb-2">
-        <button onclick="toggleAcc('${lv.label}')"
-          class="w-full flex justify-between items-center p-5 bg-surface-container ghost-border border-l-2 active:scale-[0.99] transition-transform"
-          style="border-left-color:${lv.color}">
-          <div>
-            <span class="font-headline text-xl tracking-wide">${lv.label}</span>
-            <span class="font-label text-[9px] uppercase text-gray-600 ml-3">${wks.length} complexes</span>
-          </div>
-          <span class="material-symbols-outlined text-gray-500 ${isOpen?'rotate-180':''}"
-            style="transition:transform 0.2s">expand_more</span>
-        </button>
-        ${isOpen?`<div class="space-y-px">
-          ${wks.map((w,i)=>`<div onclick="openExtraDetail('${w.id}')"
-            class="flex items-center gap-4 p-4 bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer group">
-            <span class="font-headline text-xl w-7 text-center flex-shrink-0" style="color:${lv.color}">${String(bpAll.indexOf(w)+1).padStart(2,'0')}</span>
-            <div class="flex-1">
-              <p class="font-headline text-lg leading-none">${w.label} — ${w.title}</p>
-              <p class="font-label text-[10px] text-gray-500 mt-1">${w.meta}</p>
-            </div>
-            <span class="material-symbols-outlined text-gray-700 group-hover:text-error transition-colors">chevron_right</span>
-          </div>`).join("")}
-        </div>`:''}
-      </div>`;
-    }).join("");
+    var bpAll=EXTRA_WORKOUTS.filter(function(w){return w.id.startsWith("BP");});
+    return BP_LEVELS.map(function(lv){
+      var wks=bpAll.filter(function(w){return lv.ids.includes(w.id);});
+      var isOpen=state.plan.openAcc===lv.label;
+      return '<div class="mb-2">'+
+        '<button onclick="toggleAcc(\''+lv.label+'\')"'+
+          ' class="w-full flex justify-between items-center p-4 bg-surface-container ghost-border border-l-2 active:scale-[0.99]"'+
+          ' style="border-left-color:'+lv.color+'">'+
+          '<span class="font-headline text-lg">'+lv.label+'</span>'+
+          '<span class="material-symbols-outlined text-gray-500 text-sm" style="transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s">expand_more</span>'+
+        '</button>'+
+        (isOpen?'<div class="space-y-px">'+
+          wks.map(function(w){return '<div onclick="openExtraDetail(\''+w.id+'\')"'+
+            ' class="flex items-center gap-3 p-4 bg-surface-container-low cursor-pointer active:bg-surface-container">'+
+            '<span class="font-headline text-base w-8 flex-shrink-0 text-center" style="color:'+lv.color+'">'+
+              String(bpAll.indexOf(w)+1).padStart(2,'0')+
+            '</span>'+
+            '<div class="flex-1 min-w-0">'+
+              '<p class="font-headline text-base leading-none">'+w.label+' — '+w.title+'</p>'+
+              '<p class="font-label text-[9px] text-gray-500 mt-0.5">'+w.meta+'</p>'+
+            '</div>'+
+            '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
+          '</div>';}).join('')+
+        '</div>':'')+
+      '</div>';
+    }).join('');
   }
 
-  // ── AXE: Pavel AGT ──
+  // ── TAB AXE ────────────────────────────────────────────────────
   function tabAxe(){
-    const axeHist=state.axeHistory||[];
-    const lastAxe=axeHist.slice(-1)[0];
-    const prog=state.axeProgress||{week:1,day:1,sets:10};
-    return `
-    <!-- Principi -->
-    <div class="bg-surface-container ghost-border p-6 border-l-2 mb-3" style="border-color:#8b5cf6">
-      <p class="font-label text-[9px] uppercase tracking-[0.2em] mb-3" style="color:#8b5cf6">PAVEL AGT — Anti-Glycolytic Training</p>
-      <div class="space-y-2">
-        ${[
-          {icon:"record_voice_over", txt:"Talk Test — durante i set devi riuscire a parlare"},
-          {icon:"timer",             txt:"Recupero generoso tra i set — non accorciarlo"},
-          {icon:"favorite",          txt:"Frequenza cardiaca mai sopra l'85% della max"},
-          {icon:"bolt",              txt:"Set multipli (10–20) di poche reps (4–6)"},
-          {icon:"check_circle",      txt:"Compatibile con KB — non con Bellplex"},
-        ].map(r=>`<div class="flex items-start gap-3">
-          <span class="material-symbols-outlined text-base flex-shrink-0 mt-0.5" style="color:#8b5cf6;font-variation-settings:'FILL' 1">${r.icon}</span>
-          <p class="font-label text-sm text-on-surface-variant">${r.txt}</p>
-        </div>`).join("")}
-      </div>
-    </div>
-
-    <!-- Sessione corrente -->
-    <div class="bg-surface-container ghost-border p-6 border-l-2 mb-3" style="border-color:#8b5cf6">
-      <div class="flex justify-between items-center mb-4">
-        <div>
-          <p class="font-label text-[9px] uppercase tracking-widest mb-1" style="color:#8b5cf6">SESSIONE CORRENTE</p>
-          <p class="font-headline text-4xl leading-none">Settimana ${prog.week} · Giorno ${prog.day}</p>
-        </div>
-        <div class="text-right">
-          <p class="font-headline text-5xl" style="color:#8b5cf6">${prog.sets}</p>
-          <p class="font-label text-[9px] uppercase text-gray-500">SET TARGET</p>
-        </div>
-      </div>
-      <p class="font-label text-xs text-gray-500 mb-5">KB Swing o Snatch · 5 reps/set · Riposo 60–90"</p>
-      <button onclick="state.tab='axe-setup';window.scrollTo(0,0);render()"
-        class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
-        style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff">
-        INIZIA SESSIONE AXE
-        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
-      </button>
-    </div>
-
-    <!-- Ultima sessione -->
-    ${lastAxe?`<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#8b5cf688">
-      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">ULTIMA SESSIONE</p>
-      <div class="flex justify-between items-center">
-        <div>
-          <p class="font-headline text-xl">Sett. ${lastAxe.week||'?'} · Giorno ${lastAxe.day||'?'}</p>
-          <p class="font-label text-[9px] text-gray-500 mt-1">${lastAxe.date||''} · ${lastAxe.sets||'?'} set completati</p>
-        </div>
-        ${lastAxe.feeling?`<span class="text-2xl">${lastAxe.feeling}</span>`:''}
-      </div>
-    </div>`:''}`;
+    var axeHist=state.axeHistory||[];
+    var lastAxe=axeHist.slice(-1)[0];
+    var pr=state.axeProgress||{phase:"fase 1",currentSets:0};
+    var phases=[
+      {id:"fase 1",label:"4 reps/set",maxSets:30},
+      {id:"fase 2",label:"6 reps/set",maxSets:30},
+      {id:"fase 3",label:"+ peso KB", maxSets:30},
+    ];
+    var curPhase=phases.find(function(p){return p.id===pr.phase;})||phases[0];
+    var pct=Math.min(100,Math.round((pr.currentSets||0)/curPhase.maxSets*100));
+    return (
+      // Principi compatti
+      '<div class="bg-surface-container ghost-border p-4 border-l-2 mb-3" style="border-color:#8b5cf6">'+
+        '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-3" style="color:#8b5cf6">PAVEL AGT — Principi</p>'+
+        '<div class="grid grid-cols-2 gap-2">'+
+          ['Talk Test — parla durante i set','Recupero generoso tra i set','HR mai sopra 85% del max','Set multipli (10–20) · 4–6 reps'].map(function(t){
+            return '<div class="flex items-start gap-2"><span class="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style="background:#8b5cf6"></span><p class="font-label text-[10px] text-gray-400 leading-snug">'+t+'</p></div>';
+          }).join('')+
+        '</div>'+
+      '</div>'+
+      // Progressione
+      '<div class="bg-surface-container ghost-border p-4 border-l-2 mb-3" style="border-color:#8b5cf6">'+
+        '<div class="flex justify-between items-start mb-3">'+
+          '<div>'+
+            '<p class="font-label text-[9px] uppercase tracking-widest mb-1" style="color:#8b5cf6">PROGRESSIONE</p>'+
+            '<p class="font-headline text-2xl">'+curPhase.label+'</p>'+
+          '</div>'+
+          '<div class="text-right">'+
+            '<p class="font-headline text-4xl" style="color:#8b5cf6">'+(pr.currentSets||0)+'</p>'+
+            '<p class="font-label text-[9px] text-gray-500">/ '+curPhase.maxSets+' set</p>'+
+          '</div>'+
+        '</div>'+
+        '<div class="h-1 rounded-full mb-4" style="background:rgba(255,255,255,0.06)">'+
+          '<div style="height:100%;width:'+pct+'%;background:#8b5cf6;border-radius:9999px;transition:width 0.4s"></div>'+
+        '</div>'+
+        '<button onclick="state.tab=\'axe-setup\';render()"'+
+          ' class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95"'+
+          ' style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff">'+
+          'INIZIA SESSIONE AXE'+
+          '<span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1">bolt</span>'+
+        '</button>'+
+      '</div>'+
+      // Ultima sessione
+      (lastAxe?'<div class="bg-surface-container ghost-border p-4 border-l-2" style="border-color:#8b5cf644">'+
+        '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">ULTIMA SESSIONE</p>'+
+        '<div class="flex justify-between items-center">'+
+          '<p class="font-headline text-lg">'+(lastAxe.sets||'?')+' set × '+(lastAxe.reps||'?')+' reps</p>'+
+          '<p class="font-label text-[9px] text-gray-500">'+(lastAxe.date||'')+(lastAxe.feeling?' · '+lastAxe.feeling:'')+'</p>'+
+        '</div>'+
+      '</div>':'')
+    );
   }
 
-
-  // ── KDP-26 tab ──
+  // ── TAB KDP-26 ─────────────────────────────────────────────────
   function tabKdp(){
-    const lastKdp=KDP_SESSIONS[0];
-    const sessions7=KDP_SESSIONS.filter(s=>{
+    var lastKdp=KDP_SESSIONS[0];
+    var sessions7=KDP_SESSIONS.filter(function(s){
       try{return (new Date()-new Date(s.date))<7*86400000;}catch(e){return false;}
     }).length;
-    return `
-    <!-- Card sessione -->
-    <div class="bg-surface-container ghost-border p-6 border-l-2 mb-3" style="border-color:#7A9A3A">
-      <p class="font-label text-[9px] uppercase tracking-[0.2em] mb-3" style="color:#7A9A3A">FORGE — DENSITY PROTOCOL</p>
-      <div class="space-y-2 mb-5">
-        ${[
-          {icon:"timer",        txt:"EMOM 12 min — Swing / Clean+Press / Goblet Squat"},
-          {icon:"fitness_center",txt:"AMRAP 10 min — Swing 16kg / Push-Up / Row 16kg"},
-          {icon:"flag",         txt:"Finisher — Farmer Carry o Hold bilaterale"},
-        ].map(r=>`<div class="flex items-start gap-3">
-          <span class="material-symbols-outlined text-base flex-shrink-0 mt-0.5" style="color:#7A9A3A;font-variation-settings:'FILL' 1">${r.icon}</span>
-          <p class="font-label text-sm text-on-surface-variant">${r.txt}</p>
-        </div>`).join("")}
-      </div>
-
-      <!-- Selettore finisher -->
-      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-3">FINISHER</p>
-      <div class="flex gap-2 mb-5">
-        <button data-fin="carry" class="kdp-fin-sel flex-1 py-2.5 font-headline text-base tracking-widest"
-          style="border:1px solid rgba(122,154,58,.5);color:#7A9A3A;background:rgba(122,154,58,.1);border-radius:2px"
-          onclick="kdpSelFin('carry')">CARRY</button>
-        <button data-fin="hold" class="kdp-fin-sel flex-1 py-2.5 font-headline text-base tracking-widest"
-          style="border:1px solid rgba(255,255,255,.1);color:#64748b;background:transparent;border-radius:2px"
-          onclick="kdpSelFin('hold')">HOLD</button>
-      </div>
-
-      <button onclick="kdpStartWorkout()"
-        class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
-        style="background:linear-gradient(135deg,#7A9A3A,#5E7A28);color:#0D0D0F">
-        <div style="display:flex;align-items:center;padding:8px 16px;margin-bottom:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#64748b">⌚ Amazfit: Cross Training</span></div>
-      INIZIA KDP-26
-        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">bolt</span>
-      </button>
-    </div>
-
-    <!-- Stats -->
-    <div class="grid grid-cols-2 gap-3 mb-3">
-      <div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#7A9A3A88">
-        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Sessioni (7gg)</p>
-        <p class="font-headline text-5xl leading-none" style="color:#7A9A3A">${sessions7}</p>
-      </div>
-      <div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#7A9A3A88">
-        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Totale</p>
-        <p class="font-headline text-5xl leading-none" style="color:#7A9A3A">${KDP_SESSIONS.length}</p>
-      </div>
-    </div>
-
-    <!-- Ultima sessione -->
-    ${lastKdp?`<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#7A9A3A55">
-      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">ULTIMA SESSIONE</p>
-      <div class="flex justify-between items-center">
-        <div>
-          <p class="font-headline text-xl">KDP-26 Full Session</p>
-          <p class="font-label text-[9px] text-gray-500 mt-1">${new Date(lastKdp.date).toLocaleDateString('it-IT')} · AMRAP ${lastKdp.rnd} rnd · ${lastKdp.fin}</p>
-        </div>
-        <span class="font-headline text-xl" style="color:#7A9A3A">${lastKdp.dur} min</span>
-      </div>
-    </div>`:''}`;
+    return (
+      // Struttura
+      '<div class="bg-surface-container ghost-border p-4 border-l-2 mb-3" style="border-color:#7A9A3A">'+
+        '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-3" style="color:#7A9A3A">FORGE DENSITY PROTOCOL</p>'+
+        '<div class="space-y-2 mb-4">'+
+          [{icon:"timer",txt:"EMOM 12 min — Swing / Clean+Press / Goblet Squat"},
+           {icon:"fitness_center",txt:"AMRAP 10 min — Swing / Push-Up / Row"},
+           {icon:"flag",txt:"Finisher — Farmer Carry o Hold bilaterale"}].map(function(r){
+            return '<div class="flex items-center gap-3">'+
+              '<span class="material-symbols-outlined text-sm flex-shrink-0" style="color:#7A9A3A;font-variation-settings:\'FILL\' 1">'+r.icon+'</span>'+
+              '<p class="font-label text-[10px] text-gray-400">'+r.txt+'</p>'+
+            '</div>';
+          }).join('')+
+        '</div>'+
+        // Finisher selector
+        '<div class="flex gap-2 mb-4">'+
+          '<button data-fin="carry" class="kdp-fin-sel flex-1 py-2 font-headline text-base tracking-widest"'+
+            ' style="border:1px solid rgba(122,154,58,.5);color:#7A9A3A;background:rgba(122,154,58,.1)"'+
+            ' onclick="kdpSelFin(\'carry\')">CARRY</button>'+
+          '<button data-fin="hold" class="kdp-fin-sel flex-1 py-2 font-headline text-base tracking-widest"'+
+            ' style="border:1px solid rgba(255,255,255,.1);color:#64748b;background:transparent"'+
+            ' onclick="kdpSelFin(\'hold\')">HOLD</button>'+
+        '</div>'+
+        '<button onclick="kdpStartWorkout()"'+
+          ' class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95"'+
+          ' style="background:linear-gradient(135deg,#7A9A3A,#5E7A28);color:#0D0D0F">'+
+          'INIZIA KDP-26'+
+          '<span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1">bolt</span>'+
+        '</button>'+
+      '</div>'+
+      // Stats
+      '<div class="grid grid-cols-2 gap-2 mb-3">'+
+        '<div class="bg-surface-container ghost-border p-4 border-l-2" style="border-color:#7A9A3A88">'+
+          '<p class="font-label text-[9px] text-gray-500 mb-1">Sessioni (7gg)</p>'+
+          '<p class="font-headline text-4xl" style="color:#7A9A3A">'+sessions7+'</p>'+
+        '</div>'+
+        '<div class="bg-surface-container ghost-border p-4 border-l-2" style="border-color:#7A9A3A88">'+
+          '<p class="font-label text-[9px] text-gray-500 mb-1">Totale sessioni</p>'+
+          '<p class="font-headline text-4xl" style="color:#7A9A3A">'+KDP_SESSIONS.length+'</p>'+
+        '</div>'+
+      '</div>'+
+      (lastKdp?'<div class="bg-surface-container ghost-border p-4 border-l-2" style="border-color:#7A9A3A44">'+
+        '<p class="font-label text-[9px] text-gray-500 mb-1">ULTIMA SESSIONE</p>'+
+        '<div class="flex justify-between items-center">'+
+          '<p class="font-headline text-lg">AMRAP '+lastKdp.rnd+' rnd</p>'+
+          '<p class="font-label text-[9px] text-gray-500">'+lastKdp.dur+' min · '+lastKdp.fin+'</p>'+
+        '</div>'+
+      '</div>':'')
+    );
   }
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
-    <main class="px-5 pt-8 pb-12">
-      <header class="mb-8">
-        <h1 class="font-headline text-6xl tracking-tight leading-none">TRAIN</h1>
-        <div class="w-12 h-1 bg-primary mt-2"></div>
-      </header>
-      ${tabBar}
-      ${sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="axe"?tabAxe():tabKdp()}
-    </main>
-    ${navHTML("train")}
-  </div>`;
+  return '<div class="screen bg-background" style="padding-top:64px;">'+
+    '<main class="px-5 pt-5 pb-24">'+
+      '<h1 class="font-headline text-5xl tracking-tight leading-none mb-4">TRAIN</h1>'+
+      tabBar+
+      (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="axe"?tabAxe():tabKdp())+
+    '</main>'+
+    navHTML("train")+
+  '</div>';
 }
 // ── END RENDER TRAIN ──────────────────────────────────────────────────────────
-// ── END RENDER TRAIN ──────────────────────────────────────────────────────────
-// ── END RENDER TRAIN ──────────────────────────────────────────────────────────
-// ── END RENDER TRAIN ──────────────────────────────────────────────────────────
 
-
-
-
-// ── RENDER KDP WORKOUT ────────────────────────────────────────────
 function renderKdpWorkout(){
   return `<div class="screen bg-background" style="padding-top:0;height:100vh;display:flex;flex-direction:column;overflow:hidden;">
     <!-- Overlay transizione -->
@@ -5457,110 +5432,133 @@ function renderMorning(){
   const lastWH = whLogs[0];
   const mrLogs = (state.externalHistory||[]).filter(function(e){return e._morning;});
   const lastMR = mrLogs[0];
+  var morningTab = state.morningSubTab||'routine';
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
-    <main class="px-5 pt-8 pb-12 space-y-6">
+  // ── Tab bar ──────────────────────────────────────────────────
+  function mTabBtn(id, label){
+    var on = morningTab===id;
+    return '<button onclick="state.morningSubTab=\''+id+'\';render()"'+
+      ' class="flex-1 py-2.5 font-headline text-base tracking-widest active:scale-95"'+
+      ' style="background:'+(on?'#e9c176':'transparent')+';color:'+(on?'#000':'#64748b')+';border:1px solid '+(on?'#e9c176':'rgba(90,65,54,0.3)')+'">'+
+      label+'</button>';
+  }
+  var tabBar = '<div class="flex gap-1.5 mb-5">'+mTabBtn('routine','Routine')+mTabBtn('piano','Piano AI')+'</div>';
 
-      <header class="mb-2">
-        <h1 class="font-headline text-6xl tracking-tight leading-none">MORNING</h1>
-        <div class="w-12 h-1 mt-2" style="background:#e9c176"></div>
-      </header>
+  // ══════════════════════════════════════════════════════════════
+  // TAB ROUTINE
+  // ══════════════════════════════════════════════════════════════
+  var routineContent = '';
+  routineContent +=
+    '<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:#e9c176">'+
+      '<div class="flex items-center gap-2 mb-1">'+
+        '<span class="material-symbols-outlined text-lg" style="color:#e9c176;font-variation-settings:\'FILL\' 1">wb_sunny</span>'+
+        '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:#e9c176">ROUTINE MATTUTINA</p>'+
+      '</div>'+
+      '<h2 class="font-headline text-3xl mb-1">'+r.label+'</h2>'+
+      '<p class="font-label text-xs text-gray-500 mb-4">'+r.exercises.length+' esercizi · '+r.duration+' min · No attrezzatura</p>'+
+      // Lista esercizi
+      '<div class="space-y-1 mb-5">'+
+        r.exercises.map(function(e,i){
+          return '<div class="flex items-center gap-3 py-1.5 border-b border-white/5">'+
+            '<span class="font-headline text-base w-5 flex-shrink-0" style="color:#e9c176">'+(i+1)+'</span>'+
+            '<div class="flex-1">'+
+              '<span class="font-headline text-lg leading-none">'+e.name+'</span>'+
+              '<span class="font-label text-[10px] text-gray-600 ml-2">'+e.sub+'</span>'+
+            '</div>'+
+            '<span class="font-label text-[10px] text-gray-600">'+e.duration+'s</span>'+
+          '</div>';
+        }).join('')+
+      '</div>'+
+      (lastMR?'<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: '+lastMR.date+'</p>':'')+
+      '<div class="flex gap-2">'+
+        '<button onclick="mrStart(60)" class="flex-1 py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#e9c176,#c9a856);color:#000">FULL 60"</button>'+
+        '<button onclick="mrStart(30)" class="flex-1 py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#c9a856,#9a7830);color:#000">EXPRESS 30"</button>'+
+      '</div>'+
+    '</div>'+
+    // Wim Hof
+    '<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#50dad1">'+
+      '<div class="flex items-center gap-2 mb-1">'+
+        '<span class="material-symbols-outlined text-lg" style="color:#50dad1;font-variation-settings:\'FILL\' 1">air</span>'+
+        '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:#50dad1">WIM HOF</p>'+
+      '</div>'+
+      '<h2 class="font-headline text-3xl mb-1">Respirazione</h2>'+
+      '<p class="font-label text-xs text-gray-500 mb-4">3 round · Tecnica di respirazione profonda</p>'+
+      (lastWH?'<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: '+lastWH.date+'</p>':'')+
+      '<button onclick="whStart()" class="w-full py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">INIZIA</button>'+
+    '</div>';
 
-      ${FORGE_AI_RESULT?`<div class="mb-4">
-        <button onclick="goAiPlan()"
-          class="w-full py-3 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
-          style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;background:rgba(139,92,246,0.06)">
-          📋 PIANO AI SETTIMANA
-          <span class="material-symbols-outlined" style="color:#8b5cf6;font-variation-settings:'FILL' 1">calendar_month</span>
-        </button>
-      </div>`:''}
+  // ══════════════════════════════════════════════════════════════
+  // TAB PIANO AI
+  // ══════════════════════════════════════════════════════════════
+  var pianoContent = '';
+  if(FORGE_AI_RESULT && FORGE_AI_RESULT.piano_settimana){
+    var GIORNI_IT=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+    var ABBR={lun:'lunedì',mar:'martedì',mer:'mercoledì',gio:'giovedì',ven:'venerdì',sab:'sabato',dom:'domenica'};
+    var oggiNome = GIORNI_IT[new Date().getDay()].toLowerCase();
+    var normG = function(g){var l=(g||'').trim().toLowerCase();return ABBR[l]||l;};
+    var intensColor = {'Alta':'#ffb4ab','Media':'#e9c176','Bassa':'#7A9A3A'};
 
-      ${renderMorningSuggestion()}
+    pianoContent +=
+      '<div class="flex justify-between items-center mb-4">'+
+        '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500">Piano settimana</p>'+
+        '<button onclick="forgeRemoveAI()" class="font-label text-[9px] uppercase tracking-widest px-2 py-1" style="border:1px solid rgba(90,65,54,0.4);color:#64748b">Rimuovi</button>'+
+      '</div>';
 
-      <!-- Routine Risveglio -->
-      <section>
-        <div class="bg-surface-container ghost-border p-6 border-l-2" style="border-color:#e9c176">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="material-symbols-outlined text-lg" style="color:#e9c176;font-variation-settings:'FILL' 1">wb_sunny</span>
-            <p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:#e9c176">ROUTINE MATTUTINA</p>
-          </div>
-          <h2 class="font-headline text-3xl mb-1">${r.label}</h2>
-          <p class="font-label text-xs text-gray-500 mb-4">${r.exercises.length} esercizi · ${r.duration} min · No attrezzatura</p>
+    FORGE_AI_RESULT.piano_settimana.forEach(function(w){
+      var isOggi = normG(w.giorno)===oggiNome;
+      var ic = intensColor[w.intensita]||'#ffb693';
+      pianoContent +=
+        '<div class="p-4 mb-2 border-l-2" style="background:'+(isOggi?'rgba('+hex2rgb(ic)+',0.06)':'rgba(255,255,255,0.02)')+';border-left-color:'+(isOggi?ic:'rgba(90,65,54,0.3)')+';border:1px solid rgba(90,65,54,0.25)">'+
+          '<div class="flex justify-between items-start mb-1">'+
+            '<p class="font-headline text-lg leading-none" style="color:'+(isOggi?ic:'#fff')+'">'+w.giorno.toUpperCase()+'</p>'+
+            (isOggi?'<span class="font-label text-[7px] uppercase tracking-widest px-1.5 py-0.5" style="background:'+ic+'22;color:'+ic+'">OGGI</span>':
+              '<span class="font-label text-[8px]" style="color:'+ic+'">'+w.intensita+'</span>')+
+          '</div>'+
+          '<p class="font-headline text-base leading-tight mb-1">'+w.workout+'</p>'+
+          '<p class="font-label text-[9px] text-gray-500 leading-snug">'+w.motivo+'</p>'+
+        '</div>';
+    });
 
-          <!-- Preview esercizi -->
-          <div class="space-y-1 mb-5">
-            ${r.exercises.map(function(e,i){return `<div class="flex items-center gap-3 py-1.5 border-b border-white/5">
-              <span class="font-headline text-base w-5 flex-shrink-0" style="color:#e9c176">${i+1}</span>
-              <div class="flex-1">
-                <span class="font-headline text-lg leading-none">${e.name}</span>
-                <span class="font-label text-[10px] text-gray-600 ml-2">${e.sub}</span>
-              </div>
-              <span class="font-label text-[10px] text-gray-600">1 min</span>
-            </div>`;}).join("")}
-          </div>
+    if(FORGE_AI_RESULT.consigli_coach){
+      pianoContent +=
+        '<div class="bg-surface-container ghost-border p-4 border-l-2 mt-4" style="border-color:#8b5cf6">'+
+          '<p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:#8b5cf6">Consiglio Coach</p>'+
+          '<p class="font-label text-xs text-gray-400 leading-relaxed">'+FORGE_AI_RESULT.consigli_coach+'</p>'+
+        '</div>';
+    }
 
-          ${lastMR?`<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: ${lastMR.date}</p>`:""}
+    pianoContent +=
+      '<div class="flex gap-2 mt-4">'+
+        '<button onclick="state.settingsTab=\'ai\';switchTab(\'settings\')" class="flex-1 py-2.5 font-headline text-base tracking-widest active:scale-95" style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6">Esporta dati</button>'+
+        '<button onclick="state.settingsTab=\'ai\';switchTab(\'settings\')" class="flex-1 py-2.5 font-headline text-base tracking-widest active:scale-95" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.4);color:#8b5cf6">Importa piano</button>'+
+      '</div>';
+  } else {
+    pianoContent =
+      '<div class="bg-surface-container ghost-border p-6 border-l-2 text-center" style="border-color:rgba(139,92,246,0.3)">'+
+        '<span class="material-symbols-outlined text-4xl mb-3 block" style="color:#8b5cf6;font-variation-settings:\'FILL\' 1">calendar_month</span>'+
+        '<h2 class="font-headline text-2xl mb-2">Piano AI non importato</h2>'+
+        '<p class="font-label text-xs text-gray-500 mb-6">Esporta i tuoi dati, incollali su Claude o ChatGPT e importa il piano generato</p>'+
+        '<div class="flex gap-2">'+
+          '<button onclick="forgeExportWeek()" class="flex-1 py-3 font-headline text-base tracking-widest active:scale-95" style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6">⬇ Esporta dati</button>'+
+          '<button onclick="forgeImportAI()" class="flex-1 py-3 font-headline text-base tracking-widest active:scale-95" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.4);color:#8b5cf6">⬆ Importa piano</button>'+
+        '</div>'+
+      '</div>';
+  }
 
-          <div class="flex gap-2">
-            <button onclick="mrStart(60)"
-              class="flex-1 py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform"
-              style="background:linear-gradient(135deg,#e9c176,#c9a856);color:#000">
-              FULL 60&#34;
-            </button>
-            <button onclick="mrStart(30)"
-              class="flex-1 py-4 font-headline text-xl tracking-widest active:scale-95 transition-transform"
-              style="background:linear-gradient(135deg,#c9a856,#9a7830);color:#000">
-              EXPRESS 30&#34;
-            </button>
-          </div>
-        </div>
-      </section>
+  var content = morningTab==='routine' ? routineContent : pianoContent;
 
-      <!-- Wim Hof -->
-      <section>
-        <div class="bg-surface-container ghost-border p-6 border-l-2" style="border-color:#50dad1">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="material-symbols-outlined text-lg" style="color:#50dad1;font-variation-settings:'FILL' 1">air</span>
-            <p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:#50dad1">RESPIRAZIONE</p>
-          </div>
-          <h2 class="font-headline text-3xl mb-1">Wim Hof</h2>
-          <p class="font-label text-xs text-gray-500 mb-4">3 round · 30 respiri + apnea + recupero</p>
-
-          <div class="space-y-2 mb-5">
-            ${[
-              {icon:"air",       txt:"30 respiri profondi — inspirazione potente, espirazione rilassata"},
-              {icon:"pause",     txt:"Apnea a polmoni vuoti — fino al riflesso"},
-              {icon:"refresh",   txt:"Inspira fondo, trattieni 15 secondi"},
-              {icon:"repeat",    txt:"Ripeti per 3 round"},
-            ].map(function(r){return `<div class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-sm flex-shrink-0 mt-0.5" style="color:#50dad1;font-variation-settings:'FILL' 1">${r.icon}</span>
-              <p class="font-label text-xs text-gray-400">${r.txt}</p>
-            </div>`;}).join("")}
-          </div>
-
-          ${lastWH?`<div class="mb-3 p-3 border-l-2 bg-surface-container-low" style="border-color:#50dad155">
-            <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">ULTIMA SESSIONE — ${lastWH.date}</p>
-            <p class="font-label text-xs text-gray-400">${lastWH.notes}</p>
-          </div>`:""}
-
-          <button onclick="whStart()"
-            class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
-            style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">
-            INIZIA WIM HOF
-            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">air</span>
-          </button>
-        </div>
-      </section>
-
-    </main>
-    ${navHTML("morning")}
-  </div>`;
+  return '<div class="screen bg-background" style="display:flex;flex-direction:column;height:100vh;">'+
+    '<div class="flex-shrink-0" style="padding-top:64px">'+
+      '<div class="px-5 pt-5 pb-0">'+
+        '<h1 class="font-headline text-5xl tracking-tight leading-none mb-4">MORNING</h1>'+
+        tabBar+
+      '</div>'+
+    '</div>'+
+    '<div class="flex-1 overflow-y-auto px-5 pb-24">'+content+'</div>'+
+    navHTML('morning')+
+  '</div>';
 }
 
-
-// ══════════════════════════════════════════════════════════════════
-// MORNING ROUTINE — workout e logica
-// ══════════════════════════════════════════════════════════════════
 function mrStart(dur){
   mrReset();
   MR_STATE.exDuration=dur||60;
@@ -6431,6 +6429,7 @@ function renderDpuWorkout(){
   </div>`;
 }
 
+function toggleDayAcc(k){state.plan.openAcc=state.plan.openAcc===("day-"+k)?null:("day-"+k);render();}
 function toggleAcc(id){state.plan.openAcc=state.plan.openAcc===id?null:id;render();}
 
 // ══════════════════════════════════════════════════════════════════
@@ -7753,7 +7752,8 @@ function axeSetDone(){
     if(state.axe.restRemaining<=0){
       clearAxeInterval();
       beepAxeGo();
-      state.axe.phase="idle";
+      // Auto-start set senza tap
+      state.axe.phase="work";
       render();
       return;
     }
@@ -8047,7 +8047,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v68';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v75';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
