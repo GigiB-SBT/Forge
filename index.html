@@ -87,9 +87,50 @@
       }
     </script>
 <style>
+  :root{
+    --text:#e1e2e7;
+    --muted:#8a95a0;
+    --dim:#4b5563;
+    --axe:#9C27B0;
+    --axeGlow:#C77DFF;
+  }
   .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
+  /* ── Pagina PROGRAMMI ─────────────────────────────────────────── */
+  .prog-page{padding:0 0 100px;}
+  .prog-header{padding:4px 18px 20px;}
+  .prog-header-title{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:1px;line-height:0.95;color:var(--text);}
+  .prog-header-sub{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5;}
+  .prog-section{margin:0 18px 26px;}
+  .prog-section-label{font-size:11px;letter-spacing:3px;color:#8a95a0;margin-bottom:10px;font-weight:700;}
+  .prog-day-chip{display:inline-block;font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid;margin:0 6px 6px 0;font-weight:600;}
+  .prog-suggest-card{background:#0C1017;border:1px solid #1E2A35;border-radius:14px;padding:16px;}
+  .prog-suggest-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:#e9c176;margin-bottom:10px;}
+  .prog-suggest-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .prog-suggest-note{font-size:13px;color:var(--text);line-height:1.6;}
+  .micro-card,.macro-card,.mob-card{background:#0C1017;border:1px solid #1E2A35;border-radius:16px;padding:16px;margin-bottom:14px;}
+  .micro-card.active-prog,.macro-card.active-prog{border-color:#00BFA5;box-shadow:0 0 0 1px rgba(0,191,165,0.3);}
+  .micro-card-header,.macro-card-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .micro-card-emoji{font-size:26px;line-height:1;}
+  .micro-card-title{font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--text);line-height:1.15;}
+  .micro-card-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .micro-week{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+  .micro-day-box{flex:1;min-width:38px;border:1px solid;border-radius:10px;padding:8px 2px;text-align:center;}
+  .micro-day-name{font-size:9px;letter-spacing:1px;color:#5a6472;margin-bottom:4px;}
+  .micro-day-act{font-family:'Bebas Neue',sans-serif;font-size:15px;}
+  .micro-activate-btn{width:100%;padding:12px;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;border:none;cursor:pointer;}
+  .macro-weeks{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+  .macro-week-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .macro-week-label{font-size:11px;color:var(--muted);min-width:50px;}
+  .macro-week-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;}
+  .macro-tag{font-size:11px;padding:3px 9px;border-radius:7px;font-weight:600;}
+  .mob-card{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .mob-emoji{font-size:24px;line-height:1;}
+  .mob-name{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--text);flex:1;min-width:100px;}
+  .mob-sets{font-size:12px;color:var(--muted);}
+  .mob-cue{font-size:11px;color:#5a6472;width:100%;line-height:1.4;}
+  .mob-yt{font-size:11px;color:#50dad1;font-weight:600;}
   .glow-kb-a { background: radial-gradient(circle, rgba(255, 182, 147, 0.15) 0%, transparent 70%); }
   .glow-kb-b { background: radial-gradient(circle, rgba(233, 193, 118, 0.15) 0%, transparent 70%); }
   .glow-kb-c { background: radial-gradient(circle, rgba(80, 218, 209, 0.15) 0%, transparent 70%); }
@@ -268,50 +309,67 @@ function beepAxeDone(){
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const EXERCISES={
-  "KB Swing":          {reps:"15–16 rip",yt:"https://www.youtube.com/results?search_query=kettlebell+swing+tutorial+form",cue:"Anca esplosiva, schiena dritta"},
-  "Push-up":           {reps:"10–12 rip",yt:"https://www.youtube.com/results?search_query=push+up+perfect+form+tutorial",cue:"Core stabile, corpo rigido"},
-  "Goblet Squat":      {reps:"12–15 rip",yt:"https://www.youtube.com/results?search_query=goblet+squat+kettlebell+tutorial",cue:"Ginocchia fuori, schiena verticale"},
+  "KB Swing":          {reps:"15–16 rip",yt:"https://youtu.be/0L0cOOpyPpA",cue:"Anca esplosiva, schiena dritta"},
+  "Push-up":           {reps:"10–12 rip",yt:"https://youtu.be/WDIpL0pjun0",cue:"Core stabile, corpo rigido"},
+  "Goblet Squat":      {reps:"12–15 rip",yt:"https://youtu.be/sIX71MwChNg",cue:"Ginocchia fuori, schiena verticale"},
   "Rest":              {reps:"Recupero",yt:null,cue:"Respira, preparati al prossimo minuto"},
-  "Clean + Press":     {reps:"8–10 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+press+tutorial",cue:"Clean pulito, press verticale"},
-  "Reverse Lunge":     {reps:"10 rip/lato",yt:"https://www.youtube.com/results?search_query=reverse+lunge+rack+position+kettlebell",cue:"Ginocchio non tocca il suolo"},
-  "One Arm Swing":     {reps:"12 rip/lato",yt:"https://www.youtube.com/results?search_query=one+arm+kettlebell+swing+tutorial",cue:"Stesso pattern del bimanuale"},
-  "Plank Shoulder Tap":{reps:"16 rip totali",yt:"https://www.youtube.com/results?search_query=plank+shoulder+tap+tutorial",cue:"Bacino stabile, niente rotazione"},
-  "Clean":             {reps:"× lato SX → DX",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+tutorial",cue:"Porta il KB in rack — poi squat — poi press. Non posare!"},
-  "Front Squat":       {reps:"da posizione rack",yt:"https://www.youtube.com/results?search_query=kettlebell+front+squat+tutorial",cue:"KB già in rack dal clean — squat profondo, ginocchia fuori"},
-  "Push Press":        {reps:"poi cambia lato",yt:"https://www.youtube.com/results?search_query=kettlebell+push+press+tutorial",cue:"Dip & drive dal rack — lockout completo — poi ripeti DX"},
+  "Clean + Press":     {reps:"8–10 rip/lato",yt:"https://youtu.be/BRCuLMnE-lY",cue:"Clean pulito, press verticale"},
+  "Reverse Lunge":     {reps:"10 rip/lato",yt:"https://youtu.be/r1NS0BNUh3c",cue:"Ginocchio non tocca il suolo"},
+  "One Arm Swing":     {reps:"12 rip/lato",yt:"https://youtu.be/0L0cOOpyPpA",cue:"Stesso pattern del bimanuale"},
+  "Plank Shoulder Tap":{reps:"16 rip totali",yt:"https://youtu.be/gKA5LBy7WAI",cue:"Bacino stabile, niente rotazione"},
+  "Clean":             {reps:"× lato SX → DX",yt:"https://youtu.be/arDE41m8qP8",cue:"Porta il KB in rack — poi squat — poi press. Non posare!"},
+  "Front Squat":       {reps:"da posizione rack",yt:"https://youtu.be/9VY88tcsA2w",cue:"KB già in rack dal clean — squat profondo, ginocchia fuori"},
+  "Push Press":        {reps:"poi cambia lato",yt:"https://youtu.be/CCqru4q9RK0",cue:"Dip & drive dal rack — lockout completo — poi ripeti DX"},
   "AMRAP 6'":          {reps:"Max round",yt:null,cue:"Intensità controllata, tecnica prima di tutto"},
   // ── EXTRA workouts ───────────────────────────────────────────────────────────
-  "KB Swing Bimanuale":    {reps:"10–20 rip",yt:"https://www.youtube.com/results?search_query=kettlebell+swing+hardstyle+tutorial",cue:"Anca esplosiva, schiena neutra"},
-  "Swing Bimanuale":       {reps:"15–20 rip",yt:"https://www.youtube.com/results?search_query=kettlebell+swing+hardstyle+tutorial",cue:"Anca esplosiva, schiena neutra"},
-  "KB Row":                {reps:"8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+single+arm+row+tutorial",cue:"Staggered stance, tira verso l'anca"},
-  "Plank KB Drag":         {reps:"10 drag dx→sx",yt:"https://www.youtube.com/results?search_query=plank+kettlebell+drag+tutorial",cue:"Plank alto, niente rotazione fianchi"},
-  "Reverse Lunge + Pass":  {reps:"8 tot",yt:"https://www.youtube.com/results?search_query=reverse+lunge+kettlebell+pass+tutorial",cue:"Passo indietro, passa KB, torna su"},
+  "KB Swing Bimanuale":    {reps:"10–20 rip",yt:"https://youtu.be/vek9BSHFo1c",cue:"Anca esplosiva, schiena neutra"},
+  "Swing Bimanuale":       {reps:"15–20 rip",yt:"https://youtu.be/vek9BSHFo1c",cue:"Anca esplosiva, schiena neutra"},
+  "KB Row":                {reps:"8 rip/lato",yt:"https://youtu.be/8gg400ddt-g",cue:"Staggered stance, tira verso l'anca"},
+  "Plank KB Drag":         {reps:"10 drag dx→sx",yt:"https://youtu.be/JGDdzQdRZns",cue:"Plank alto, niente rotazione fianchi"},
+  "Reverse Lunge + Pass":  {reps:"8 tot",yt:"https://youtu.be/r1NS0BNUh3c",cue:"Passo indietro, passa KB, torna su"},
   "Recupero attivo":       {reps:"Recupero",yt:null,cue:"Cammina, respira — KB a terra"},
   "Recupero":              {reps:"Recupero",yt:null,cue:"Respira — prossimo round in arrivo"},
   "Pausa blocco":          {reps:"Recupero",yt:null,cue:"Respira — prossimo blocco in arrivo"},
   "Pausa tra blocchi":     {reps:"Recupero",yt:null,cue:"Respira — prossimo blocco in arrivo"},
   "Cambio lato":           {reps:"15\"",yt:null,cue:"Passa la KB alla mano opposta"},
-  "Sumo Deadlift":         {reps:"10–12 rip",yt:"https://www.youtube.com/results?search_query=kettlebell+sumo+deadlift+tutorial",cue:"Piedi larghi, punte a 45° — spingi il pavimento"},
-  "Renegade Row":          {reps:"8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+renegade+row+tutorial",cue:"Plank rigido — tira verso l'anca non la spalla"},
-  "Goblet Squat Jump":     {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=goblet+squat+jump+kettlebell+tutorial",cue:"Squat profondo → spingi il suolo → atterra morbido"},
-  "KB Snatch":             {reps:"5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+snatch+tutorial+technique",cue:"Traiettoria verticale — KB vicina al corpo"},
-  "KB Halo":               {reps:"5 giri/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+halo+exercise+tutorial",cue:"KB capovolta — cerchio stretto, spalle basse"},
+  "Sumo Deadlift":         {reps:"10–12 rip",yt:"https://youtu.be/4n4zj1S-Sxg",cue:"Piedi larghi, punte a 45° — spingi il pavimento"},
+  "Renegade Row":          {reps:"8 rip/lato",yt:"https://youtu.be/JGDdzQdRZns",cue:"Plank rigido — tira verso l'anca non la spalla"},
+  "Goblet Squat Jump":     {reps:"Max rep",yt:"https://youtu.be/sIX71MwChNg",cue:"Squat profondo → spingi il suolo → atterra morbido"},
+  "KB Snatch":             {reps:"5 rip/lato",yt:"https://youtu.be/H9kD2Aqlssc",cue:"Traiettoria verticale — KB vicina al corpo"},
+  "KB Halo":               {reps:"5 giri/lato",yt:"https://youtu.be/Sci3lijQBmk",cue:"KB capovolta — cerchio stretto, spalle basse"},
   // ── Bellplex exercises ───────────────────────────────────────────────────────
-  "Thruster":              {reps:"5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+thruster+exercise+tutorial",cue:"Squat profondo → drive dall'anca → press sopra la testa — 1 movimento fluido"},
-  "KB High Pull":          {reps:"3-5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+high+pull+tutorial+technique",cue:"Gomito alto verso il soffitto — KB vicina al corpo — zip up"},
-  "Overhead Lunge":        {reps:"3-5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+overhead+lunge+tutorial",cue:"KB lockout sopra — braccio dritto — passo avanti — ginocchio sfiora il suolo"},
-  "KB Windmill":           {reps:"2-5 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+windmill+tutorial+technique",cue:"KB overhead — guarda la KB — ruota torso — tocca il piede opposto — torna su"},
-  "KB Clean":              {reps:"8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+technique+tutorial",cue:"Rack pulito — gomito a corpo, zero oscillazione"},
+  "Thruster":              {reps:"5 rip/lato",yt:"https://youtu.be/KYmAsdjO0XI",cue:"Squat profondo → drive dall'anca → press sopra la testa — 1 movimento fluido"},
+  "KB High Pull":          {reps:"3-5 rip/lato",yt:"https://youtu.be/mP1BHxBeAEM",cue:"Gomito alto verso il soffitto — KB vicina al corpo — zip up"},
+  "Overhead Lunge":        {reps:"3-5 rip/lato",yt:"https://youtu.be/1KqD4Bt06vM",cue:"KB lockout sopra — braccio dritto — passo avanti — ginocchio sfiora il suolo"},
+  "KB Windmill":           {reps:"2-5 rip/lato",yt:"https://youtu.be/1N1Qs9FO4GU",cue:"KB overhead — guarda la KB — ruota torso — tocca il piede opposto — torna su"},
+  "KB Clean":              {reps:"8 rip/lato",yt:"https://youtu.be/arDE41m8qP8",cue:"Rack pulito — gomito a corpo, zero oscillazione"},
   "Rest libero":           {reps:"Recupero",yt:null,cue:"Respira — qualità > velocità"},
-  "KB Press":              {reps:"6–8 rip/lato",yt:"https://www.youtube.com/results?search_query=kettlebell+strict+press+tutorial",cue:"Strict press — no dip, spingi con la spalla"},
-  "Push Press Alternato":  {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=kettlebell+push+press+alternating+tutorial",cue:"Dip & drive — lockout duro, alterna lati"},
-  "Burpee":                {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=burpee+perfect+form+tutorial",cue:"Plank → push-up → salto — ritmo costante"},
-  "Burpee + KB Deadlift":  {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=burpee+kettlebell+deadlift+combo",cue:"Burpee → in piedi → 1 deadlift KB = 1 rep"},
-  "Mountain Climber":      {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=mountain+climber+exercise+tutorial",cue:"Plank alto — ginocchia veloci, fianchi giù"},
-  "Squat Jump":            {reps:"Max rep",yt:"https://www.youtube.com/results?search_query=squat+jump+tutorial+form",cue:"Squat → spingi il suolo → atterra con ginocchia morbide"},
-  "Clean → Squat → Press (SX)":{reps:"Max triplette",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+squat+press+complex+tutorial",cue:"Clean → rack → squat → press → riabbassa"},
-  "Clean → Squat → Press (DX)":{reps:"Max triplette",yt:"https://www.youtube.com/results?search_query=kettlebell+clean+squat+press+complex+tutorial",cue:"Clean → rack → squat → press → riabbassa"},
+  "KB Press":              {reps:"6–8 rip/lato",yt:"https://youtu.be/He8TyCcK0sc",cue:"Strict press — no dip, spingi con la spalla"},
+  "Push Press Alternato":  {reps:"Max rep",yt:"https://youtu.be/CCqru4q9RK0",cue:"Dip & drive — lockout duro, alterna lati"},
+  "Burpee":                {reps:"Max rep",yt:"https://youtu.be/G2hv_NYhM-A",cue:"Plank → push-up → salto — ritmo costante"},
+  "Burpee + KB Deadlift":  {reps:"Max rep",yt:"https://youtu.be/G2hv_NYhM-A",cue:"Burpee → in piedi → 1 deadlift KB = 1 rep"},
+  "Mountain Climber":      {reps:"Max rep",yt:"https://youtu.be/Q_olQdxEPF4",cue:"Plank alto — ginocchia veloci, fianchi giù"},
+  "Squat Jump":            {reps:"Max rep",yt:"https://youtu.be/81Qt5sbZJ90",cue:"Squat → spingi il suolo → atterra con ginocchia morbide"},
+  "Clean → Squat → Press (SX)":{reps:"Max triplette",yt:"https://youtu.be/BRCuLMnE-lY",cue:"Clean → rack → squat → press → riabbassa"},
+  "Clean → Squat → Press (DX)":{reps:"Max triplette",yt:"https://youtu.be/BRCuLMnE-lY",cue:"Clean → rack → squat → press → riabbassa"},
 };
+
+// ── PROGRAMMI (progressioni tecniche a lungo termine, da riempire nel tempo) ───
+const PROGRAMS=[
+  {
+    id:"tgu", label:"Turkish Get-Up", color:"#e9c176", emoji:"🔄",
+    intro:"Movimento tecnico in 6 fasi. Non aggiungere carico finché ogni step non è fluido e controllato — prima a corpo libero o con oggetto leggero in equilibrio sul pugno.",
+    yt:"https://youtu.be/0bWRPC49-KI",
+    steps:[
+      {title:"1. Roll to Elbow",   detail:"Da supino, un braccio verticale (finto KB). Rotola sul gomito mantenendo l'occhio sul pugno.", yt:null},
+      {title:"2. Roll to Hand",    detail:"Dal gomito, spingi fino ad appoggiarti sulla mano, braccio disteso.", yt:null},
+      {title:"3. Hip Lift (Bridge)", detail:"Dalla mano appoggiata, spingi il bacino su formando un ponte; la gamba libera scivola sotto.", yt:null},
+      {title:"4. Sweep the Leg Through", detail:"Porta la gamba piegata sotto il corpo fino alla posizione in ginocchio (half-kneeling).", yt:null},
+      {title:"5. Half Get-Up",     detail:"Sali fino alla posizione in ginocchio e torna giù. Ottimo esercizio a sé stante — allenalo a lungo prima di proseguire.", yt:null},
+      {title:"6. Lunge to Stand + Discesa", detail:"Dalla posizione in ginocchio, affondo inverso per arrivare in piedi. Poi ripercorri tutta la sequenza al contrario per tornare giù.", yt:null},
+    ],
+  },
+];
 
 function buildDayA(){
   const seq=[];
@@ -734,14 +792,16 @@ let state={
   activeProgram:(function(){
     try{
       const ap=JSON.parse(localStorage.getItem("kb-active-program")||"null");
-      // Valida struttura — deve avere days come array
-      if(ap&&(!ap.days||!Array.isArray(ap.days))){
+      // Valida struttura — i programmi micro/macro devono avere days come array;
+      // i programmi tecnici (type:"tech") usano steps, non days.
+      if(ap&&ap.type!=="tech"&&(!ap.days||!Array.isArray(ap.days))){
         localStorage.removeItem("kb-active-program");
         return null;
       }
       return ap;
     }catch(e){return null;}
   })(),
+  techProgress:JSON.parse(localStorage.getItem("kb-tech-progress")||"{}"),
   editingEntry:localStorage.getItem("kb-editing-entry")!==null ? Number(localStorage.getItem("kb-editing-entry")) : null,
   healthHistory:JSON.parse(localStorage.getItem("kb-health-history")||"[]"),
   healthProfile:JSON.parse(localStorage.getItem("kb-health-profile")||JSON.stringify({height:175,age:40})),
@@ -920,6 +980,15 @@ function saveExternalHistory(){localStorage.setItem("kb-external-history",JSON.s
 function saveAxeHistory(){localStorage.setItem("kb-axe-history",JSON.stringify(state.axeHistory));}
 function saveAxeProgress(){localStorage.setItem("kb-axe-progress",JSON.stringify(state.axeProgress));}
 function saveActiveProgram(){localStorage.setItem("kb-active-program",JSON.stringify(state.activeProgram));}
+function saveTechProgress(){localStorage.setItem("kb-tech-progress",JSON.stringify(state.techProgress));}
+function toggleTechStep(progId,stepIdx){
+  if(!state.techProgress[progId])state.techProgress[progId]=[];
+  const arr=state.techProgress[progId];
+  const i=arr.indexOf(stepIdx);
+  if(i>=0)arr.splice(i,1);else arr.push(stepIdx);
+  saveTechProgress();
+  render();
+}
 function dayColor(k){return DAYS[k]?.color||"#FF5722";}
 
 function ringHTML(total,remaining,color,countdown=false){
@@ -1185,7 +1254,7 @@ function renderHome(){
   var links = [
     {label:'Morning',      sub:'Routine + Wim Hof',     icon:'wb_sunny',        color:'#e9c176', action:"switchTab('morning')"},
     {label:'Tutti i workout', sub:'Train · AXE · KDP · BP', icon:'fitness_center', color:'#ffb693', action:"switchTab('train')"},
-    {label:'⚡ Finisher',   sub:'5 min AMRAP Snatch',   icon:'bolt',            color:'#e9c176', action:"state.finisherReturnTab='home';finStart()"},
+    {label:'Programmi',    sub:'Piano · Progressioni tecniche (TGU)', icon:'calendar_month', color:'#00BFA5', action:"switchTab('programs')"},
   ].map(function(l){
     return '<button onclick="'+l.action+'"'+
       ' class="flex items-center gap-4 py-4 px-4 active:scale-[0.98] transition-transform w-full"'+
@@ -1203,11 +1272,52 @@ function renderHome(){
   var warmupChips = MORNING_ROUTINE.exercises.map(function(ex,i){
     return '<button onclick="startSingleEx(\'warmup\','+i+')"'+
       ' class="flex-shrink-0 px-3 py-2 text-left active:scale-95"'+
-      ' style="background:rgba(233,193,118,0.06);border:1px solid rgba(233,193,118,0.2);min-width:100px">'+
+      ' style="background:rgba(233,193,118,0.14);border:1px solid rgba(233,193,118,0.5);min-width:100px">'+
       '<p class="font-headline text-sm leading-tight" style="color:#e9c176">'+ex.name+'</p>'+
       '<p class="font-label text-[8px] text-gray-500 mt-0.5">'+ex.duration+'s</p>'+
     '</button>';
   }).join('');
+
+  // Programma attivo (micro/macro/tecnico) — banner su Home
+  var activeProgBanner = '';
+  if(state.activeProgram){
+    var ap=state.activeProgram;
+    var apColor = ap.color || '#00BFA5';
+    var apTitle = ap.title || ap.label || 'Programma';
+    var apSub = '';
+    if(ap.type==='tech'){
+      var done=(state.techProgress[ap.id]||[]).length;
+      var total=(ap.steps||[]).length;
+      apSub = done+'/'+total+' fasi completate';
+    } else {
+      apSub = ap.subtitle || (ap.type==='micro'?'Microciclo attivo':'Macrociclo attivo');
+    }
+    activeProgBanner =
+      '<button onclick="switchTab(\'programs\')"'+
+        ' class="flex items-center gap-4 py-4 px-4 active:scale-[0.98] transition-transform w-full mb-3"'+
+        ' style="background:'+apColor+'14;border:1px solid '+apColor+'66;">'+
+        '<span class="material-symbols-outlined text-2xl flex-shrink-0" style="color:'+apColor+'">check_circle</span>'+
+        '<div class="text-left flex-1">'+
+          '<p class="font-label text-[9px] uppercase tracking-widest" style="color:'+apColor+'">Programma attivo</p>'+
+          '<p class="font-headline text-lg leading-none mt-0.5" style="color:'+apColor+'">'+apTitle+'</p>'+
+          '<p class="font-label text-[9px] text-gray-500 mt-0.5">'+apSub+'</p>'+
+        '</div>'+
+        '<span class="material-symbols-outlined" style="color:'+apColor+'">chevron_right</span>'+
+      '</button>';
+  }
+
+  // Finisher — banner giallo distinto (non una riga link come le altre)
+  var finisherBanner =
+    '<button onclick="state.finisherReturnTab=\'home\';finStart()"'+
+      ' class="flex items-center gap-4 py-4 px-4 active:scale-[0.98] transition-transform w-full mb-5"'+
+      ' style="background:rgba(233,193,118,0.14);border:1px solid rgba(233,193,118,0.5);">'+
+      '<span class="material-symbols-outlined text-2xl flex-shrink-0" style="color:#e9c176;font-variation-settings:\'FILL\' 1">bolt</span>'+
+      '<div class="text-left flex-1">'+
+        '<p class="font-headline text-lg leading-none" style="color:#e9c176">⚡ Finisher</p>'+
+        '<p class="font-label text-[9px] text-gray-500 mt-0.5">5 min AMRAP Snatch</p>'+
+      '</div>'+
+      '<span class="material-symbols-outlined" style="color:#e9c176">chevron_right</span>'+
+    '</button>';
 
   return '<div class="screen bg-background" style="padding-top:64px;">'+
     '<main class="px-5 pt-5 pb-24">'+
@@ -1222,6 +1332,12 @@ function renderHome(){
         '</div>'+
         '<div class="grid grid-cols-3 gap-2">'+dayChips+'</div>'+
       '</div>'+
+
+      // Programma attivo (se presente)
+      activeProgBanner+
+
+      // Finisher — banner giallo
+      finisherBanner+
 
       // Link sezioni
       '<div class="space-y-1.5 mb-5">'+links+'</div>'+
@@ -2266,33 +2382,77 @@ function renderPrograms(){
   // ── Microcicli ──
   const microCards=MICROCYCLES.map(function(mc){
     const isActive=ap&&ap.id===mc.id;
+    const isOpen=state.openCycleId==="micro-"+mc.id;
     const sortedDays=[...(mc.days||[])].sort((a,b)=>a.d-b.d);
     const dayBoxes=sortedDays.map(d=>microDayBoxHTML(d,DAYS_IT)).join("");
     const btnHTML=isActive
-      ?'<button class="micro-activate-btn" style="background:#001A10;border:1.5px solid #00BFA5;color:#00BFA5;" onclick="deactivateProgram()">✅ Attivo — Disattiva</button>'
-      :'<button class="micro-activate-btn" style="background:'+mc.color+';color:#fff;" onclick="activateProgram(\'micro\',\''+mc.id+'\')">▶ Attiva questo microciclo</button>';
-    return '<div class="micro-card '+(isActive?'active-prog':'')+'"><div class="micro-card-header"><span class="micro-card-emoji">'+mc.emoji+'</span><div><div class="micro-card-title">'+mc.title+'</div><div class="micro-card-sub">'+mc.subtitle+'</div></div></div>'
-      +'<div class="micro-week">'+dayBoxes+'</div>'
-      +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">'+mc.desc+'</div>'
-      +btnHTML+'</div>';
+      ?'<button class="micro-activate-btn" style="background:#001A10;border:1.5px solid #00BFA5;color:#00BFA5;" onclick="event.stopPropagation();deactivateProgram()">✅ Attivo — Disattiva</button>'
+      :'<button class="micro-activate-btn" style="background:'+mc.color+';color:#fff;" onclick="event.stopPropagation();activateProgram(\'micro\',\''+mc.id+'\')">▶ Attiva questo microciclo</button>';
+    return '<div class="micro-card '+(isActive?'active-prog':'')+'" style="cursor:pointer;" onclick="state.openCycleId=state.openCycleId===\'micro-'+mc.id+'\'?null:\'micro-'+mc.id+'\';render();">'
+      +'<div class="micro-card-header"><span class="micro-card-emoji">'+mc.emoji+'</span><div style="flex:1;"><div class="micro-card-title">'+mc.title+(isActive?' <span style="font-size:11px;color:#00BFA5;">● attivo</span>':'')+'</div><div class="micro-card-sub">'+mc.subtitle+'</div></div>'
+      +'<span class="material-symbols-outlined" style="color:#5a6472;transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s;">expand_more</span></div>'
+      +(isOpen?('<div class="micro-week">'+dayBoxes+'</div>'
+        +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">'+mc.desc+'</div>'
+        +btnHTML):'')
+      +'</div>';
   }).join("");
 
   // ── Macrocicli ──
   const macroCards=MACROCYCLES.map(function(mc){
     const isActive=ap&&ap.id===mc.id;
+    const isOpen=state.openCycleId==="macro-"+mc.id;
     const weekRows=mc.weeks.map(macroWeekRowHTML).join("");
     const btnHTML=isActive
-      ?'<button class="micro-activate-btn" style="background:#1A1200;border:1.5px solid #FFC107;color:#FFC107;margin-top:6px;" onclick="deactivateProgram()">✅ Attivo — Disattiva</button>'
-      :'<button class="micro-activate-btn" style="background:'+mc.color+';color:#000;margin-top:6px;" onclick="activateProgram(\'macro\',\''+mc.id+'\')">▶ Attiva questo macrociclo</button>';
-    return '<div class="macro-card '+(isActive?'active-prog':'')+'"><div class="macro-card-header"><span style="font-size:28px;">'+mc.emoji+'</span><div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;">'+mc.title+'</div><div style="font-size:12px;color:var(--muted);">'+mc.subtitle+'</div></div></div>'
-      +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">'+mc.desc+'</div>'
-      +'<div class="macro-weeks">'+weekRows+'</div>'
-      +btnHTML+'</div>';
+      ?'<button class="micro-activate-btn" style="background:#1A1200;border:1.5px solid #FFC107;color:#FFC107;margin-top:6px;" onclick="event.stopPropagation();deactivateProgram()">✅ Attivo — Disattiva</button>'
+      :'<button class="micro-activate-btn" style="background:'+mc.color+';color:#000;margin-top:6px;" onclick="event.stopPropagation();activateProgram(\'macro\',\''+mc.id+'\')">▶ Attiva questo macrociclo</button>';
+    return '<div class="macro-card '+(isActive?'active-prog':'')+'" style="cursor:pointer;" onclick="state.openCycleId=state.openCycleId===\'macro-'+mc.id+'\'?null:\'macro-'+mc.id+'\';render();">'
+      +'<div class="macro-card-header"><span style="font-size:28px;">'+mc.emoji+'</span><div style="flex:1;"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;">'+mc.title+(isActive?' <span style="font-size:11px;color:#FFC107;">● attivo</span>':'')+'</div><div style="font-size:12px;color:var(--muted);">'+mc.subtitle+'</div></div>'
+      +'<span class="material-symbols-outlined" style="color:#5a6472;transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s;">expand_more</span></div>'
+      +(isOpen?('<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">'+mc.desc+'</div>'
+        +'<div class="macro-weeks">'+weekRows+'</div>'
+        +btnHTML):'')
+      +'</div>';
   }).join("");
 
   // ── Mobilità warm-up ──
   const mobCards=MOBILITY_EX.map(function(ex){
     return '<div class="mob-card"><div class="mob-emoji">'+ex.emoji+'</div><div class="mob-name">'+ex.name+'</div><div class="mob-sets">'+ex.sets+'</div><div class="mob-cue">'+ex.cue+'</div><a href="'+ex.yt+'" target="_blank" class="mob-yt">▶️ Video</a></div>';
+  }).join("");
+
+  // ── Progressioni tecniche (da riempire nel tempo) ──
+  const progCards=PROGRAMS.map(function(p){
+    const isOpen=state.openProgId===p.id;
+    const isActive=ap&&ap.type==="tech"&&ap.id===p.id;
+    const doneSteps=state.techProgress[p.id]||[];
+    const doneCount=doneSteps.length;
+    const totalSteps=p.steps.length;
+    const stepsHTML=p.steps.map(function(s,i){
+      const checked=doneSteps.indexOf(i)>=0;
+      return '<div style="display:flex;gap:10px;padding-left:2px;border-left:2px solid '+p.color+'44;margin-bottom:10px;padding-left:10px;">'
+        +'<div onclick="event.stopPropagation();toggleTechStep(\''+p.id+'\','+i+')" style="flex-shrink:0;width:22px;height:22px;border-radius:6px;border:1.5px solid '+(checked?p.color:'#3a4048')+';background:'+(checked?p.color:'transparent')+';display:flex;align-items:center;justify-content:center;margin-top:2px;cursor:pointer;">'
+          +(checked?'<span class="material-symbols-outlined" style="font-size:15px;color:#000;">check</span>':'')
+        +'</div>'
+        +'<div style="flex:1;'+(checked?'opacity:0.55;':'')+'">'
+          +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:15px;color:'+p.color+';'+(checked?'text-decoration:line-through;':'')+'">'+s.title+'</div>'
+          +'<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:2px;">'+s.detail+'</div>'
+          +(s.yt?'<a href="'+s.yt+'" target="_blank" onclick="event.stopPropagation();" style="font-size:11px;color:'+p.color+';display:inline-block;margin-top:3px;">▶ Video</a>'
+                :'<div style="font-size:11px;color:#3A3A3A;font-style:italic;margin-top:3px;">video da aggiungere</div>')
+        +'</div>'
+        +'</div>';
+    }).join("");
+    const activateBtnHTML=isActive
+      ?'<button class="micro-activate-btn" style="background:#1a1400;border:1.5px solid '+p.color+';color:'+p.color+';margin-bottom:14px;" onclick="event.stopPropagation();deactivateProgram()">✅ Attivo — Disattiva</button>'
+      :'<button class="micro-activate-btn" style="background:'+p.color+';color:#000;margin-bottom:14px;" onclick="event.stopPropagation();activateProgram(\'tech\',\''+p.id+'\')">▶ Attiva questa progressione</button>';
+    return '<div class="micro-card '+(isActive?'active-prog':'')+'" style="cursor:pointer;" onclick="state.openProgId=state.openProgId===\''+p.id+'\'?null:\''+p.id+'\';render();">'
+      +'<div class="micro-card-header"><span class="micro-card-emoji">'+p.emoji+'</span><div style="flex:1;"><div class="micro-card-title">'+p.label+(isActive?' <span style="font-size:11px;color:'+p.color+';">● attivo</span>':'')+'</div>'
+      +'<div class="micro-card-sub">'+doneCount+'/'+totalSteps+' fasi completate</div></div>'
+      +'<span class="material-symbols-outlined" style="color:#5a6472;transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s;">expand_more</span></div>'
+      +(isOpen?'<div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px;">'+p.intro+'</div>'
+        +(p.yt?'<a href="'+p.yt+'" target="_blank" onclick="event.stopPropagation();" style="font-size:11px;color:'+p.color+';display:inline-block;margin-bottom:12px;border:1px solid '+p.color+'55;padding:4px 10px;border-radius:8px;">▶️ Video introduttivo</a>':'')
+        +activateBtnHTML
+        +stepsHTML
+      :'')
+      +'</div>';
   }).join("");
 
   return `<div class="screen bg-background" style="padding-top:64px;">
@@ -2326,6 +2486,15 @@ function renderPrograms(){
           <div class="prog-suggest-row">${suggChipsHTML}</div>
           <div class="prog-suggest-note">${suggText}</div>
         </div>
+      </div>
+
+      <!-- Progressioni tecniche -->
+      <div class="prog-section">
+        <div class="prog-section-label">🔄 PROGRESSIONI TECNICHE</div>
+        <div style="background:#0A0A0A;border:1px solid #1E2A35;border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:13px;color:var(--muted);line-height:1.6;">
+          Movimenti tecnici da costruire a step nel tempo — non sono allenamenti a sé. Attivane una per vederla in evidenza in Home e traccia le fasi completate. Sezione in crescita, la riempiamo un po' alla volta.
+        </div>
+        ${progCards}
       </div>
 
       <!-- Microcicli -->
@@ -3046,7 +3215,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP2: Zeus ─────────────────────────────────────────────────────────────
   {
-    id:"BP2",yt:"https://youtu.be/FzCWl-Mqq-4",label:"Zeus",emoji:"⚡",color:"#1E88E5",
+    id:"BP2",yt:"https://youtu.be/UNy-i6FBOm4",label:"Zeus",emoji:"⚡",color:"#1E88E5",
     title:"Zeus",
     meta:"Bellplex · ~20 min · 5 serie · KB singola",
     totalMin:20,
@@ -3071,7 +3240,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP3: Hercules ─────────────────────────────────────────────────────────
   {
-    id:"BP3",yt:"https://youtu.be/NXL_Z01j9yY",label:"Hercules",emoji:"💪",color:"#8E24AA",
+    id:"BP3",yt:"https://youtu.be/FzCWl-Mqq-4",label:"Hercules",emoji:"💪",color:"#8E24AA",
     title:"Hercules",
     meta:"Bellplex · ~18 min · 5 serie · KB singola",
     totalMin:18,
@@ -3096,7 +3265,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP4: Poseidon ─────────────────────────────────────────────────────────
   {
-    id:"BP4",yt:"https://youtu.be/WsxQpHW-G8U",label:"Poseidon",emoji:"🔱",color:"#00ACC1",
+    id:"BP4",yt:"https://youtu.be/NXL_Z01j9yY",label:"Poseidon",emoji:"🔱",color:"#00ACC1",
     title:"Poseidon",
     meta:"Bellplex · ~20 min · 5 serie · KB singola",
     totalMin:20,
@@ -3296,7 +3465,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP12: Leonidas ────────────────────────────────────────────────────────
   {
-    id:"BP12",yt:"https://youtu.be/ySgQaLb4BLg",label:"Leonidas",emoji:"🛡️",color:"#C62828",
+    id:"BP12",yt:"https://youtu.be/ED_1Qt78RBg",label:"Leonidas",emoji:"🛡️",color:"#C62828",
     title:"Leonidas",
     meta:"Bellplex · ~18 min · 5 serie · KB singola",
     totalMin:18,
@@ -3321,7 +3490,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP13: Codi Special ────────────────────────────────────────────────────
   {
-    id:"BP13",yt:"https://youtu.be/ED_1Qt78RBg",label:"Codi Special",emoji:"🔥",color:"#FF6F00",
+    id:"BP13",yt:"https://youtu.be/MSRx8FJKaXc",label:"Codi Special",emoji:"🔥",color:"#FF6F00",
     title:"Codi Special",
     meta:"Bellplex · ~18 min · 5 serie · KB singola",
     totalMin:18,
@@ -3346,7 +3515,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP14: Starky Boy ──────────────────────────────────────────────────────
   {
-    id:"BP14",yt:"https://youtu.be/MSRx8FJKaXc",label:"Starky Boy",emoji:"🌠",color:"#0277BD",
+    id:"BP14",yt:"https://youtu.be/RUre3CfbWJU",label:"Starky Boy",emoji:"🌠",color:"#0277BD",
     title:"Starky Boy",
     meta:"Bellplex · ~18 min · 5 serie · KB singola · × 5 rip",
     totalMin:18,
@@ -3371,7 +3540,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP15: Big Mick ────────────────────────────────────────────────────────
   {
-    id:"BP15",yt:"https://youtu.be/RUre3CfbWJU",label:"Big Mick",emoji:"💥",color:"#558B2F",
+    id:"BP15",yt:"https://youtu.be/sojqDX7y5P4",label:"Big Mick",emoji:"💥",color:"#558B2F",
     title:"Big Mick",
     meta:"Bellplex · ~20 min · 5 serie · KB singola",
     totalMin:20,
@@ -3396,7 +3565,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP16: King Kong (double bell) ─────────────────────────────────────────
   {
-    id:"BP16",yt:"https://youtu.be/sojqDX7y5P4",label:"King Kong",emoji:"🦍",color:"#4A148C",
+    id:"BP16",yt:"https://youtu.be/pMPTlkX0h0g",label:"King Kong",emoji:"🦍",color:"#4A148C",
     title:"King Kong",
     meta:"Bellplex · ~20 min · 5 serie · DOPPIA KB",
     totalMin:20,
@@ -3420,7 +3589,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP17: Devil's Tricycle (2 mani) ───────────────────────────────────────
   {
-    id:"BP17",yt:"https://youtu.be/pMPTlkX0h0g",label:"Devil's Tricycle",emoji:"😈",color:"#B71C1C",
+    id:"BP17",yt:"https://youtu.be/0Vjjxw8mCfs",label:"Devil's Tricycle",emoji:"😈",color:"#B71C1C",
     title:"Devil's Tricycle",
     meta:"Bellplex · ~20 min · 5 serie · 2 mani sulla KB",
     totalMin:20,
@@ -3445,7 +3614,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP18: DeGiuli ─────────────────────────────────────────────────────────
   {
-    id:"BP18",yt:"https://youtu.be/0Vjjxw8mCfs",label:"DeGiuli",emoji:"💀",color:"#263238",
+    id:"BP18",yt:"https://youtu.be/H0frXMG7Apw",label:"DeGiuli",emoji:"💀",color:"#263238",
     title:"DeGiuli",
     meta:"Bellplex · ~18 min · 5 serie · KB singola · × 6 rip",
     totalMin:18,
@@ -3469,7 +3638,7 @@ const EXTRA_WORKOUTS=[
 
   // ── BP19: Helldiver (2 KB preferred) ─────────────────────────────────────
   {
-    id:"BP19",yt:"https://youtu.be/H0frXMG7Apw",label:"Helldiver",emoji:"🔱",color:"#880E4F",
+    id:"BP19",yt:"https://youtu.be/JVazUjG1tgk",label:"Helldiver",emoji:"🔱",color:"#880E4F",
     title:"Helldiver",
     meta:"Bellplex · ~20 min · 5 serie · 2 KB preferibili",
     totalMin:20,
@@ -3523,7 +3692,7 @@ const EXTRA_WORKOUTS=[
     rounds:7,
   },
   {
-    id:"BP20",yt:"https://youtu.be/JVazUjG1tgk",label:"Worst Complex Ever",emoji:"☠️",color:"#212121",
+    id:"BP20",yt:"https://youtu.be/1Zd2SBDFsHc",label:"Worst Complex Ever",emoji:"☠️",color:"#212121",
     title:"Worst Complex Ever",
     meta:"Bellplex · ~25 min · 5 serie · DOPPIA KB",
     totalMin:25,
@@ -7474,6 +7643,7 @@ function render(){
   else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
   else if(state.tab==="kdp-workout") app.innerHTML=renderKdpWorkout();
   else if(state.tab==="finisher")     app.innerHTML=renderFinisher();
+  else if(state.tab==="programs")     app.innerHTML=renderPrograms();
   else if(state.tab==="morning")      app.innerHTML=renderMorning();
   else if(state.tab==="settings")    app.innerHTML=renderSettings();
   else if(state.tab==="ai-plan")      app.innerHTML=renderAIPlan();
@@ -8020,14 +8190,16 @@ function importJSON(){
 function activateProgram(type,id){
   const prog=type==="micro"
     ?MICROCYCLES.find(m=>m.id===id)
-    :MACROCYCLES.find(m=>m.id===id);
+    :type==="macro"
+    ?MACROCYCLES.find(m=>m.id===id)
+    :PROGRAMS.find(m=>m.id===id);
   if(!prog)return;
   state.activeProgram={...prog,type};
   saveActiveProgram();
   render();
   const hint=document.getElementById('sound-hint');
   if(hint){
-    hint.textContent=`✅ "${prog.title}" attivato`;
+    hint.textContent=`✅ "${prog.title||prog.label}" attivato`;
     hint.classList.add('show');
     setTimeout(()=>{hint.classList.remove('show');hint.textContent='🔊 Tocca Start per attivare l\'audio';},2500);
   }
