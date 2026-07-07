@@ -1740,7 +1740,8 @@ function renderLog(){
           <p class="font-headline text-xl tracking-widest">NESSUNA SESSIONE</p>
           <p class="font-label text-sm mt-2">Inizia il primo allenamento</p>
         </div>`
-      :visible.map(h=>{
+      :(function(){
+        function entryCardHTML(h){
         const isExt=h._src==="ext";
         const realIdx=isExt?extHist.findIndex(e=>e.date===h.date&&e.type===h.type):hist.findIndex(e=>e.date===h.date&&e.day===h.day&&(e.duration===h.duration||e.notes===h.notes));
         const editKey=isExt?`ext_${realIdx}`:`kb_${realIdx}`;
@@ -1749,16 +1750,15 @@ function renderLog(){
         const isKDP=isExt&&h._kdp;
         const isFinisher=isExt&&h._finisher;
         const isAxeEntry=isExt&&h._axe;
+        const isMorningEntry=isExt&&h._morning;
         const col=isExt
-          ?(isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#ef4444"))
+          ?(isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":isMorningEntry?"#64748b":(EXT_C[h.type]||"#ef4444"))
           :(isBP?"#ffb4ab":(KPhex[h.day]||"#ffb693"));
         const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
         const bpW=rawId.startsWith("BP")?getExtraById(rawId):null;
         const label=isExt
           ?(isAxeEntry?"AXE Protocol":isKDP?"KDP-26":isFinisher?"Finisher Snatch":h.type)
           :(bpW?(bpW.label+" — "+bpW.title):rawId?rawId:`Giorno ${h.day}`);
-        const [dayN,...rest]=h.date?h.date.split("/"):["—"];
-        const mo=rest.length?["","GEN","FEB","MAR","APR","MAG","GIU","LUG","AGO","SET","OTT","NOV","DIC"][Number(rest[0])]||"":"";
         const editBlock=isEditing?`<div class="mt-3 pt-3 border-t border-white/5 space-y-3">
           <div class="grid grid-cols-2 gap-3">
             <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">HR Media</label>
@@ -1771,23 +1771,19 @@ function renderLog(){
           <button onclick="closeEdit()" class="w-full py-3 font-headline text-lg tracking-widest" style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">✓ CHIUDI</button>
         </div>`:"";
         const isFolded=state.openLogKey!==editKey;
-        return `<div class="bg-surface-container ghost-border transition-colors" style="border-left:2px solid ${col}">
-          <button onclick="state.openLogKey=state.openLogKey==='${editKey}'?null:'${editKey}';render();" class="w-full flex items-center gap-4 p-4 text-left active:bg-surface-container-high">
-          <div class="text-center w-9 flex-shrink-0">
-            <p class="font-headline text-xl leading-none">${dayN}</p>
-            <p class="font-label text-[8px] uppercase text-gray-600">${mo}</p>
-          </div>
+        return `<div class="bg-surface-container-low" style="border-left:2px solid ${col}">
+          <button onclick="event.stopPropagation();state.openLogKey=state.openLogKey==='${editKey}'?null:'${editKey}';render();" class="w-full flex items-center gap-3 p-3 text-left active:bg-surface-container-high">
           <div class="flex-1 min-w-0">
-            <p class="font-headline text-lg leading-none" style="color:${col}">${label.toUpperCase()}</p>
+            <p class="font-headline text-base leading-none" style="color:${col}">${label.toUpperCase()}${h._mergedCount>1?` <span style="font-size:10px;color:#8a95a0;">×${h._mergedCount}</span>`:''}</p>
             <div class="flex gap-3 mt-1 flex-wrap">
               ${h.duration?`<span class="font-label text-[9px] text-gray-500 uppercase">${h.duration} min</span>`:''}
               ${!isFolded&&h.hrAvg?`<span class="font-label text-[9px] uppercase" style="color:#ffb4ab">❤️ ${h.hrAvg}</span>`:''}
               ${!isFolded&&h.feeling?`<span class="font-label text-[9px] text-gray-500">${h.feeling}</span>`:''}
             </div>
           </div>
-          <span class="material-symbols-outlined text-gray-600 flex-shrink-0" style="transform:${isFolded?'none':'rotate(180deg)'};transition:transform .2s">expand_more</span>
+          <span class="material-symbols-outlined text-gray-600 flex-shrink-0 text-lg" style="transform:${isFolded?'none':'rotate(180deg)'};transition:transform .2s">expand_more</span>
           </button>
-          ${!isFolded?`<div class="px-4 pb-4 -mt-1">
+          ${!isFolded?`<div class="px-3 pb-3 -mt-1">
             ${h.hrAvg||h.hrMax?`<div class="flex gap-3 mb-1 flex-wrap">
               ${h.hrAvg?`<span class="font-label text-[9px] uppercase" style="color:#ffb4ab">❤️ media ${h.hrAvg}</span>`:''}
               ${h.hrMax?`<span class="font-label text-[9px] uppercase text-gray-500">max ${h.hrMax}</span>`:''}
@@ -1804,7 +1800,69 @@ function renderLog(){
             </div>
           </div>`:''}
         </div>`;
-      }).join("");
+        }
+
+        // Raggruppa per data
+        const groups=[];
+        const byDate={};
+        visible.forEach(h=>{
+          if(!byDate[h.date]){byDate[h.date]={date:h.date,items:[]};groups.push(byDate[h.date]);}
+          byDate[h.date].items.push(h);
+        });
+
+        // Fonde sessioni quasi identiche (stesso tipo/etichetta, durata simile) registrate lo stesso giorno —
+        // tipicamente un doppio salvataggio involontario a pochi minuti di distanza.
+        function sessionKey(h){
+          const isExt=h._src==="ext";
+          return isExt
+            ?(h._axe?"axe":h._kdp?"kdp":h._finisher?"fin":h._morning?"morning":("ext:"+(h.type||"")))
+            :("kb:"+(h.day||""));
+        }
+        function mergeCloseSessions(items){
+          const out=[];
+          items.forEach(h=>{
+            const k=sessionKey(h);
+            const match=out.find(m=>sessionKey(m)===k&&Math.abs((m.duration||0)-(h.duration||0))<=3);
+            if(match){
+              match._mergedCount=(match._mergedCount||1)+1;
+              if(!match.notes&&h.notes)match.notes=h.notes;
+              if(!match.hrAvg&&h.hrAvg)match.hrAvg=h.hrAvg;
+              if(!match.hrMax&&h.hrMax)match.hrMax=h.hrMax;
+              if(!match.feeling&&h.feeling)match.feeling=h.feeling;
+            } else {
+              out.push(Object.assign({},h));
+            }
+          });
+          return out;
+        }
+
+        return groups.map(g=>{
+          const mergedItems=mergeCloseSessions(g.items);
+          const [dayN,...rest]=g.date?g.date.split("/"):["—"];
+          const mo=rest.length?["","GEN","FEB","MAR","APR","MAG","GIU","LUG","AGO","SET","OTT","NOV","DIC"][Number(rest[0])]||"":"";
+          const dayKey="day_"+g.date;
+          const dayOpen=state.openLogDay===dayKey;
+          const totalMin=mergedItems.reduce((s,h)=>s+(h.duration||0),0);
+          const dotColors=[...new Set(mergedItems.map(h=>{
+            const isExt=h._src==="ext";
+            return isExt?(h._axe?"#8b5cf6":h._kdp?"#7A9A3A":h._finisher?"#e9c176":h._morning?"#64748b":(EXT_C[h.type]||"#ef4444")):(h.day&&h.day.startsWith("extra_BP")?"#ffb4ab":(KPhex[h.day]||"#ffb693"));
+          }))];
+          return `<div class="bg-surface-container ghost-border mb-1.5">
+            <button onclick="state.openLogDay=state.openLogDay==='${dayKey}'?null:'${dayKey}';render();" class="w-full flex items-center gap-4 p-4 text-left active:bg-surface-container-high">
+              <div class="text-center w-9 flex-shrink-0">
+                <p class="font-headline text-xl leading-none">${dayN}</p>
+                <p class="font-label text-[8px] uppercase text-gray-600">${mo}</p>
+              </div>
+              <div class="flex-1 min-w-0 flex items-center gap-2">
+                <div class="flex gap-1">${dotColors.map(c=>`<span class="w-2 h-2 rounded-full inline-block" style="background:${c}"></span>`).join("")}</div>
+                <p class="font-label text-[10px] text-gray-500 uppercase tracking-wider">${mergedItems.length} ${mergedItems.length===1?'sessione':'sessioni'}${totalMin?' · '+totalMin+' min':''}</p>
+              </div>
+              <span class="material-symbols-outlined text-gray-600 flex-shrink-0" style="transform:${dayOpen?'rotate(180deg)':'none'};transition:transform .2s">expand_more</span>
+            </button>
+            ${dayOpen?`<div class="px-3 pb-3 space-y-1.5">${mergedItems.map(entryCardHTML).join("")}</div>`:''}
+          </div>`;
+        }).join("");
+      })();
 
     return `${filterBar}${manualForm}${extForm}<div class="space-y-1">${list}</div>
     <!-- Backup -->
@@ -2171,7 +2229,7 @@ function renderAxeWorkout(){
   if(isRest){
     ringSection='<div class="flex flex-col items-center py-6">'+
       '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-3">RIPOSO</p>'+
-      ringHTML(ax.restSec,ax.restRemaining,"#50dad1",ax.restRemaining<=3&&ax.restRemaining>0)+
+      '<div class="axe-ring-wrap">'+ringHTML(ax.restSec,ax.restRemaining,"#50dad1",ax.restRemaining<=3&&ax.restRemaining>0)+'</div>'+
       '<p class="font-label text-[10px] text-gray-500 mt-3">Il set parte automaticamente</p>'+
     '</div>';
   } else if(isWork){
@@ -2225,7 +2283,7 @@ function renderAxeWorkout(){
         '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500">AXE — SET '+ax.setsDone+' / '+ax.targetSets+'</p>'+
         '<p class="font-headline text-xl" style="color:'+accent+'">'+phaseLabel+'</p>'+
       '</div>'+
-      '<button onclick="axeFinishSession()" class="font-label text-[9px] uppercase tracking-widest px-3 py-2" style="border:1px solid rgba(90,65,54,0.4);color:#64748b">FINE</button>'+
+      '<button onclick="axeConfirmFinish()" class="font-label text-[9px] uppercase tracking-widest px-3 py-2" style="border:1px solid rgba(90,65,54,0.4);color:#64748b">FINE</button>'+
     '</div>'+
 
     // Barra progresso
@@ -2246,7 +2304,6 @@ function renderAxeWorkout(){
       // Pulsante
       '<div class="px-5 pb-6 space-y-2">'+
         actionBtn+
-        (isWork?'<button onclick="axeFinishSession()" class="w-full py-2 font-label text-[9px] uppercase tracking-widest" style="color:#64748b">Fine sessione</button>':'')+
       '</div>'+
     '</div>'+
   '</div>';
@@ -7966,6 +8023,12 @@ function axeSkipRest(){
   render();
 }
 
+function axeConfirmFinish(){
+  if(state.axe.setsDone<=0){axeFinishSession();return;}
+  if(confirm('Terminare la sessione AXE?\n'+state.axe.setsDone+'/'+state.axe.targetSets+' set completati.')){
+    axeFinishSession();
+  }
+}
 function axeFinishSession(){
   clearAxeInterval();
   releaseWakeLock();
