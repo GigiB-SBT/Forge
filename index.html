@@ -1324,6 +1324,9 @@ function renderHome(){
 
       aiCard+
 
+      // Allenamento del giorno / riposo (suggerimento algoritmico)
+      sugCard+
+
       // Giorni KB
       '<div class="mb-5">'+
         '<div class="flex justify-between items-center mb-2">'+
@@ -1682,7 +1685,7 @@ function renderLog(){
     });
     const visible=filter==="kb"?allSessions.filter(h=>h._src==="kb"):filter==="external"?allSessions.filter(h=>h._src==="ext"):allSessions;
     const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
-    const EXT_C={"Calisthenics":"#50dad1","Corsa":"#ffb693","SUP":"#06b6d4","Yoga":"#8b5cf6","Ciclismo":"#e9c176","Nuoto":"#0891b2","Calcio":"#22c55e","Altro":"#64748b"};
+    const EXT_C={"Calisthenics":"#50dad1","Corsa":"#ffb693","SUP":"#06b6d4","Yoga":"#8b5cf6","Ciclismo":"#e9c176","Nuoto":"#0891b2","Calcio":"#22c55e","Altro":"#ef4444"};
 
     const filterBar=`<div class="flex gap-2 mb-5">
       ${[{id:"all",l:"Tutti"},{id:"kb",l:"KB"},{id:"external",l:"Altri"}].map(f=>`<button onclick="setStatsFilter('${f.id}')"
@@ -1747,7 +1750,7 @@ function renderLog(){
         const isFinisher=isExt&&h._finisher;
         const isAxeEntry=isExt&&h._axe;
         const col=isExt
-          ?(isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#64748b"))
+          ?(isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#ef4444"))
           :(isBP?"#ffb4ab":(KPhex[h.day]||"#ffb693"));
         const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
         const bpW=rawId.startsWith("BP")?getExtraById(rawId):null;
@@ -1767,7 +1770,9 @@ function renderLog(){
           <input class="log-input w-full" type="text" placeholder="Note..." value="${h.notes||''}" onchange="editEntryField('${editKey}','notes',this.value)"/></div>
           <button onclick="closeEdit()" class="w-full py-3 font-headline text-lg tracking-widest" style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">✓ CHIUDI</button>
         </div>`:"";
-        return `<div class="flex items-center gap-4 p-4 bg-surface-container ghost-border hover:bg-surface-container-high transition-colors group" style="border-left:2px solid ${col}">
+        const isFolded=state.openLogKey!==editKey;
+        return `<div class="bg-surface-container ghost-border transition-colors" style="border-left:2px solid ${col}">
+          <button onclick="state.openLogKey=state.openLogKey==='${editKey}'?null:'${editKey}';render();" class="w-full flex items-center gap-4 p-4 text-left active:bg-surface-container-high">
           <div class="text-center w-9 flex-shrink-0">
             <p class="font-headline text-xl leading-none">${dayN}</p>
             <p class="font-label text-[8px] uppercase text-gray-600">${mo}</p>
@@ -1776,20 +1781,28 @@ function renderLog(){
             <p class="font-headline text-lg leading-none" style="color:${col}">${label.toUpperCase()}</p>
             <div class="flex gap-3 mt-1 flex-wrap">
               ${h.duration?`<span class="font-label text-[9px] text-gray-500 uppercase">${h.duration} min</span>`:''}
-              ${h.hrAvg?`<span class="font-label text-[9px] uppercase" style="color:#ffb4ab">❤️ ${h.hrAvg}</span>`:''}
-              ${h.feeling?`<span class="font-label text-[9px] text-gray-500">${h.feeling}</span>`:''}
+              ${!isFolded&&h.hrAvg?`<span class="font-label text-[9px] uppercase" style="color:#ffb4ab">❤️ ${h.hrAvg}</span>`:''}
+              ${!isFolded&&h.feeling?`<span class="font-label text-[9px] text-gray-500">${h.feeling}</span>`:''}
             </div>
-            ${h.notes?`<p class="font-label text-[10px] italic text-gray-600 mt-1">"${h.notes}"</p>`:''}
+          </div>
+          <span class="material-symbols-outlined text-gray-600 flex-shrink-0" style="transform:${isFolded?'none':'rotate(180deg)'};transition:transform .2s">expand_more</span>
+          </button>
+          ${!isFolded?`<div class="px-4 pb-4 -mt-1">
+            ${h.hrAvg||h.hrMax?`<div class="flex gap-3 mb-1 flex-wrap">
+              ${h.hrAvg?`<span class="font-label text-[9px] uppercase" style="color:#ffb4ab">❤️ media ${h.hrAvg}</span>`:''}
+              ${h.hrMax?`<span class="font-label text-[9px] uppercase text-gray-500">max ${h.hrMax}</span>`:''}
+            </div>`:''}
+            ${h.notes?`<p class="font-label text-[10px] italic text-gray-600 mb-2">"${h.notes}"</p>`:''}
             ${editBlock}
-          </div>
-          <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-            <button onclick="openEdit('${editKey}')" class="text-gray-600 hover:text-primary transition-colors">
-              <span class="material-symbols-outlined text-base">edit</span>
-            </button>
-            <button onclick="deleteEntryByKey('${editKey}')" class="text-gray-600 hover:text-error transition-colors">
-              <span class="material-symbols-outlined text-base">delete</span>
-            </button>
-          </div>
+            <div class="flex gap-4 mt-2 pt-2 border-t border-white/5">
+              <button onclick="openEdit('${editKey}')" class="flex items-center gap-1 text-gray-500 active:text-primary transition-colors">
+                <span class="material-symbols-outlined text-base">edit</span><span class="font-label text-[10px] uppercase tracking-widest">Modifica</span>
+              </button>
+              <button onclick="deleteEntryByKey('${editKey}')" class="flex items-center gap-1 text-gray-500 active:text-error transition-colors">
+                <span class="material-symbols-outlined text-base">delete</span><span class="font-label text-[10px] uppercase tracking-widest">Elimina</span>
+              </button>
+            </div>
+          </div>`:''}
         </div>`;
       }).join("");
 
@@ -4295,7 +4308,8 @@ function exitBellplex(){
     var roundsDone=(state.bpSerie||1)-1;
     var w=getExtraById(state.extraWorkoutId)||{};
     savePartialEntry(w.label||'Bellplex', roundsDone, state.startTime||null, (state.extraWorkoutId||''));
-    doExit();
+    var bpText=(w.title||'')+' '+(w.how||'');
+    showMuscleSummary(bpText,'train',{trainSubTab:'bellplex'},(w.label||'Bellplex')+' (parziale)');
   }
   function doExit(){
     state.tab="extra-detail";
@@ -6434,8 +6448,14 @@ function dpuExit(){
   function doSave(){
     if(DPU_STATE.tid){clearInterval(DPU_STATE.tid);DPU_STATE.tid=null;}
     if(DPU_STATE.round>0) dpuSave(true);
-    releaseWakeLock(); dpuReset();
-    state.tab='extra-detail'; state.extraDetailId='DPU'; render();
+    releaseWakeLock();
+    var doneRound=DPU_STATE.round>0;
+    dpuReset();
+    if(doneRound){
+      showMuscleSummary('push-up bodyweight','extra-detail',{extraDetailId:'DPU'},'Deep Push-Up EMOM (parziale)');
+    } else {
+      state.tab='extra-detail'; state.extraDetailId='DPU'; render();
+    }
   }
   function doExit(){
     if(DPU_STATE.tid){clearInterval(DPU_STATE.tid);DPU_STATE.tid=null;}
@@ -7276,8 +7296,13 @@ function core7Exit(){
         notes:r+'/7 round · ⚠ interrotto', _src:'ext', _core7:true, _partial:true
       });
       saveExternalHistory();
+      var w=getExtraById('CORE7');
+      var exText=(w&&w.exercises||[]).map(function(e){return e.name;}).join(' ');
+      CORE7_STATE={round:0,totalRounds:7,phase:'idle'};
+      showMuscleSummary(exText,'extra-detail',{extraDetailId:'CORE7'},'Core & Forza 7R (parziale)');
+    } else {
+      doExit();
     }
-    doExit();
   }
   function doExit(){
     CORE7_STATE={round:0,totalRounds:7,phase:'idle'};
@@ -7709,9 +7734,8 @@ function exitWorkout(){
     var stepsDone=state.stepIdx||0;
     var seq=state.dayKey&&DAYS[state.dayKey]?DAYS[state.dayKey].seq:[];
     var mins=state.startTime?Math.round((Date.now()-state.startTime)/60000):0;
-    var label=state.extraWorkoutId?
-      (getExtraById(state.extraWorkoutId)||{}).label||'Extra':
-      ('Giorno '+(state.dayKey||'?'));
+    var w=state.extraWorkoutId?getExtraById(state.extraWorkoutId):null;
+    var label=w?(w.label||'Extra'):('Giorno '+(state.dayKey||'?'));
     if(!state.externalHistory) state.externalHistory=[];
     state.externalHistory.unshift({
       type:label, date:fmtDateIT(new Date()), duration:mins||1,
@@ -7719,7 +7743,10 @@ function exitWorkout(){
       _src:'ext', _partial:true
     });
     saveExternalHistory();
-    doExit();
+    var exText=w?(w.exercises||[]).map(function(e){return e.name;}).join(' '):seq.map(function(e){return e.name;}).join(' ');
+    var returnTab=w?'extra-detail':(state.dayKey==="bw_jacked"||state.dayKey==="bw_circuit"?'plan':'home');
+    var returnExtra=w?{extraDetailId:state.extraWorkoutId}:null;
+    showMuscleSummary(exText, returnTab, returnExtra, label+' (parziale)');
   }
   function doExit(){
     if(state.extraWorkoutId){state.tab="extra-detail";}
