@@ -1178,12 +1178,25 @@ function renderHome(){
 
   // ── Piano AI del giorno (se importato) ──────────────────────────
   var aiCard = '';
+  var hasTodayAIPlan = false;
+  function aiWorkoutAction(text){
+    var t=(text||'').toLowerCase();
+    if(/ripos|rest|recupero/.test(t)) return null;
+    if(/giorno\s*a\b/.test(t)) return "startWorkout('A')";
+    if(/giorno\s*b\b/.test(t)) return "startWorkout('B')";
+    if(/giorno\s*c\b/.test(t)) return "startWorkout('C')";
+    if(/axe/.test(t)) return "switchTab('train');state.trainSubTab='axe';render()";
+    if(/kdp/.test(t)) return "switchTab('train');state.trainSubTab='kdp';render()";
+    if(/bellplex|\bbp\b/.test(t)) return "switchTab('train');state.trainSubTab='bellplex';render()";
+    return null; // testo non riconosciuto — l'utente apre il piano con "APRI" invece di rischiare l'azione sbagliata
+  }
   if(FORGE_AI_RESULT && FORGE_AI_RESULT.piano_settimana){
     var GIORNI_IT=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
     var ABBR={lun:'lunedì',mar:'martedì',mer:'mercoledì',gio:'giovedì',ven:'venerdì',sab:'sabato',dom:'domenica'};
     var oggiNome=GIORNI_IT[new Date().getDay()].toLowerCase();
     var normG=function(g){var l=(g||'').trim().toLowerCase();return ABBR[l]||l;};
     var todayAI=FORGE_AI_RESULT.piano_settimana.filter(function(w){return normG(w.giorno)===oggiNome;})[0]||null;
+    hasTodayAIPlan = !!todayAI;
     var intensColor={'Alta':'#ffb4ab','Media':'#e9c176','Bassa':'#7A9A3A'};
     var ic = todayAI ? (intensColor[todayAI.intensita]||'#8b5cf6') : '#8b5cf6';
     aiCard =
@@ -1198,8 +1211,8 @@ function renderHome(){
               '<p class="font-headline text-xl leading-none" style="color:'+ic+'">'+todayAI.workout+'</p>'+
               '<p class="font-label text-[9px] text-gray-500 mt-0.5">'+todayAI.motivo+'</p>'+
             '</div>'+
-            (sug.action ?
-              '<button onclick="'+sug.action+'" class="ml-3 flex-shrink-0 w-10 h-10 flex items-center justify-center active:scale-90" style="background:'+ic+';color:#000">'+
+            (aiWorkoutAction(todayAI.workout) ?
+              '<button onclick="'+aiWorkoutAction(todayAI.workout)+'" class="ml-3 flex-shrink-0 w-10 h-10 flex items-center justify-center active:scale-90" style="background:'+ic+';color:#000">'+
                 '<span class="material-symbols-outlined text-lg" style="font-variation-settings:\'FILL\' 1">play_arrow</span>'+
               '</button>' : '')+
           '</div>'
@@ -1219,23 +1232,26 @@ function renderHome(){
       '</button>';
   }
 
-  // ── Suggerimento algoritmo (compatto) ─────────────────────────
-  var sugCard =
-    '<div class="bg-surface-container ghost-border p-4 border-l-2 mb-4" style="border-color:'+(sug.color||'#ffb693')+'">'+
-      '<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1.5">Suggerimento del giorno</p>'+
-      '<div class="flex items-center justify-between">'+
-        '<div class="flex items-center gap-3">'+
-          '<span style="font-size:20px">'+sug.icon+'</span>'+
-          '<div>'+
-            '<p class="font-headline text-xl leading-none" style="color:'+(sug.color||'#ffb693')+'">'+sug.title.toUpperCase()+'</p>'+
-            '<p class="font-label text-[9px] text-gray-500 mt-0.5 leading-snug">'+sug.reason+'</p>'+
+  // ── Suggerimento algoritmo (compatto) — FALLBACK: solo se manca un piano AI per oggi ──
+  var sugCard = '';
+  if(!hasTodayAIPlan){
+    sugCard =
+      '<div class="bg-surface-container ghost-border p-4 border-l-2 mb-4" style="border-color:'+(sug.color||'#ffb693')+'">'+
+        '<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1.5">Suggerimento del giorno</p>'+
+        '<div class="flex items-center justify-between">'+
+          '<div class="flex items-center gap-3">'+
+            '<span style="font-size:20px">'+sug.icon+'</span>'+
+            '<div>'+
+              '<p class="font-headline text-xl leading-none" style="color:'+(sug.color||'#ffb693')+'">'+sug.title.toUpperCase()+'</p>'+
+              '<p class="font-label text-[9px] text-gray-500 mt-0.5 leading-snug">'+sug.reason+'</p>'+
+            '</div>'+
           '</div>'+
+          (sug.action?'<button onclick="'+sug.action+'" class="ml-4 flex-shrink-0 w-10 h-10 flex items-center justify-center active:scale-90" style="background:'+(sug.color||'#ffb693')+';color:#000">'+
+            '<span class="material-symbols-outlined text-lg">arrow_forward</span>'+
+          '</button>':'')+
         '</div>'+
-        (sug.action?'<button onclick="'+sug.action+'" class="ml-4 flex-shrink-0 w-10 h-10 flex items-center justify-center active:scale-90" style="background:'+(sug.color||'#ffb693')+';color:#000">'+
-          '<span class="material-symbols-outlined text-lg">arrow_forward</span>'+
-        '</button>':'')+
-      '</div>'+
-    '</div>';
+      '</div>';
+  }
 
   // Giorni KB (chip compatte)
   var dayChips = ['A','B','C'].map(function(key){
