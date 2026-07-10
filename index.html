@@ -1192,9 +1192,10 @@ function renderHome(){
   }
   if(FORGE_AI_RESULT && FORGE_AI_RESULT.piano_settimana){
     var GIORNI_IT=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
-    var ABBR={lun:'lunedì',mar:'martedì',mer:'mercoledì',gio:'giovedì',ven:'venerdì',sab:'sabato',dom:'domenica'};
-    var oggiNome=GIORNI_IT[new Date().getDay()].toLowerCase();
-    var normG=function(g){var l=(g||'').trim().toLowerCase();return ABBR[l]||l;};
+    var ABBR={lun:'lunedi',mar:'martedi',mer:'mercoledi',gio:'giovedi',ven:'venerdi',sab:'sabato',dom:'domenica'};
+    var stripAcc=function(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');};
+    var oggiNome=stripAcc(GIORNI_IT[new Date().getDay()].toLowerCase());
+    var normG=function(g){var l=stripAcc((g||'').trim().toLowerCase());return ABBR[l]||l;};
     var todayAI=FORGE_AI_RESULT.piano_settimana.filter(function(w){return normG(w.giorno)===oggiNome;})[0]||null;
     hasTodayAIPlan = !!todayAI;
     var intensColor={'Alta':'#ffb4ab','Media':'#e9c176','Bassa':'#7A9A3A'};
@@ -6741,9 +6742,10 @@ function getWorkoutSuggestion(){
   // ── PRIORITÀ AL PIANO AI ────────────────────────────────────────
   if(FORGE_AI_RESULT&&FORGE_AI_RESULT.piano_settimana&&FORGE_AI_RESULT.piano_settimana.length){
     var GIORNI_IT=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
-    var ABBR={'lun':'lunedì','mar':'martedì','mer':'mercoledì','gio':'giovedì','ven':'venerdì','sab':'sabato','dom':'domenica'};
-    var oggiNome=GIORNI_IT[now.getDay()].toLowerCase();
-    function normG(g){var l=(g||'').trim().toLowerCase();return ABBR[l]||l;}
+    var ABBR={'lun':'lunedi','mar':'martedi','mer':'mercoledi','gio':'giovedi','ven':'venerdi','sab':'sabato','dom':'domenica'};
+    var stripAcc=function(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');};
+    var oggiNome=stripAcc(GIORNI_IT[now.getDay()].toLowerCase());
+    function normG(g){var l=stripAcc((g||'').trim().toLowerCase());return ABBR[l]||l;}
     var wOggi=FORGE_AI_RESULT.piano_settimana.filter(function(w){
       return normG(w.giorno)===oggiNome;
     })[0];
