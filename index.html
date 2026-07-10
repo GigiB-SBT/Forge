@@ -1190,16 +1190,18 @@ function renderHome(){
     if(/bellplex|\bbp\b/.test(t)) return "switchTab('train');state.trainSubTab='bellplex';render()";
     return null; // testo non riconosciuto — l'utente apre il piano con "APRI" invece di rischiare l'azione sbagliata
   }
-  if(FORGE_AI_RESULT && FORGE_AI_RESULT.piano_settimana){
+  if(FORGE_AI_RESULT && FORGE_AI_RESULT.piano_settimana && FORGE_AI_RESULT.piano_settimana.length){
     var GIORNI_IT=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
     var ABBR={lun:'lunedi',mar:'martedi',mer:'mercoledi',gio:'giovedi',ven:'venerdi',sab:'sabato',dom:'domenica'};
     var stripAcc=function(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');};
     var oggiNome=stripAcc(GIORNI_IT[new Date().getDay()].toLowerCase());
     var normG=function(g){var l=stripAcc((g||'').trim().toLowerCase());return ABBR[l]||l;};
     var todayAI=FORGE_AI_RESULT.piano_settimana.filter(function(w){return normG(w.giorno)===oggiNome;})[0]||null;
-    hasTodayAIPlan = !!todayAI;
+    // Un piano settimanale AI esiste per l'intera settimana: se oggi non compare nell'elenco,
+    // significa riposo implicito (l'AI elenca solo i giorni di allenamento), NON "nessun piano".
+    hasTodayAIPlan = true;
     var intensColor={'Alta':'#ffb4ab','Media':'#e9c176','Bassa':'#7A9A3A'};
-    var ic = todayAI ? (intensColor[todayAI.intensita]||'#8b5cf6') : '#8b5cf6';
+    var ic = todayAI ? (intensColor[todayAI.intensita]||'#8b5cf6') : '#7A9A3A';
     aiCard =
       '<div class="bg-surface-container ghost-border p-4 border-l-2 mb-3" style="border-color:#8b5cf6">'+
         '<div class="flex justify-between items-center mb-1">'+
@@ -1217,7 +1219,7 @@ function renderHome(){
                 '<span class="material-symbols-outlined text-lg" style="font-variation-settings:\'FILL\' 1">play_arrow</span>'+
               '</button>' : '')+
           '</div>'
-        : '<p class="font-label text-[10px] text-gray-500">Nessun allenamento previsto oggi</p>')+
+        : '<p class="font-headline text-xl leading-none" style="color:'+ic+'">RIPOSO</p><p class="font-label text-[9px] text-gray-500 mt-0.5">Giorno non presente nel piano — recupero.</p>')+
       '</div>';
   } else {
     aiCard =
@@ -6940,7 +6942,7 @@ function renderSettings(){
   h+='<button onclick="forgeExportWeekly()" class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 mb-2" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;display:block">&#11015; ESPORTA DATI SETTIMANA</button>';
   h+='<button onclick="forgeImportAI()" class="w-full py-3.5 font-headline text-xl tracking-widest active:scale-95" style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;background:rgba(139,92,246,0.06);display:block">&#11014; IMPORTA PIANO AI</button>';
   h+='</section>';
-  h+='<section class="mt-6 pt-4 border-t border-white/5"><p class="font-label text-[9px] text-gray-700 text-center">FORGE build kb-v76</p></section>';
+  h+='<section class="mt-6 pt-4 border-t border-white/5"><p class="font-label text-[9px] text-gray-700 text-center">FORGE build kb-v77</p></section>';
   h+='</main>'+navHTML('settings')+'</div>';
   return h;
 }
@@ -8328,7 +8330,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v76';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v77';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
