@@ -2370,7 +2370,7 @@ function renderPrograms(){
 var FLOWS = [
   {
     id:"FL1", nome:"Full Body Flow", sottotitolo:"Il flow completo: tocca tutto il corpo",
-    livello:"Intermedio", color:"#ffb693", durataRound:75, rest:45, roundsMin:3, roundsMax:5,
+    livello:"Intermedio", color:"#ffb693", durataRound:110, rest:60, roundsMin:2, roundsMax:5,
     quando:"Giorno di allenamento normale, quando vuoi qualcosa di vario",
     focus:["Coordinazione","Mobilità","Stabilità","Conditioning"],
     sequenza:[
@@ -2378,30 +2378,48 @@ var FLOWS = [
        transizione:"Dalla posizione di partenza: swing indietro tra le gambe, spinta d'anca, gomiti stretti al corpo."},
       {n:2, nome:"Goblet Squat", lato:null, descrizione:"Kettlebell al petto, accosciata completa con schiena dritta.",
        transizione:"Dal rack: afferra le corna con entrambe le mani, gomiti dentro le ginocchia."},
-      {n:3, nome:"Swing → Snatch", lato:"DX", descrizione:"Lascia scendere tra le gambe e porta sopra la testa in un solo movimento.",
+
+      {n:3, nome:"Swing → Snatch", lato:"DX · 1° giro", descrizione:"Lascia scendere tra le gambe e porta sopra la testa in un solo movimento.",
        transizione:"Risalito dallo squat: lascia il kettlebell su una mano sola (DX), l'altra si stacca."},
-      {n:4, nome:"Press → Windmill", lato:"DX", descrizione:"Braccio DX teso in alto. Ruota i piedi 45°, scendi lateralmente sfiorando il pavimento con la mano SX.",
+      {n:4, nome:"Press → Windmill", lato:"DX · 1° giro", descrizione:"Braccio DX teso in alto. Ruota i piedi 45°, scendi lateralmente sfiorando il pavimento con la mano SX.",
        transizione:"Dallo snatch il braccio è già bloccato in alto: ruota i piedi verso SX e spingi l'anca DX di lato."},
-      {n:5, nome:"Affondo indietro + Press", lato:"DX", descrizione:"Passo indietro con la gamba SX, risali spingendo il kettlebell in alto con il braccio DX.",
+      {n:5, nome:"Affondo indietro + Press", lato:"DX · 1° giro", descrizione:"Passo indietro con la gamba SX, risali spingendo il kettlebell in alto con il braccio DX.",
        transizione:"Risali dal windmill, porta il kettlebell in rack DX, poi fai il passo indietro."},
-      {n:6, nome:"Halo", lato:null, descrizione:"Kettlebell davanti al petto, giro attorno alla testa con gomiti alti.",
-       transizione:"Abbassa il kettlebell in rack, poi afferra le corna con entrambe le mani."},
-      {n:7, nome:"Figure 8", lato:null, descrizione:"Passa il kettlebell tra le gambe da una mano all'altra disegnando un otto.",
+
+      {n:6, nome:"Swing → Snatch", lato:"DX · 2° giro", descrizione:"Secondo giro sul lato destro: swing e snatch.",
+       transizione:"Dal press abbassa in rack, lascia scendere tra le gambe e riparti."},
+      {n:7, nome:"Press → Windmill", lato:"DX · 2° giro", descrizione:"Secondo windmill sul lato destro.",
+       transizione:"Braccio già bloccato in alto dallo snatch: ruota i piedi e apri l'anca."},
+      {n:8, nome:"Affondo indietro + Press", lato:"DX · 2° giro", descrizione:"Secondo affondo con press sul lato destro.",
+       transizione:"Risali dal windmill, kettlebell in rack DX, poi passo indietro."},
+
+      {n:9, nome:"Halo", lato:null, descrizione:"Kettlebell davanti al petto, giro attorno alla testa con gomiti alti.",
+       transizione:"Dal press abbassa in rack, afferra le corna a due mani, sali al viso e falla girare attorno alla testa."},
+      {n:10, nome:"Figure 8", lato:null, descrizione:"Passa il kettlebell tra le gambe da una mano all'altra disegnando un otto.",
        transizione:"Dall'halo: scendi in semi-squat con il kettlebell davanti, poi passalo tra le gambe."},
-      {n:8, nome:"Swing → Snatch", lato:"SX", descrizione:"Come il punto 3, sul lato sinistro.",
-       transizione:"Il figure 8 ti lascia il kettlebell nella mano SX: parti direttamente da lì."},
-      {n:9, nome:"Press → Windmill", lato:"SX", descrizione:"Braccio SX teso in alto, discesa laterale specchiata.",
+
+      {n:11, nome:"Swing → Snatch", lato:"SX · 1° giro", descrizione:"Primo giro sul lato sinistro.",
+       transizione:"Quando il KB e dietro nella mano SX non continuare l otto: lascialo oscillare avanti, diventa swing e poi snatch."},
+      {n:12, nome:"Press → Windmill", lato:"SX · 1° giro", descrizione:"Braccio SX teso in alto, discesa laterale specchiata.",
        transizione:"Braccio già bloccato in alto dallo snatch: ruota i piedi verso DX, spingi l'anca SX."},
-      {n:10, nome:"Affondo indietro + Press", lato:"SX", descrizione:"Passo indietro con la gamba DX, risalita con press SX.",
+      {n:13, nome:"Affondo indietro + Press", lato:"SX · 1° giro", descrizione:"Passo indietro con la gamba DX, risalita con press SX.",
        transizione:"Risali dal windmill, kettlebell in rack SX, poi passo indietro."},
-      {n:11, nome:"Halo al contrario", lato:null, descrizione:"Come il punto 6, girando nella direzione opposta.",
+
+      {n:14, nome:"Swing → Snatch", lato:"SX · 2° giro", descrizione:"Secondo giro sul lato sinistro: swing e snatch.",
+       transizione:"Dal press abbassa in rack, lascia scendere tra le gambe e riparti."},
+      {n:15, nome:"Press → Windmill", lato:"SX · 2° giro", descrizione:"Secondo windmill sul lato sinistro.",
+       transizione:"Braccio già bloccato in alto: ruota i piedi e apri l'anca SX."},
+      {n:16, nome:"Affondo indietro + Press", lato:"SX · 2° giro", descrizione:"Secondo affondo con press sul lato sinistro.",
+       transizione:"Risali dal windmill, kettlebell in rack SX, poi passo indietro."},
+
+      {n:17, nome:"Halo al contrario", lato:null, descrizione:"Come il punto 9, girando nella direzione opposta.",
        transizione:"Abbassa in rack, afferra le corna a due mani."},
-      {n:12, nome:"Goblet Squat", lato:null, descrizione:"Accosciata completa di chiusura.",
+      {n:18, nome:"Goblet Squat", lato:null, descrizione:"Accosciata completa di chiusura.",
        transizione:"Dall'halo il kettlebell è già davanti al petto: scendi direttamente."},
-      {n:13, nome:"Clean finale", lato:null, descrizione:"Riporta il kettlebell in rack e chiudi il round.",
+      {n:19, nome:"Clean finale", lato:null, descrizione:"Riporta il kettlebell in rack e chiudi il round.",
        transizione:"Dallo squat: risali, lascia scendere il kettlebell tra le gambe, un ultimo clean."},
     ],
-    attenzione:["Non fermarti tra un movimento e l'altro","Tieni l'addome sempre contratto","Respira in modo ritmico, non trattenere il fiato","Ogni round è simmetrico: DX e SX si equivalgono"]
+    attenzione:["Non fermarti tra un movimento e l'altro","Tieni l'addome sempre contratto","Respira in modo ritmico, non trattenere il fiato","Ogni round: 2 giri per lato, poi clean finale"]
   },
   {
     id:"FL2", nome:"Grind Flow", sottotitolo:"Lento e controllato: il flow della forza",
@@ -7809,6 +7827,24 @@ function flowTick(){
   if(st && s.phase==='work') st.innerHTML=flowStepHTML(f,s.stepIdx);
 }
 
+function flowAddRound(){
+  FLOW_STATE.totalRounds++;
+  showToast('Round aggiunto: '+FLOW_STATE.totalRounds+' totali','ok');
+  render();
+}
+
+function flowFinishNow(){
+  var s=FLOW_STATE, f=getFlowById(s.id);
+  if(!f) return;
+  if(s.tid) clearInterval(s.tid);
+  faStop(); FA.open=false;
+  // Round completati: quelli finiti + frazione dello attuale
+  s.totalRounds = s.phase==='rest' ? s.round : s.round;
+  s.phase='done';
+  render();
+}
+
+
 function flowSkipRest(){
   var s=FLOW_STATE, f=getFlowById(s.id);
   if(s.phase!=='rest'||!f) return;
@@ -7885,11 +7921,12 @@ var FLOW_TRANS = {
     {c:"Risali senza abbassare il kettlebell",head:[114,94,14],torso:"M114,108 L100,158",armFar:"M112,116 L120,146 L116,172",armNear:"M112,116 L102,82 L98,58",legFar:"M100,158 L116,200 L120,248",legNear:"M100,158 L84,202 L80,248",footFar:"M120,248 L134,250",footNear:"M80,248 L66,250",kb:[97,44],handle:[97,56],handA:"M92,56 L102,56",handB:"M92,56 L102,56"},
     {c:"In piedi, braccio bloccato in alto",head:[104,80,14],torso:"M104,94 L100,152",armFar:"M102,102 L114,124 L108,142",armNear:"M102,102 L98,76 L98,56",legFar:"M100,152 L112,198 L114,248",legNear:"M100,152 L88,198 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[97,42],handle:[97,54],handA:"M92,54 L102,54",handB:"M92,54 L102,54"},
     {c:"Passo indietro: il braccio non si muove",head:[104,86,14],torso:"M104,100 L102,158",armFar:"M102,108 L116,132 L110,152",armNear:"M102,108 L98,80 L98,58",legFar:"M102,158 L128,196 L140,238",legNear:"M102,158 L92,202 L90,248",footFar:"M140,238 L152,242",footNear:"M90,248 L78,251",kb:[97,44],handle:[97,56],handA:"M92,56 L102,56",handB:"M92,56 L102,56"}]},
-  T5:{t:"Figure 8 → Snatch", poses:[
-    {c:"Otto tra le gambe, semi-squat",head:[104,72,15],torso:"M104,87 L102,142",armFar:"M102,100 L116,130 L108,152",armNear:"M102,100 L88,128 L98,150",legFar:"M102,142 L120,192 L120,248",legNear:"M102,142 L84,192 L82,248",footFar:"M120,248 L132,251",footNear:"M82,248 L70,251",kb:[104,164],handle:[104,152],handA:"M96,152 L104,152",handB:"M96,152 L104,152"},
-    {c:"Il KB passa nell'altra mano dietro la coscia",head:[104,72,15],torso:"M104,87 L102,142",armFar:"M102,100 L114,132 L106,154",armNear:"M102,100 L90,130 L100,152",legFar:"M102,142 L120,192 L120,248",legNear:"M102,142 L84,192 L82,248",footFar:"M120,248 L132,251",footNear:"M82,248 L70,251",kb:[106,166],handle:[106,154],handA:"M106,154 L114,154",handB:"M106,154 L114,154"},
-    {c:"Risali e carica lo swing",head:[104,60,15],torso:"M104,75 L100,138",armFar:"M102,88 L116,118 L108,142",armNear:"M102,88 L92,118 L100,142",legFar:"M100,138 L114,192 L116,248",legNear:"M100,138 L86,192 L84,248",footFar:"M116,248 L128,251",footNear:"M84,248 L72,251",kb:[102,156],handle:[102,144],handA:"M102,144 L110,144",handB:"M102,144 L110,144"},
-    {c:"Snatch: sopra la testa in un tempo",head:[104,80,14],torso:"M104,94 L100,152",armFar:"M102,102 L114,124 L108,142",armNear:"M102,102 L98,76 L98,56",legFar:"M100,152 L112,198 L114,248",legNear:"M100,152 L88,198 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[97,42],handle:[97,54],handA:"M92,54 L102,54",handB:"M92,54 L102,54"}]},
+  T5:{t:"Figure 8 a Swing + Snatch", arc:true, poses:[
+    {c:"Figure 8: semi-squat, KB tra le gambe",head:[104,74,15],torso:"M104,89 L102,144",armFar:"M102,102 L116,132 L108,154",armNear:"M102,102 L88,130 L98,152",legFar:"M102,144 L122,194 L122,248",legNear:"M102,144 L82,194 L80,248",footFar:"M122,248 L134,251",footNear:"M80,248 L68,251",kb:[105,168],handle:[105,156],handA:"M97,156 L105,156",handB:"M97,156 L105,156"},
+    {c:"Il KB passa dietro: prendilo con la mano SX",head:[104,74,15],torso:"M104,89 L102,144",armFar:"M102,102 L114,134 L106,158",armNear:"M102,102 L90,132 L100,156",legFar:"M102,144 L122,194 L122,248",legNear:"M102,144 L82,194 L80,248",footFar:"M122,248 L134,251",footNear:"M80,248 L68,251",kb:[108,172],handle:[108,160],handA:"M108,160 L116,160",handB:"M108,160 L116,160"},
+    {c:"Non continuare l otto: lascialo oscillare avanti",head:[104,68,15],torso:"M104,83 L102,142",armFar:"M102,96 L118,124 L112,146",armNear:"M102,96 L92,124 L102,146",legFar:"M102,142 L120,192 L120,248",legNear:"M102,142 L84,192 L82,248",footFar:"M120,248 L132,251",footNear:"M82,248 L70,251",kb:[112,158],handle:[112,148],handA:"M112,148 L120,148",handB:"M112,148 L120,148"},
+    {c:"Spinta d anca esplosiva: e uno swing",head:[104,54,15],torso:"M104,69 L100,136",armFar:"M102,82 L116,104 L110,124",armNear:"M102,82 L90,104 L98,124",legFar:"M100,136 L112,192 L114,248",legNear:"M100,136 L88,192 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[102,138],handle:[102,126],handA:"M102,126 L110,126",handB:"M102,126 L110,126"},
+    {c:"Accelera e vai sopra la testa: snatch",head:[104,80,14],torso:"M104,94 L100,152",armFar:"M102,102 L114,124 L108,142",armNear:"M102,102 L98,76 L98,56",legFar:"M100,152 L112,198 L114,248",legNear:"M100,152 L88,198 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[97,42],handle:[97,54],handA:"M97,54 L106,54",handB:"M97,54 L106,54"}]},
   T6:{t:"Cambio mano in volo", poses:[
     {c:"Swing in salita, KB su una mano",head:[104,50,15],torso:"M104,65 L100,132",armFar:"M102,78 L118,102 L110,120",armNear:"M102,78 L88,100 L96,118",legFar:"M100,132 L112,190 L114,248",legNear:"M100,132 L88,190 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[100,132],handle:[100,120],handA:"M92,120 L100,120",handB:"M92,120 L100,120"},
     {c:"Punto morto in alto: il KB è senza peso",head:[104,46,15],torso:"M104,61 L100,130",armFar:"M102,74 L116,92 L112,104",armNear:"M102,74 L88,92 L92,104",legFar:"M100,130 L112,188 L114,248",legNear:"M100,130 L88,188 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[102,116],handle:[102,104],handA:"M96,104 L102,104",handB:"M96,104 L102,104"},
@@ -7905,14 +7942,21 @@ var FLOW_TRANS = {
     {c:"Abbassa lungo il corpo, anche indietro",head:[102,58,15],torso:"M102,73 L104,140",armFar:"M100,86 L114,120 L110,150",armNear:"M100,86 L88,120 L94,152",legFar:"M104,140 L120,190 L120,248",legNear:"M104,140 L86,190 L84,248",footFar:"M120,248 L132,251",footNear:"M84,248 L72,251",kb:[98,166],handle:[98,154],handA:"M90,154 L98,154",handB:"M90,154 L98,154"},
     {c:"Posizione di stacco: cambia presa",head:[100,72,15],torso:"M100,87 L106,150",armFar:"M98,100 L110,140 L106,176",armNear:"M98,100 L88,140 L94,178",legFar:"M106,150 L124,192 L122,248",legNear:"M106,150 L84,194 L82,248",footFar:"M122,248 L134,251",footNear:"M82,248 L70,251",kb:[100,192],handle:[100,180],handA:"M102,180 L110,180",handB:"M102,180 L110,180"},
     {c:"Pronto a ripartire con l'altra mano",head:[104,54,15],torso:"M104,69 L102,138",armFar:"M102,82 L116,116 L112,146",armNear:"M102,82 L90,116 L96,148",legFar:"M102,138 L116,190 L118,248",legNear:"M102,138 L88,190 L86,248",footFar:"M118,248 L130,251",footNear:"M86,248 L74,251",kb:[100,162],handle:[100,150],handA:"M102,150 L110,150",handB:"M102,150 L110,150"}]},
+  T9:{t:"Press/Rack a Halo", orbit:true, poses:[
+    {c:"Press: braccio teso sopra la testa",head:[104,80,14],torso:"M104,94 L100,152",armFar:"M102,102 L114,124 L108,142",armNear:"M102,102 L98,76 L98,56",legFar:"M100,152 L112,198 L114,248",legNear:"M100,152 L88,198 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[97,42],handle:[97,54],handA:"M92,54 L102,54",handB:"M92,54 L102,54"},
+    {c:"Abbassa in rack, gomito stretto al corpo",head:[104,56,15],torso:"M104,71 L100,140",armFar:"M102,88 L120,104 L112,120",armNear:"M102,88 L86,102 L98,116",legFar:"M100,140 L112,194 L114,248",legNear:"M100,140 L88,194 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[104,128],handle:[104,114],handA:"M94,114 L102,114",handB:"M94,114 L102,114"},
+    {c:"Seconda mano sulle corna, KB allo sterno",head:[104,56,15],torso:"M104,71 L100,140",armFar:"M102,86 L118,100 L108,112",armNear:"M102,86 L86,100 L98,110",legFar:"M100,140 L112,194 L114,248",legNear:"M100,140 L88,194 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[103,124],handle:[103,110],handA:"M95,110 L101,110",handB:"M105,110 L111,110"},
+    {c:"Sali al viso, gomiti alti e larghi",head:[104,54,15],torso:"M104,69 L100,138",armFar:"M102,78 L124,80 L116,64",armNear:"M102,78 L82,80 L90,64",legFar:"M100,138 L112,192 L114,248",legNear:"M100,138 L88,192 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[103,74],handle:[103,62],handA:"M95,62 L101,62",handB:"M105,62 L111,62"},
+    {c:"Il KB gira di lato alla testa...",head:[104,54,15],torso:"M104,69 L100,138",armFar:"M102,78 L128,70 L134,54",armNear:"M102,78 L86,74 L94,58",legFar:"M100,138 L112,192 L114,248",legNear:"M100,138 L88,192 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[142,46],handle:[138,56],handA:"M130,54 L138,50",handB:"M130,54 L138,50"},
+    {c:"...passa dietro e torna: un giro completo",head:[104,54,15],torso:"M104,69 L100,138",armFar:"M102,78 L120,58 L112,40",armNear:"M102,78 L84,60 L92,42",legFar:"M100,138 L112,192 L114,248",legNear:"M100,138 L88,192 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[102,30],handle:[102,40],handA:"M96,40 L108,38",handB:"M96,40 L108,38"}]},
 };
 
 // Mappa step → transizione (per flow e indice step)
 var FLOW_TRANS_MAP = {
-  FL1:{1:"T1", 3:"T3", 4:"T4", 7:"T5", 8:"T3", 9:"T4"},
+  FL1:{1:"T1", 3:"T3", 4:"T4", 6:"T3", 7:"T4", 8:"T9", 10:"T5", 11:"T3", 12:"T4", 14:"T3", 15:"T4", 16:"T9"},
   FL2:{3:"T3", 4:"T4", 6:"T8", 10:"T3", 11:"T4"},
   FL3:{4:"T6"},
-  FL4:{4:"T7", 6:"T8", 7:"T7"},
+  FL4:{0:"T9", 4:"T7", 6:"T8", 7:"T7"},
 };
 
 function getTransKey(flowId, stepIdx){
@@ -7987,6 +8031,9 @@ function faSvgHTML(color){
   h+='<svg viewBox="0 0 200 280" style="width:100%;max-width:150px;height:auto" xmlns="http://www.w3.org/2000/svg">';
   h+='<style>.fa-fig{fill:none;stroke:#e8e8e8;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.fa-far{stroke:#7d838b;stroke-width:4.5}.fa-head{fill:#e8e8e8}.fa-kbb{fill:#c97a4a}.fa-kbh{fill:none;stroke:'+color+';stroke-width:5;stroke-linecap:round}.fa-hand{fill:none;stroke:#fff;stroke-width:4.5;stroke-linecap:round}</style>';
   h+='<line x1="20" y1="252" x2="180" y2="252" stroke="rgba(255,255,255,.1)" stroke-width="2"/>';
+  var trDef=FLOW_TRANS[FA.key]||{};
+  if(trDef.orbit) h+='<ellipse cx="104" cy="52" rx="42" ry="26" fill="none" stroke="rgba(255,182,147,.35)" stroke-width="2" stroke-dasharray="5 4"/>';
+  if(trDef.arc)   h+='<path d="M76,168 Q104,148 132,168" fill="none" stroke="rgba(255,182,147,.3)" stroke-width="2" stroke-dasharray="4 4"/>';
   h+='<path class="fa-fig fa-far" id="fa-legFar"/><path class="fa-fig fa-far" id="fa-footFar"/><path class="fa-fig fa-far" id="fa-armFar"/>';
   h+='<circle class="fa-head" id="fa-head"/><path class="fa-fig" id="fa-torso"/>';
   h+='<path class="fa-fig" id="fa-legNear"/><path class="fa-fig" id="fa-footNear"/>';
@@ -8030,12 +8077,12 @@ function flowStepHTML(f,idx){
   }
   h+='<p class="font-label text-xs text-gray-400 leading-relaxed mb-4">'+cur.descrizione+'</p>';
   if(nxt){
-    h+='<div class="pt-3" style="border-top:1px solid rgba(255,255,255,0.06)">';
-    h+='<p class="font-label text-[8px] uppercase tracking-widest text-gray-700 mb-1">PROSSIMO</p>';
-    h+='<div class="flex items-center flex-wrap"><p class="font-headline text-xl text-gray-600">'+nxt.nome+'</p>'+(nxt.lato?'<span class="font-label text-[8px] uppercase tracking-widest px-1.5 py-0.5 ml-2" style="background:rgba(255,255,255,0.05);color:#4b5563">'+nxt.lato+'</span>':'')+'</div>';
+    h+='<div class="p-3 mt-1" style="background:rgba(255,255,255,0.03);border-left:2px solid rgba(255,255,255,0.12)">';
+    h+='<p class="font-label text-[8px] uppercase tracking-widest text-gray-600 mb-0.5">POI →</p>';
+    h+='<div class="flex items-center flex-wrap"><p class="font-headline text-2xl text-gray-300">'+nxt.nome+'</p>'+(nxt.lato?'<span class="font-label text-[9px] uppercase tracking-widest px-1.5 py-0.5 ml-2" style="background:rgba(255,255,255,0.08);color:#9ca3af">'+nxt.lato+'</span>':'')+'</div>';
     h+='</div>';
   } else {
-    h+='<div class="pt-3" style="border-top:1px solid rgba(255,255,255,0.06)"><p class="font-label text-[9px] uppercase tracking-widest" style="color:'+f.color+'">ULTIMO STEP DEL ROUND</p></div>';
+    h+='<div class="p-3 mt-1" style="background:'+f.color+'0f;border-left:2px solid '+f.color+'"><p class="font-label text-[10px] uppercase tracking-widest" style="color:'+f.color+'">ULTIMO STEP DEL ROUND</p></div>';
   }
   return h;
 }
@@ -8142,7 +8189,7 @@ function renderFlowWorkout(){
     h+='<span class="material-symbols-outlined text-3xl" style="color:'+f.color+';font-variation-settings:\'FILL\' 1">check_circle</span></div>';
     h+='<p class="font-label text-[9px] uppercase tracking-[0.25em] mb-1" style="color:'+f.color+'">FLOW COMPLETATO</p>';
     h+='<h2 class="font-headline text-3xl">'+f.nome+'</h2>';
-    h+='<p class="font-label text-xs text-gray-500 mt-1">'+s.totalRounds+' round · '+mins+' min</p>';
+    h+='<p class="font-label text-xs text-gray-500 mt-1">'+s.totalRounds+' round · '+mins+' min effettivi</p>';
     h+='</div>';
     h+='<div class="flex-1 overflow-y-auto px-5">';
     // Feeling
@@ -8202,14 +8249,18 @@ function renderFlowWorkout(){
   // Footer
   h+='<div class="flex-shrink-0 px-5 pb-6 pt-3" style="background:#0C1017;box-shadow:0 -8px 24px rgba(0,0,0,0.6)">';
   if(isRest){
-    h+='<button onclick="flowSkipRest()" class="w-full py-3.5 font-headline text-lg tracking-widest active:scale-95" style="border:1px solid rgba(80,218,209,0.35);color:#50dad1;background:transparent">⏭ SALTA RECUPERO</button>';
+    h+='<button onclick="flowSkipRest()" class="w-full py-3.5 font-headline text-lg tracking-widest active:scale-95 mb-2" style="border:1px solid rgba(80,218,209,0.35);color:#50dad1;background:transparent">⏭ SALTA RECUPERO</button>';
   } else {
-    h+='<div class="flex gap-2">';
+    h+='<div class="flex gap-2 mb-3">';
     f.sequenza.forEach(function(x,i){
       h+='<div class="flex-1 h-1" style="background:'+(i<=s.stepIdx?f.color:'rgba(255,255,255,0.08)')+';transition:background .3s"></div>';
     });
     h+='</div>';
   }
+  h+='<div class="flex gap-2">';
+  h+='<button onclick="flowAddRound()" class="flex-1 py-2.5 font-headline text-base tracking-widest active:scale-95" style="border:1px solid rgba(255,255,255,0.15);color:#94a3b8;background:transparent">+ 1 ROUND</button>';
+  h+='<button onclick="flowFinishNow()" class="flex-1 py-2.5 font-headline text-base tracking-widest active:scale-95" style="border:1px solid '+f.color+'59;color:'+f.color+';background:'+f.color+'0f">✓ FINE FLOW</button>';
+  h+='</div>';
   h+='</div>';
 
   h+='</div>';
@@ -8220,8 +8271,19 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v81";
+var APP_VERSION = "v83";
 var APP_CHANGELOG = [
+  {v:"v83", data:"09/08/2026", items:[
+    "Nuova animazione: come passare da rack/press all Halo",
+    "Rifatta l animazione Figure 8 verso Swing + Snatch",
+    "Traiettoria del kettlebell tratteggiata nelle animazioni",
+  ]},
+  {v:"v82", data:"09/08/2026", items:[
+    "Flow: pulsante + 1 ROUND per allungare durante la sessione",
+    "Flow: pulsante FINE FLOW, la durata registrata è quella reale",
+    "Flow: prossimo esercizio più visibile durante l'esecuzione",
+    "Full Body Flow: ora 2 giri per lato prima del clean finale",
+  ]},
   {v:"v81", data:"09/08/2026", items:[
     "Flow: animazioni delle transizioni tra i movimenti",
     "Tocca il tasto play accanto alla transizione per vederla",
@@ -8886,7 +8948,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v81';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v83';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
