@@ -2370,56 +2370,66 @@ function renderPrograms(){
 var FLOWS = [
   {
     id:"FL1", nome:"Full Body Flow", sottotitolo:"Il flow completo: tocca tutto il corpo",
-    livello:"Intermedio", color:"#ffb693", durataRound:110, rest:60, roundsMin:2, roundsMax:5,
+    livello:"Intermedio", color:"#ffb693", durataRound:140, rest:60, roundsMin:2, roundsMax:4,
     quando:"Giorno di allenamento normale, quando vuoi qualcosa di vario",
-    focus:["Coordinazione","Mobilità","Stabilità","Conditioning"],
+    focus:["Coordinazione","Mobilita","Stabilita","Conditioning"],
     sequenza:[
       {n:1, nome:"Double-Hand Clean", lato:null, descrizione:"Swing a due mani, poi porta il kettlebell al petto in rack.",
-       transizione:"Dalla posizione di partenza: swing indietro tra le gambe, spinta d'anca, gomiti stretti al corpo."},
+       transizione:"Dalla posizione di partenza: swing indietro tra le gambe, spinta d anca, gomiti stretti al corpo."},
       {n:2, nome:"Goblet Squat", lato:null, descrizione:"Kettlebell al petto, accosciata completa con schiena dritta.",
        transizione:"Dal rack: afferra le corna con entrambe le mani, gomiti dentro le ginocchia."},
 
-      {n:3, nome:"Swing → Snatch", lato:"DX · 1° giro", descrizione:"Lascia scendere tra le gambe e porta sopra la testa in un solo movimento.",
-       transizione:"Risalito dallo squat: lascia il kettlebell su una mano sola (DX), l'altra si stacca."},
-      {n:4, nome:"Press → Windmill", lato:"DX · 1° giro", descrizione:"Braccio DX teso in alto. Ruota i piedi 45°, scendi lateralmente sfiorando il pavimento con la mano SX.",
-       transizione:"Dallo snatch il braccio è già bloccato in alto: ruota i piedi verso SX e spingi l'anca DX di lato."},
-      {n:5, nome:"Affondo indietro + Press", lato:"DX · 1° giro", descrizione:"Passo indietro con la gamba SX, risali spingendo il kettlebell in alto con il braccio DX.",
+      {n:3, nome:"Swing e Snatch", lato:"DX · giro 1", descrizione:"Lascia scendere tra le gambe e porta sopra la testa in un solo movimento.",
+       transizione:"Risalito dallo squat: lascia il kettlebell su una mano sola (DX), l altra si stacca."},
+      {n:4, nome:"Press e Windmill", lato:"DX · giro 1", descrizione:"Braccio DX teso in alto. Ruota i piedi 45 gradi, scendi lateralmente sfiorando il pavimento con la mano SX.",
+       transizione:"Dallo snatch il braccio e gia bloccato in alto: ruota i piedi verso SX e spingi l anca DX di lato."},
+      {n:5, nome:"Affondo indietro e Press", lato:"DX · giro 1", descrizione:"Passo indietro con la gamba SX, risali spingendo il kettlebell in alto con il braccio DX.",
        transizione:"Risali dal windmill, porta il kettlebell in rack DX, poi fai il passo indietro."},
 
-      {n:6, nome:"Swing → Snatch", lato:"DX · 2° giro", descrizione:"Secondo giro sul lato destro: swing e snatch.",
-       transizione:"Dal press abbassa in rack, lascia scendere tra le gambe e riparti."},
-      {n:7, nome:"Press → Windmill", lato:"DX · 2° giro", descrizione:"Secondo windmill sul lato destro.",
-       transizione:"Braccio già bloccato in alto dallo snatch: ruota i piedi e apri l'anca."},
-      {n:8, nome:"Affondo indietro + Press", lato:"DX · 2° giro", descrizione:"Secondo affondo con press sul lato destro.",
+      {n:6, nome:"Halo", lato:null, descrizione:"Kettlebell davanti al petto, giro attorno alla testa con gomiti alti.",
+       transizione:"Dal press abbassa in rack, afferra le corna a due mani, sali al viso e falla girare attorno alla testa."},
+      {n:7, nome:"Figure 8", lato:"passa a SX", descrizione:"Passa il kettlebell tra le gambe da una mano all altra disegnando un otto.",
+       transizione:"Dall halo: scendi in semi-squat con il kettlebell davanti, poi passalo tra le gambe verso la mano SX."},
+
+      {n:8, nome:"Swing e Snatch", lato:"SX · giro 1", descrizione:"Primo giro sul lato sinistro.",
+       transizione:"Quando il KB e dietro nella mano SX non continuare l otto: lascialo oscillare avanti, diventa swing e poi snatch."},
+      {n:9, nome:"Press e Windmill", lato:"SX · giro 1", descrizione:"Braccio SX teso in alto, discesa laterale specchiata.",
+       transizione:"Braccio gia bloccato in alto dallo snatch: ruota i piedi verso DX, spingi l anca SX."},
+      {n:10, nome:"Affondo indietro e Press", lato:"SX · giro 1", descrizione:"Passo indietro con la gamba DX, risalita con press SX.",
+       transizione:"Risali dal windmill, kettlebell in rack SX, poi passo indietro."},
+
+      {n:11, nome:"Halo al contrario", lato:null, descrizione:"Come il punto 6, girando nella direzione opposta.",
+       transizione:"Dal press abbassa in rack, afferra le corna a due mani, sali al viso e gira nel senso opposto."},
+      {n:12, nome:"Figure 8", lato:"torna a DX", descrizione:"Otto tra le gambe per riportare il kettlebell alla mano destra.",
+       transizione:"Dall halo: semi-squat e passa il kettlebell tra le gambe verso la mano DX."},
+
+      {n:13, nome:"Swing e Snatch", lato:"DX · giro 2", descrizione:"Secondo giro sul lato destro.",
+       transizione:"Quando il KB e dietro nella mano DX lascialo oscillare avanti: swing e poi snatch."},
+      {n:14, nome:"Press e Windmill", lato:"DX · giro 2", descrizione:"Secondo windmill sul lato destro.",
+       transizione:"Braccio gia bloccato in alto dallo snatch: ruota i piedi e apri l anca DX."},
+      {n:15, nome:"Affondo indietro e Press", lato:"DX · giro 2", descrizione:"Secondo affondo con press sul lato destro.",
        transizione:"Risali dal windmill, kettlebell in rack DX, poi passo indietro."},
 
-      {n:9, nome:"Halo", lato:null, descrizione:"Kettlebell davanti al petto, giro attorno alla testa con gomiti alti.",
-       transizione:"Dal press abbassa in rack, afferra le corna a due mani, sali al viso e falla girare attorno alla testa."},
-      {n:10, nome:"Figure 8", lato:null, descrizione:"Passa il kettlebell tra le gambe da una mano all'altra disegnando un otto.",
-       transizione:"Dall'halo: scendi in semi-squat con il kettlebell davanti, poi passalo tra le gambe."},
+      {n:16, nome:"Halo", lato:null, descrizione:"Terzo halo del round.",
+       transizione:"Dal press abbassa in rack, corna a due mani, sali al viso e gira attorno alla testa."},
+      {n:17, nome:"Figure 8", lato:"passa a SX", descrizione:"Otto tra le gambe verso la mano sinistra.",
+       transizione:"Dall halo: semi-squat e passa il kettlebell tra le gambe verso la mano SX."},
 
-      {n:11, nome:"Swing → Snatch", lato:"SX · 1° giro", descrizione:"Primo giro sul lato sinistro.",
-       transizione:"Quando il KB e dietro nella mano SX non continuare l otto: lascialo oscillare avanti, diventa swing e poi snatch."},
-      {n:12, nome:"Press → Windmill", lato:"SX · 1° giro", descrizione:"Braccio SX teso in alto, discesa laterale specchiata.",
-       transizione:"Braccio già bloccato in alto dallo snatch: ruota i piedi verso DX, spingi l'anca SX."},
-      {n:13, nome:"Affondo indietro + Press", lato:"SX · 1° giro", descrizione:"Passo indietro con la gamba DX, risalita con press SX.",
+      {n:18, nome:"Swing e Snatch", lato:"SX · giro 2", descrizione:"Secondo giro sul lato sinistro.",
+       transizione:"Quando il KB e dietro nella mano SX lascialo oscillare avanti: swing e poi snatch."},
+      {n:19, nome:"Press e Windmill", lato:"SX · giro 2", descrizione:"Secondo windmill sul lato sinistro.",
+       transizione:"Braccio gia bloccato in alto: ruota i piedi e apri l anca SX."},
+      {n:20, nome:"Affondo indietro e Press", lato:"SX · giro 2", descrizione:"Secondo affondo con press sul lato sinistro.",
        transizione:"Risali dal windmill, kettlebell in rack SX, poi passo indietro."},
 
-      {n:14, nome:"Swing → Snatch", lato:"SX · 2° giro", descrizione:"Secondo giro sul lato sinistro: swing e snatch.",
-       transizione:"Dal press abbassa in rack, lascia scendere tra le gambe e riparti."},
-      {n:15, nome:"Press → Windmill", lato:"SX · 2° giro", descrizione:"Secondo windmill sul lato sinistro.",
-       transizione:"Braccio già bloccato in alto: ruota i piedi e apri l'anca SX."},
-      {n:16, nome:"Affondo indietro + Press", lato:"SX · 2° giro", descrizione:"Secondo affondo con press sul lato sinistro.",
-       transizione:"Risali dal windmill, kettlebell in rack SX, poi passo indietro."},
-
-      {n:17, nome:"Halo al contrario", lato:null, descrizione:"Come il punto 9, girando nella direzione opposta.",
-       transizione:"Abbassa in rack, afferra le corna a due mani."},
-      {n:18, nome:"Goblet Squat", lato:null, descrizione:"Accosciata completa di chiusura.",
-       transizione:"Dall'halo il kettlebell è già davanti al petto: scendi direttamente."},
-      {n:19, nome:"Clean finale", lato:null, descrizione:"Riporta il kettlebell in rack e chiudi il round.",
+      {n:21, nome:"Halo al contrario", lato:null, descrizione:"Ultimo halo, direzione opposta.",
+       transizione:"Dal press abbassa in rack, corna a due mani, sali al viso e gira nel senso opposto."},
+      {n:22, nome:"Goblet Squat", lato:null, descrizione:"Accosciata completa di chiusura.",
+       transizione:"Dall halo il kettlebell e gia davanti al petto: scendi direttamente."},
+      {n:23, nome:"Clean finale", lato:null, descrizione:"Riporta il kettlebell in rack e chiudi il round.",
        transizione:"Dallo squat: risali, lascia scendere il kettlebell tra le gambe, un ultimo clean."},
     ],
-    attenzione:["Non fermarti tra un movimento e l'altro","Tieni l'addome sempre contratto","Respira in modo ritmico, non trattenere il fiato","Ogni round: 2 giri per lato, poi clean finale"]
+    attenzione:["Non fermarti tra un movimento e l altro","Tieni l addome sempre contratto","Respira in modo ritmico, non trattenere il fiato","Alternanza: DX, SX, DX, SX poi chiusura"]
   },
   {
     id:"FL2", nome:"Grind Flow", sottotitolo:"Lento e controllato: il flow della forza",
@@ -7771,6 +7781,7 @@ function flowStart(){
     id:f.id, round:1, totalRounds:state.flowRounds||f.roundsMin,
     phase:'work', remaining:f.durataRound, stepIdx:0, tid:null, startTs:Date.now()
   };
+  FA.key = getTransKey(f.id, 0);
   forgeShowTrans(f.nome.toUpperCase(), f.sottotitolo, function(){
     state.tab='flow-workout'; render();
     flowStartTimer();
@@ -7796,8 +7807,11 @@ function flowTick(){
     if(newIdx!==s.stepIdx){
       s.stepIdx=newIdx; kdpVib([60]);
       var nk=getTransKey(s.id,newIdx);
+      faStop();
+      FA.key = nk;
+      var wrapEl=document.getElementById('flow-step-wrap');
+      if(wrapEl) wrapEl.innerHTML=flowStepHTML(f,s.stepIdx);
       if(FA.open && nk) faStart(nk);
-      else if(FA.open && !nk) faStop();
     }
   }
 
@@ -7823,8 +7837,7 @@ function flowTick(){
   // Aggiorna DOM senza re-render completo
   var t=document.getElementById('flow-time');
   if(t) t.textContent=fmtTime(s.remaining);
-  var st=document.getElementById('flow-step-wrap');
-  if(st && s.phase==='work') st.innerHTML=flowStepHTML(f,s.stepIdx);
+  // step wrap aggiornato solo al cambio step (vedi sopra)
 }
 
 function flowAddRound(){
@@ -7953,8 +7966,8 @@ var FLOW_TRANS = {
 
 // Mappa step → transizione (per flow e indice step)
 var FLOW_TRANS_MAP = {
-  FL1:{1:"T1", 3:"T3", 4:"T4", 6:"T3", 7:"T4", 8:"T9", 10:"T5", 11:"T3", 12:"T4", 14:"T3", 15:"T4", 16:"T9"},
-  FL2:{3:"T3", 4:"T4", 6:"T8", 10:"T3", 11:"T4"},
+  FL1:{1:"T1", 3:"T3", 5:"T9", 7:"T5", 8:"T3", 10:"T9", 12:"T5", 13:"T3", 15:"T9", 17:"T5", 18:"T3", 20:"T9"},
+  FL2:{3:"T3", 6:"T8", 10:"T3"},
   FL3:{4:"T6"},
   FL4:{0:"T9", 4:"T7", 6:"T8", 7:"T7"},
 };
@@ -8040,7 +8053,9 @@ function faSvgHTML(color){
   h+='<circle class="fa-kbb" id="fa-kbBall" r="13"/><path class="fa-kbh" id="fa-kbHandle"/>';
   h+='<path class="fa-fig" id="fa-armNear"/><path class="fa-hand" id="fa-handA"/><path class="fa-hand" id="fa-handB"/>';
   h+='</svg></div>';
-  h+='<p id="fa-cue" style="text-align:center;font-size:10px;color:#94a3b8;padding:5px 4px 0;min-height:14px;line-height:1.3"></p>';
+  var trTitle=(FLOW_TRANS[FA.key]||{}).t||'';
+  h+='<p style="text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:.15em;color:'+color+';padding:6px 4px 0">'+trTitle+'</p>';
+  h+='<p id="fa-cue" style="text-align:center;font-size:10px;color:#94a3b8;padding:3px 4px 0;min-height:14px;line-height:1.3"></p>';
   h+='<div id="fa-track" style="display:flex;gap:3px;padding:4px 0 0">';
   h+='<div style="flex:1;height:2px;background:rgba(255,255,255,.08)"></div>'.repeat(4);
   h+='</div>';
@@ -8271,8 +8286,13 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v83";
+var APP_VERSION = "v84";
 var APP_CHANGELOG = [
+  {v:"v84", data:"09/08/2026", items:[
+    "Full Body Flow: alternanza DX, SX, DX, SX (23 step)",
+    "Corretto: l animazione ora cambia davvero a ogni transizione",
+    "Titolo della transizione visibile sopra l animazione",
+  ]},
   {v:"v83", data:"09/08/2026", items:[
     "Nuova animazione: come passare da rack/press all Halo",
     "Rifatta l animazione Figure 8 verso Swing + Snatch",
@@ -8948,7 +8968,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v83';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v84';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
