@@ -2365,57 +2365,98 @@ function renderPrograms(){
 var FLOWS = [
   {
     id:"FL1", nome:"Full Body Flow", sottotitolo:"Il flow completo: tocca tutto il corpo",
-    livello:"Intermedio", color:"#ffb693", durataRound:60, rest:45, roundsMin:3, roundsMax:5,
+    livello:"Intermedio", color:"#ffb693", durataRound:75, rest:45, roundsMin:3, roundsMax:5,
     quando:"Giorno di allenamento normale, quando vuoi qualcosa di vario",
     focus:["Coordinazione","Mobilità","Stabilità","Conditioning"],
     sequenza:[
-      {n:1, nome:"Double-Hand Clean", lato:null, descrizione:"Parti dallo swing a due mani e porta il kettlebell al petto (posizione di rack)."},
-      {n:2, nome:"Goblet Squat", lato:null, descrizione:"Con il kettlebell al petto, scendi in accosciata completa tenendo la schiena dritta."},
-      {n:3, nome:"Swing → Snatch", lato:"DX", descrizione:"Lascia scendere il kettlebell tra le gambe, poi portalo sopra la testa con il braccio destro in un solo movimento."},
-      {n:4, nome:"Rack", lato:"DX", descrizione:"Piega il gomito e appoggia il kettlebell sull'avambraccio, all'altezza del petto. Fermati un istante."},
-      {n:5, nome:"Windmill", lato:"DX", descrizione:"Braccio destro teso sopra la testa. Scendi lateralmente sfiorando il pavimento con la mano sinistra, guardando sempre il kettlebell."},
-      {n:6, nome:"Halo", lato:null, descrizione:"Kettlebell davanti al petto, fallo girare attorno alla testa tenendo i gomiti alti e l'addome contratto."},
-      {n:7, nome:"Goblet Squat", lato:null, descrizione:"Seconda accosciata completa."},
-      {n:8, nome:"Figure 8", lato:null, descrizione:"Passa il kettlebell tra le gambe da una mano all'altra disegnando un otto, restando in posizione di semi-squat."},
-      {n:9, nome:"Affondo indietro + Press", lato:"DX", descrizione:"Passo indietro con la gamba sinistra, poi risali spingendo il kettlebell sopra la testa con il braccio destro."},
-      {n:10, nome:"Halo al contrario", lato:null, descrizione:"Come il punto 6, ma girando nella direzione opposta."},
-      {n:11, nome:"Cambio mano", lato:null, descrizione:"Passa il kettlebell alla mano sinistra."},
-      {n:12, nome:"Swing → Snatch", lato:"SX", descrizione:"Ripeti il punto 3 sul lato sinistro."},
-      {n:13, nome:"Clean finale", lato:null, descrizione:"Riporta il kettlebell in rack e chiudi il flow."},
+      {n:1, nome:"Double-Hand Clean", lato:null, descrizione:"Swing a due mani, poi porta il kettlebell al petto in rack.",
+       transizione:"Dalla posizione di partenza: swing indietro tra le gambe, spinta d'anca, gomiti stretti al corpo."},
+      {n:2, nome:"Goblet Squat", lato:null, descrizione:"Kettlebell al petto, accosciata completa con schiena dritta.",
+       transizione:"Dal rack: afferra le corna con entrambe le mani, gomiti dentro le ginocchia."},
+      {n:3, nome:"Swing → Snatch", lato:"DX", descrizione:"Lascia scendere tra le gambe e porta sopra la testa in un solo movimento.",
+       transizione:"Risalito dallo squat: lascia il kettlebell su una mano sola (DX), l'altra si stacca."},
+      {n:4, nome:"Press → Windmill", lato:"DX", descrizione:"Braccio DX teso in alto. Ruota i piedi 45°, scendi lateralmente sfiorando il pavimento con la mano SX.",
+       transizione:"Dallo snatch il braccio è già bloccato in alto: ruota i piedi verso SX e spingi l'anca DX di lato."},
+      {n:5, nome:"Affondo indietro + Press", lato:"DX", descrizione:"Passo indietro con la gamba SX, risali spingendo il kettlebell in alto con il braccio DX.",
+       transizione:"Risali dal windmill, porta il kettlebell in rack DX, poi fai il passo indietro."},
+      {n:6, nome:"Halo", lato:null, descrizione:"Kettlebell davanti al petto, giro attorno alla testa con gomiti alti.",
+       transizione:"Abbassa il kettlebell in rack, poi afferra le corna con entrambe le mani."},
+      {n:7, nome:"Figure 8", lato:null, descrizione:"Passa il kettlebell tra le gambe da una mano all'altra disegnando un otto.",
+       transizione:"Dall'halo: scendi in semi-squat con il kettlebell davanti, poi passalo tra le gambe."},
+      {n:8, nome:"Swing → Snatch", lato:"SX", descrizione:"Come il punto 3, sul lato sinistro.",
+       transizione:"Il figure 8 ti lascia il kettlebell nella mano SX: parti direttamente da lì."},
+      {n:9, nome:"Press → Windmill", lato:"SX", descrizione:"Braccio SX teso in alto, discesa laterale specchiata.",
+       transizione:"Braccio già bloccato in alto dallo snatch: ruota i piedi verso DX, spingi l'anca SX."},
+      {n:10, nome:"Affondo indietro + Press", lato:"SX", descrizione:"Passo indietro con la gamba DX, risalita con press SX.",
+       transizione:"Risali dal windmill, kettlebell in rack SX, poi passo indietro."},
+      {n:11, nome:"Halo al contrario", lato:null, descrizione:"Come il punto 6, girando nella direzione opposta.",
+       transizione:"Abbassa in rack, afferra le corna a due mani."},
+      {n:12, nome:"Goblet Squat", lato:null, descrizione:"Accosciata completa di chiusura.",
+       transizione:"Dall'halo il kettlebell è già davanti al petto: scendi direttamente."},
+      {n:13, nome:"Clean finale", lato:null, descrizione:"Riporta il kettlebell in rack e chiudi il round.",
+       transizione:"Dallo squat: risali, lascia scendere il kettlebell tra le gambe, un ultimo clean."},
     ],
-    attenzione:["Non fermarti tra un movimento e l'altro","Tieni l'addome sempre contratto","Respira in modo ritmico, non trattenere il fiato"]
+    attenzione:["Non fermarti tra un movimento e l'altro","Tieni l'addome sempre contratto","Respira in modo ritmico, non trattenere il fiato","Ogni round è simmetrico: DX e SX si equivalgono"]
   },
   {
     id:"FL2", nome:"Grind Flow", sottotitolo:"Lento e controllato: il flow della forza",
-    livello:"Avanzato", color:"#e9c176", durataRound:75, rest:60, roundsMin:3, roundsMax:4,
+    livello:"Avanzato", color:"#e9c176", durataRound:120, rest:60, roundsMin:2, roundsMax:4,
     quando:"Giorno dedicato alla forza, in alternativa al Giorno A",
     focus:["Forza","Controllo","Core","Stabilità"],
     sequenza:[
-      {n:1, nome:"Clean", lato:"DX", descrizione:"Porta il kettlebell in rack con la mano destra."},
-      {n:2, nome:"Strict Press ×2", lato:"DX", descrizione:"Spingi il kettlebell sopra la testa senza aiutarti con le gambe. Due ripetizioni."},
-      {n:3, nome:"Rack Squat ×2", lato:"DX", descrizione:"Due accosciate tenendo il kettlebell in rack sul lato destro. L'appoggio asimmetrico costringe il core a lavorare."},
-      {n:4, nome:"Windmill", lato:"DX", descrizione:"Braccio teso sopra la testa, scendi lateralmente in modo lento e controllato."},
-      {n:5, nome:"Affondo + braccio teso ×2", lato:"DX", descrizione:"Kettlebell teso in alto, passo indietro e risalita. Il braccio resta fermo per tutto il movimento."},
-      {n:6, nome:"Bent Press", lato:"DX", descrizione:"Movimento lento di discesa e risalita mantenendo il kettlebell sopra la testa. In alternativa: Half Get-Up."},
-      {n:7, nome:"Cambio mano — ripeti tutto", lato:"SX", descrizione:"Ripeti l'intera sequenza sul lato sinistro."},
+      {n:1, nome:"Clean", lato:"DX", descrizione:"Porta il kettlebell in rack con la mano destra.",
+       transizione:"Dalla posizione di partenza: swing indietro, spinta d'anca, gomito stretto al corpo."},
+      {n:2, nome:"Strict Press ×2", lato:"DX", descrizione:"Due spinte sopra la testa senza aiuto delle gambe.",
+       transizione:"Dal rack: espira e spingi. Dopo la prima ripetizione torna in rack controllato."},
+      {n:3, nome:"Rack Squat ×2", lato:"DX", descrizione:"Due accosciate con il kettlebell in rack sul lato DX.",
+       transizione:"Dall'ultimo press: abbassa in rack, stabilizza il core contro l'asimmetria, poi scendi."},
+      {n:4, nome:"Press → Windmill", lato:"DX", descrizione:"Braccio teso in alto, discesa laterale lenta e controllata.",
+       transizione:"Dal rack: un press per bloccare il braccio in alto, poi ruota i piedi 45° e apri l'anca."},
+      {n:5, nome:"Affondo + braccio teso ×2", lato:"DX", descrizione:"Kettlebell teso in alto, passo indietro e risalita. Il braccio non si muove.",
+       transizione:"Risali dal windmill mantenendo il braccio bloccato in alto: non abbassare mai."},
+      {n:6, nome:"Bent Press o Half Get-Up", lato:"DX", descrizione:"Discesa e risalita lente mantenendo il kettlebell in alto.",
+       transizione:"Il braccio è già teso: continua il lavoro senza abbassare il kettlebell."},
+      {n:7, nome:"Cambio mano", lato:null, descrizione:"Abbassa in rack, poi passa il kettlebell alla mano sinistra.",
+       transizione:"Abbassa lentamente in rack DX, scendi in posizione di stacco, cambia presa."},
+      {n:8, nome:"Clean", lato:"SX", descrizione:"Porta il kettlebell in rack con la mano sinistra.",
+       transizione:"Il kettlebell è già nella mano SX: swing indietro, spinta d'anca, gomito stretto."},
+      {n:9, nome:"Strict Press ×2", lato:"SX", descrizione:"Due spinte sopra la testa senza aiuto delle gambe.",
+       transizione:"Dal rack SX: espira e spingi, poi torna in rack controllato."},
+      {n:10, nome:"Rack Squat ×2", lato:"SX", descrizione:"Due accosciate con il kettlebell in rack sul lato SX.",
+       transizione:"Dall'ultimo press: abbassa in rack, stabilizza il core, poi scendi."},
+      {n:11, nome:"Press → Windmill", lato:"SX", descrizione:"Braccio teso in alto, discesa laterale lenta e controllata.",
+       transizione:"Dal rack: un press per bloccare il braccio, poi ruota i piedi e apri l'anca SX."},
+      {n:12, nome:"Affondo + braccio teso ×2", lato:"SX", descrizione:"Kettlebell teso in alto, passo indietro e risalita.",
+       transizione:"Risali dal windmill mantenendo il braccio bloccato in alto: non abbassare mai."},
+      {n:13, nome:"Bent Press o Half Get-Up", lato:"SX", descrizione:"Discesa e risalita lente mantenendo il kettlebell in alto.",
+       transizione:"Il braccio è già teso: continua senza abbassare il kettlebell."},
     ],
     attenzione:["Nessun movimento esplosivo: qui si va piano","Respira sotto sforzo, non in apnea","Se il 10 kg ti sembra leggero, aggiungi ripetizioni prima di aumentare il peso"]
   },
   {
     id:"FL3", nome:"Ballistic Flow", sottotitolo:"Veloce e metabolico: il flow che fa bruciare",
     livello:"Intermedio", color:"#ffb4ab", durataRound:60, rest:45, roundsMin:4, roundsMax:6,
-    quando:"Obiettivo dimagrimento, in alternativa a Bellplex o Giorno B",
+    quando:"Obiettivo dimagrimento, in alternativa a Complex o Giorno B",
     focus:["Conditioning","Potenza","HIIT","Dimagrimento"],
     sequenza:[
-      {n:1, nome:"Swing 2 mani ×5", lato:null, descrizione:"Slancio esplosivo dalle anche, il kettlebell arriva all'altezza del petto."},
-      {n:2, nome:"Clean ×2", lato:"DX", descrizione:"Dal basso al rack, due volte."},
-      {n:3, nome:"Snatch ×2", lato:"DX", descrizione:"Dal basso a sopra la testa in un solo movimento, due volte."},
-      {n:4, nome:"High Pull ×3", lato:"DX", descrizione:"Come uno swing, ma tiri il gomito indietro all'altezza della spalla."},
-      {n:5, nome:"Cambio mano in volo", lato:null, descrizione:"Durante uno swing, passa il kettlebell alla mano sinistra a mezz'aria."},
-      {n:6, nome:"Clean ×2", lato:"SX", descrizione:"Dal basso al rack, due volte sul lato sinistro."},
-      {n:7, nome:"Snatch ×2", lato:"SX", descrizione:"Dal basso a sopra la testa, due volte sul lato sinistro."},
-      {n:8, nome:"High Pull ×3", lato:"SX", descrizione:"Tre high pull sul lato sinistro."},
-      {n:9, nome:"Swing 2 mani ×5", lato:null, descrizione:"Chiusura con cinque swing a due mani."},
+      {n:1, nome:"Swing 2 mani ×5", lato:null, descrizione:"Slancio esplosivo dalle anche, kettlebell all'altezza del petto.",
+       transizione:"Partenza da terra: hike pass tra le gambe, poi spinta d'anca."},
+      {n:2, nome:"Clean ×2", lato:"DX", descrizione:"Dal basso al rack, due volte.",
+       transizione:"All'ultimo swing lascia la mano SX: il kettlebell resta su una mano sola."},
+      {n:3, nome:"Snatch ×2", lato:"DX", descrizione:"Dal basso a sopra la testa in un solo movimento, due volte.",
+       transizione:"Dal rack: lascia scendere tra le gambe e accelera di più nella risalita."},
+      {n:4, nome:"High Pull ×3", lato:"DX", descrizione:"Come uno swing, ma tiri il gomito indietro all'altezza della spalla.",
+       transizione:"Dall'ultimo snatch: lascia scendere il kettlebell, riduci l'ampiezza della tirata."},
+      {n:5, nome:"Cambio mano in volo", lato:null, descrizione:"Durante uno swing, passa il kettlebell alla mano SX a mezz'aria.",
+       transizione:"Dall'high pull: un swing normale, al punto morto in alto molla e riprendi con l'altra mano."},
+      {n:6, nome:"Clean ×2", lato:"SX", descrizione:"Dal basso al rack, due volte sul lato sinistro.",
+       transizione:"Il kettlebell è già nella mano SX dal cambio in volo: lascia scendere e clean."},
+      {n:7, nome:"Snatch ×2", lato:"SX", descrizione:"Dal basso a sopra la testa, due volte sul lato sinistro.",
+       transizione:"Dal rack SX: stessa meccanica del lato destro, specchiata."},
+      {n:8, nome:"High Pull ×3", lato:"SX", descrizione:"Tre high pull sul lato sinistro.",
+       transizione:"Dall'ultimo snatch: lascia scendere e riduci l'ampiezza."},
+      {n:9, nome:"Swing 2 mani ×5", lato:null, descrizione:"Chiusura con cinque swing a due mani.",
+       transizione:"All'ultimo high pull riprendi anche con la mano DX: torni a due mani."},
     ],
     attenzione:["Ritmo costante dall'inizio alla fine","Frequenza cardiaca attesa: 140-155","Il cambio mano si fa in volo, senza posare il kettlebell"]
   },
@@ -2425,16 +2466,26 @@ var FLOWS = [
     quando:"Giorni di scarico, dopo sessioni pesanti (Giorno C, KDP-26), quando ti senti rigido",
     focus:["Mobilità","Recupero","Respirazione","Scarico"],
     sequenza:[
-      {n:1, nome:"Halo ×3", lato:null, descrizione:"Kettlebell attorno alla testa, gomiti alti."},
-      {n:2, nome:"Halo al contrario ×3", lato:null, descrizione:"Stessa cosa nella direzione opposta."},
-      {n:3, nome:"Goblet Squat oscillante ×3", lato:null, descrizione:"Scendi in accosciata profonda e resta giù, oscillando lentamente da un lato all'altro per aprire le anche."},
-      {n:4, nome:"Figure 8 ×5", lato:null, descrizione:"Otto tra le gambe, lento."},
-      {n:5, nome:"Half Get-Up ×2", lato:"DX", descrizione:"Da sdraiato, sali fino al gomito e poi alla mano, tenendo il kettlebell sempre teso verso il soffitto."},
-      {n:6, nome:"Windmill lento ×2", lato:"DX", descrizione:"Discesa laterale molto controllata."},
-      {n:7, nome:"Cambio mano", lato:null, descrizione:"Passa il kettlebell alla mano sinistra."},
-      {n:8, nome:"Half Get-Up ×2", lato:"SX", descrizione:"Ripeti sul lato sinistro."},
-      {n:9, nome:"Windmill lento ×2", lato:"SX", descrizione:"Ripeti sul lato sinistro."},
-      {n:10, nome:"Goblet Squat tenuta 15s", lato:null, descrizione:"Resta giù in accosciata profonda e respira."},
+      {n:1, nome:"Halo ×3", lato:null, descrizione:"Kettlebell attorno alla testa, gomiti alti.",
+       transizione:"Parti con il kettlebell davanti al petto, presa sulle corna."},
+      {n:2, nome:"Halo al contrario ×3", lato:null, descrizione:"Stessa cosa nella direzione opposta.",
+       transizione:"Chiudi il terzo halo davanti al petto e inverti subito il senso."},
+      {n:3, nome:"Goblet Squat oscillante ×3", lato:null, descrizione:"Accosciata profonda, resta giù oscillando da un lato all'altro per aprire le anche.",
+       transizione:"Dall'halo il kettlebell è già davanti al petto: scendi mantenendo i gomiti dentro."},
+      {n:4, nome:"Figure 8 ×5", lato:null, descrizione:"Otto tra le gambe, lento e controllato.",
+       transizione:"Risali dallo squat a metà altezza, poi passa il kettlebell tra le gambe."},
+      {n:5, nome:"Half Get-Up ×2", lato:"DX", descrizione:"Da sdraiato sali al gomito poi alla mano, kettlebell sempre verso il soffitto.",
+       transizione:"Il figure 8 ti lascia il kettlebell in mano DX: scendi a terra e portalo sopra il petto."},
+      {n:6, nome:"Windmill lento ×2", lato:"DX", descrizione:"In piedi, discesa laterale molto controllata.",
+       transizione:"Dal get-up alzati completamente tenendo il braccio bloccato in alto, poi apri l'anca."},
+      {n:7, nome:"Cambio mano", lato:null, descrizione:"Abbassa e passa il kettlebell alla mano sinistra.",
+       transizione:"Abbassa lentamente in rack, scendi in stacco e cambia presa."},
+      {n:8, nome:"Half Get-Up ×2", lato:"SX", descrizione:"Ripeti sul lato sinistro.",
+       transizione:"Con il kettlebell in mano SX scendi a terra e portalo sopra il petto."},
+      {n:9, nome:"Windmill lento ×2", lato:"SX", descrizione:"Discesa laterale specchiata.",
+       transizione:"Alzati dal get-up mantenendo il braccio SX bloccato in alto."},
+      {n:10, nome:"Goblet Squat tenuta 15s", lato:null, descrizione:"Resta giù in accosciata profonda e respira.",
+       transizione:"Abbassa il kettlebell davanti al petto con entrambe le mani, poi scendi e resta."},
     ],
     attenzione:["Non cercare l'intensità: la frequenza cardiaca deve restare sotto 120","Il kettlebell serve come contrappeso per aprire le posizioni, non come carico","Se un movimento tira troppo, riduci l'ampiezza"]
   },
@@ -3106,9 +3157,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP1: PD Special ──────────────────────────────────────────────────────
   {
-    id:"BP1",yt:"https://youtu.be/kujifegkkq4",label:"PD Special",emoji:"⭐",color:"#E53935",
+    id:"BP1",kb:"1",desc:"Tirata, slancio e spinta",yt:"https://youtu.be/kujifegkkq4",label:"PD Special",emoji:"⭐",color:"#E53935",
     title:"PD Special",
-    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    meta:"Complex · ~20 min · 5 serie · KB singola",
     totalMin:20,
     how:"Complex single arm Bellplex. 5 Rows + 5 Swings + 5 Thrusters su un lato, poi cambia. 5 serie totali con 60-90\" di recupero tra serie. Nessuna pausa tra gli esercizi all'interno della serie.",
     structure:[["Serie","5"],["Schema","5 Row + 5 Swing + 5 Thruster"],["Lato","SX poi DX = 1 serie"],["Rest tra serie","60-90\""]],
@@ -3131,9 +3182,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP2: Zeus ─────────────────────────────────────────────────────────────
   {
-    id:"BP2",yt:"https://youtu.be/FzCWl-Mqq-4",label:"Zeus",emoji:"⚡",color:"#1E88E5",
+    id:"BP2",kb:"1",desc:"Schiena, portata e gambe",yt:"https://youtu.be/FzCWl-Mqq-4",label:"Zeus",emoji:"⚡",color:"#1E88E5",
     title:"Zeus",
-    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    meta:"Complex · ~20 min · 5 serie · KB singola",
     totalMin:20,
     how:"6 Rows + 5 Cleans + 4 Single Arm Front Squats. Complesso singolo braccio — fluidità tra Row, Clean e Front Squat. 5 serie, 60-90\" rest.",
     structure:[["Serie","5"],["Schema","6 Row + 5 Clean + 4 Front Squat"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3156,9 +3207,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP3: Hercules ─────────────────────────────────────────────────────────
   {
-    id:"BP3",yt:"https://youtu.be/NXL_Z01j9yY",label:"Hercules",emoji:"💪",color:"#8E24AA",
+    id:"BP3",kb:"1",desc:"Slancio esplosivo e spinta sopra la testa",yt:"https://youtu.be/NXL_Z01j9yY",label:"Hercules",emoji:"💪",color:"#8E24AA",
     title:"Hercules",
-    meta:"Bellplex · ~18 min · 5 serie · KB singola",
+    meta:"Complex · ~18 min · 5 serie · KB singola",
     totalMin:18,
     how:"3 Swings + 3 Cleans + 3 Push Press. Complesso corto e potente — ideale per iniziare con i complexes o come finisher. 5 serie.",
     structure:[["Serie","5"],["Schema","3 Swing + 3 Clean + 3 Push Press"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3181,9 +3232,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP4: Poseidon ─────────────────────────────────────────────────────────
   {
-    id:"BP4",yt:"https://youtu.be/WsxQpHW-G8U",label:"Poseidon",emoji:"🔱",color:"#00ACC1",
+    id:"BP4",kb:"1",desc:"Catena balistica: swing, tirata, strappo",yt:"https://youtu.be/WsxQpHW-G8U",label:"Poseidon",emoji:"🔱",color:"#00ACC1",
     title:"Poseidon",
-    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    meta:"Complex · ~20 min · 5 serie · KB singola",
     totalMin:20,
     how:"4 Swings + 3 High Pulls + 2 Snatches. Progressione di difficoltà dentro la serie — dal balistico base allo Snatch. 5 serie.",
     structure:[["Serie","5"],["Schema","4 Swing + 3 High Pull + 2 Snatch"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3206,9 +3257,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP5: Achilles ─────────────────────────────────────────────────────────
   {
-    id:"BP5",yt:"https://youtu.be/WsxQpHW-G8U",label:"Achilles",emoji:"🏹",color:"#F4511E",
+    id:"BP5",kb:"1",desc:"Strappo e affondi sopra la testa",yt:"https://youtu.be/WsxQpHW-G8U",label:"Achilles",emoji:"🏹",color:"#F4511E",
     title:"Achilles",
-    meta:"Bellplex · ~18 min · 5 serie · KB singola",
+    meta:"Complex · ~18 min · 5 serie · KB singola",
     totalMin:18,
     how:"3 Swings + 3 Snatches + 3 Overhead Lunges. Snatch porta la KB overhead → mantienila su per i Lunges. Esige mobilità di spalla e stabilità overhead. 5 serie.",
     structure:[["Serie","5"],["Schema","3 Swing + 3 Snatch + 3 Overhead Lunge"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3231,9 +3282,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP6: Sisyphus (2 mani) ────────────────────────────────────────────────
   {
-    id:"BP6",yt:"https://youtu.be/4AG-xP6FPYs",label:"Sisyphus",emoji:"🪨",color:"#6D4C41",
+    id:"BP6",kb:"2h",desc:"Gambe: accosciata e affondi",yt:"https://youtu.be/4AG-xP6FPYs",label:"Sisyphus",emoji:"🪨",color:"#6D4C41",
     title:"Sisyphus",
-    meta:"Bellplex · ~20 min · 5 serie · 2 mani sulla KB",
+    meta:"Complex · ~20 min · 5 serie · 2 mani sulla KB",
     totalMin:20,
     how:"5 Two Hand Squat Cleans + 4 Goblet Squats + 3/gamba Lunges. Tutto bimanuale — la KB non cambia mano. Squat Clean porta direttamente in posizione Goblet. 5 serie.",
     structure:[["Serie","5"],["Schema","5 Two Hand Squat Clean + 4 Goblet Squat + 3/gamba Lunge"],["Stile","Bimanuale"],["Rest","60-90\""]],
@@ -3255,9 +3306,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP7: Gimli (2 mani) ───────────────────────────────────────────────────
   {
-    id:"BP7",yt:"https://youtu.be/1kblNZ_YsNA",label:"Gimli",emoji:"🪓",color:"#795548",
+    id:"BP7",kb:"2h",desc:"Catena posteriore e gambe",yt:"https://youtu.be/1kblNZ_YsNA",label:"Gimli",emoji:"🪓",color:"#795548",
     title:"Gimli",
-    meta:"Bellplex · ~18 min · 5 serie · 2 mani sulla KB",
+    meta:"Complex · ~18 min · 5 serie · 2 mani sulla KB",
     totalMin:18,
     how:"5 Swings + 4 Deadlift High Pulls + 3 Goblet Squats. Bimanuale. Progressione dalla potenza (Swing) alla trazione (DHP) alla forza in squat (Goblet). 5 serie.",
     structure:[["Serie","5"],["Schema","5 Swing + 4 Deadlift High Pull + 3 Goblet Squat"],["Stile","Bimanuale"],["Rest","60-90\""]],
@@ -3280,9 +3331,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP8: Aragorn ──────────────────────────────────────────────────────────
   {
-    id:"BP8",yt:"https://youtu.be/pzGCMP3pmb0",label:"Aragorn",emoji:"⚔️",color:"#37474F",
+    id:"BP8",kb:"1",desc:"Schiena, portata e spinta",yt:"https://youtu.be/pzGCMP3pmb0",label:"Aragorn",emoji:"⚔️",color:"#37474F",
     title:"Aragorn",
-    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    meta:"Complex · ~20 min · 5 serie · KB singola",
     totalMin:20,
     how:"6 Rows + 5 Cleans + 4 Push Press. Simile a Zeus ma con Push Press invece di Front Squat. Enfasi su trazione e spinta verticale. 5 serie.",
     structure:[["Serie","5"],["Schema","6 Row + 5 Clean + 4 Push Press"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3305,9 +3356,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP9: Legolas ──────────────────────────────────────────────────────────
   {
-    id:"BP9",yt:"https://youtu.be/UmItpwoiiCU",label:"Legolas",emoji:"🏹",color:"#2E7D32",
+    id:"BP9",kb:"1",desc:"Schiena e strappo",yt:"https://youtu.be/UmItpwoiiCU",label:"Legolas",emoji:"🏹",color:"#2E7D32",
     title:"Legolas",
-    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    meta:"Complex · ~20 min · 5 serie · KB singola",
     totalMin:20,
     how:"4 Ballistic Rows + 4 Tactical Cleans + 4 Tactical Snatches. Versione tattica/balistica — ogni movimento ha una qualità specifica. 5 serie.",
     structure:[["Serie","5"],["Schema","4 Ballistic Row + 4 Tactical Clean + 4 Tactical Snatch"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3330,9 +3381,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP10: Elrond ─────────────────────────────────────────────────────────
   {
-    id:"BP10",yt:"https://youtu.be/5zeVsH3hRH0",label:"Elrond",emoji:"🌟",color:"#F9A825",
+    id:"BP10",kb:"1",desc:"Stacco, portata e spinta",yt:"https://youtu.be/5zeVsH3hRH0",label:"Elrond",emoji:"🌟",color:"#F9A825",
     title:"Elrond",
-    meta:"Bellplex · ~18 min · 5 serie · KB singola",
+    meta:"Complex · ~18 min · 5 serie · KB singola",
     totalMin:18,
     how:"5 Single Arm Deadlifts + 4 Cleans + 3 Push Press. Parte da terra — DL insegna l'hinge pulito prima del Clean. 5 serie.",
     structure:[["Serie","5"],["Schema","5 SA Deadlift + 4 Clean + 3 Push Press"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3355,9 +3406,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP11: Gandalf ─────────────────────────────────────────────────────────
   {
-    id:"BP11",yt:"https://youtu.be/ySgQaLb4BLg",label:"Gandalf",emoji:"🧙",color:"#9E9E9E",
+    id:"BP11",kb:"1",desc:"Cinque movimenti: il più completo",yt:"https://youtu.be/ySgQaLb4BLg",label:"Gandalf",emoji:"🧙",color:"#9E9E9E",
     title:"Gandalf",
-    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    meta:"Complex · ~20 min · 5 serie · KB singola",
     totalMin:20,
     how:"Swing + Tactical Clean & Thruster + Tactical Snatch + Windmill × 2 rip. Il complex più tecnico — include il Windmill che richiede mobilità di spalla e anca. 5 serie.",
     structure:[["Serie","5"],["Schema","1 Swing + 1 Clean&Thruster + 1 Snatch + 2 Windmill"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3381,9 +3432,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP12: Leonidas ────────────────────────────────────────────────────────
   {
-    id:"BP12",yt:"https://youtu.be/ySgQaLb4BLg",label:"Leonidas",emoji:"🛡️",color:"#C62828",
+    id:"BP12",kb:"1",desc:"Portata e doppia spinta",yt:"https://youtu.be/ySgQaLb4BLg",label:"Leonidas",emoji:"🛡️",color:"#C62828",
     title:"Leonidas",
-    meta:"Bellplex · ~18 min · 5 serie · KB singola",
+    meta:"Complex · ~18 min · 5 serie · KB singola",
     totalMin:18,
     how:"4 Cleans + 3 Push Press + 2 Thrusters. Scala dal volume (4) alla potenza (2). Il Thruster è il punto culminante di ogni serie — 2 rep massimo intensità. 5 serie.",
     structure:[["Serie","5"],["Schema","4 Clean + 3 Push Press + 2 Thruster"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3406,9 +3457,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP13: Codi Special ────────────────────────────────────────────────────
   {
-    id:"BP13",yt:"https://youtu.be/ED_1Qt78RBg",label:"Codi Special",emoji:"🔥",color:"#FF6F00",
+    id:"BP13",kb:"1",desc:"Tirata, slancio e strappo",yt:"https://youtu.be/ED_1Qt78RBg",label:"Codi Special",emoji:"🔥",color:"#FF6F00",
     title:"Codi Special",
-    meta:"Bellplex · ~18 min · 5 serie · KB singola",
+    meta:"Complex · ~18 min · 5 serie · KB singola",
     totalMin:18,
     how:"4 Rows + 3 Swings + 2 Snatches. Piramide discendente di rep — ogni esercizio è più difficile del precedente con meno rip. 5 serie.",
     structure:[["Serie","5"],["Schema","4 Row + 3 Swing + 2 Snatch"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3431,9 +3482,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP14: Starky Boy ──────────────────────────────────────────────────────
   {
-    id:"BP14",yt:"https://youtu.be/MSRx8FJKaXc",label:"Starky Boy",emoji:"🌠",color:"#0277BD",
+    id:"BP14",kb:"1",desc:"Schiena e portata — 5 ripetizioni",yt:"https://youtu.be/MSRx8FJKaXc",label:"Starky Boy",emoji:"🌠",color:"#0277BD",
     title:"Starky Boy",
-    meta:"Bellplex · ~18 min · 5 serie · KB singola · × 5 rip",
+    meta:"Complex · ~18 min · 5 serie · KB singola · × 5 rip",
     totalMin:18,
     how:"Row + Dead Clean + Swing Clean & Thruster × 5 rip. Tutto × 5 rip per ogni movimento. Il Dead Clean parte da terra ogni rep — no backswing. 5 serie.",
     structure:[["Serie","5"],["Schema","(Row + Dead Clean + Swing Clean & Thruster) × 5 rip"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3456,9 +3507,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP15: Big Mick ────────────────────────────────────────────────────────
   {
-    id:"BP15",yt:"https://youtu.be/RUre3CfbWJU",label:"Big Mick",emoji:"💥",color:"#558B2F",
+    id:"BP15",kb:"1",desc:"Tirata, slancio e strappo",yt:"https://youtu.be/RUre3CfbWJU",label:"Big Mick",emoji:"💥",color:"#558B2F",
     title:"Big Mick",
-    meta:"Bellplex · ~20 min · 5 serie · KB singola",
+    meta:"Complex · ~20 min · 5 serie · KB singola",
     totalMin:20,
     how:"3 Rows + 4 Swings + 5 Snatches. Piramide crescente — parte da 3, arriva a 5 Snatches. L'intensità cresce dentro la serie. 5 serie.",
     structure:[["Serie","5"],["Schema","3 Row + 4 Swing + 5 Snatch"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3481,9 +3532,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP16: King Kong (double bell) ─────────────────────────────────────────
   {
-    id:"BP16",yt:"https://youtu.be/sojqDX7y5P4",label:"King Kong",emoji:"🦍",color:"#4A148C",
+    id:"BP16",kb:"2",desc:"Doppia KB: schiena, portata e spinta",yt:"https://youtu.be/sojqDX7y5P4",label:"King Kong",emoji:"🦍",color:"#4A148C",
     title:"King Kong",
-    meta:"Bellplex · ~20 min · 5 serie · DOPPIA KB",
+    meta:"Complex · ~20 min · 5 serie · DOPPIA KB",
     totalMin:20,
     how:"Gorilla Row + Gorilla Row + Squat Clean & Thruster × 5 rip. Con due kettlebell. Gorilla Row = Row alternato con la KB a terra (come un gorilla). 5 serie.",
     structure:[["Serie","5"],["Schema","(Gorilla Row + Gorilla Row + Squat Clean & Thruster) × 5"],["Stile","DOPPIA KB"],["Rest","60-90\""]],
@@ -3505,9 +3556,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP17: Devil's Tricycle (2 mani) ───────────────────────────────────────
   {
-    id:"BP17",yt:"https://youtu.be/pMPTlkX0h0g",label:"Devil's Tricycle",emoji:"😈",color:"#B71C1C",
+    id:"BP17",kb:"2h",desc:"Catena posteriore e gambe",yt:"https://youtu.be/pMPTlkX0h0g",label:"Devil's Tricycle",emoji:"😈",color:"#B71C1C",
     title:"Devil's Tricycle",
-    meta:"Bellplex · ~20 min · 5 serie · 2 mani sulla KB",
+    meta:"Complex · ~20 min · 5 serie · 2 mani sulla KB",
     totalMin:20,
     how:"6 Swings + 6 Deadlift High Pull + 3/gamba Offset Squat Cleans. Bimanuale. Offset Squat Clean = KB su un lato solo durante lo squat. 5 serie.",
     structure:[["Serie","5"],["Schema","6 Swing + 6 DHP + 3/gamba Offset Squat Clean"],["Stile","Bimanuale"],["Rest","60-90\""]],
@@ -3530,9 +3581,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP18: DeGiuli ─────────────────────────────────────────────────────────
   {
-    id:"BP18",yt:"https://youtu.be/0Vjjxw8mCfs",label:"DeGiuli",emoji:"💀",color:"#263238",
+    id:"BP18",kb:"1",desc:"Stacco e slancio — 6 ripetizioni",yt:"https://youtu.be/0Vjjxw8mCfs",label:"DeGiuli",emoji:"💀",color:"#263238",
     title:"DeGiuli",
-    meta:"Bellplex · ~18 min · 5 serie · KB singola · × 6 rip",
+    meta:"Complex · ~18 min · 5 serie · KB singola · × 6 rip",
     totalMin:18,
     how:"SA Deadlift + SA Deadlift + Deadstop Swing × 6 rip. Tutto con dead stop tra i rep — nessun bounce o elasticità. Costruisce forza dal basso. 5 serie.",
     structure:[["Serie","5"],["Schema","(SA DL + SA DL + Deadstop Swing) × 6 rip"],["Lato","SX poi DX"],["Rest","60-90\""]],
@@ -3554,9 +3605,9 @@ const EXTRA_WORKOUTS=[
 
   // ── BP19: Helldiver (2 KB preferred) ─────────────────────────────────────
   {
-    id:"BP19",yt:"https://youtu.be/H0frXMG7Apw",label:"Helldiver",emoji:"🔱",color:"#880E4F",
+    id:"BP19",kb:"2",desc:"Doppia KB: slancio, strappo e spinta",yt:"https://youtu.be/H0frXMG7Apw",label:"Helldiver",emoji:"🔱",color:"#880E4F",
     title:"Helldiver",
-    meta:"Bellplex · ~20 min · 5 serie · 2 KB preferibili",
+    meta:"Complex · ~20 min · 5 serie · 2 KB preferibili",
     totalMin:20,
     how:"Swing + Snatch + Thruster × 5 rip. Preferibilmente con due KB. Schema tre movimenti classici in sequenza. 5 serie.",
     structure:[["Serie","5"],["Schema","(Swing + Snatch + Thruster) × 5 rip"],["Stile","2 KB preferred / 1 KB OK"],["Rest","60-90\""]],
@@ -3578,6 +3629,57 @@ const EXTRA_WORKOUTS=[
   },
 
   // ── BP20: Worst Complex Ever (2 KB) ──────────────────────────────────────
+
+  // ── BP21: 6½ Single KB Complex ────────────────────────────────────────────
+  {
+    id:"BP21",kb:"1",desc:"Sette movimenti total body, un lato alla volta",label:"6½ Complex",emoji:"⚙️",color:"#ffb693",
+    title:"6½ Single Kettlebell Complex",
+    meta:"Complex · ~22 min · 3-5 round · KB singola",
+    totalMin:22,
+    how:"Complex total body che combina forza, potenza e conditioning senza mai appoggiare il kettlebell. Completa tutte le ripetizioni da un lato, poi ripeti dall'altro. 3-5 round con 60-90\" di recupero.",
+    structure:[["Round","3-5"],["Schema","4+4+4+4+4+4 + 1 TGU"],["Lato","tutto SX, poi tutto DX"],["Rest tra round","60-90\""]],
+    exercises:[
+      {n:"1",name:"Push-up",             detail:"4 rip — corpo in linea",                          t:"reps",c:"#ffb693"},
+      {n:"2",name:"Bent Over Row",       detail:"4 rip — busto inclinato, core contratto",         t:"reps",c:"#ffb693"},
+      {n:"3",name:"One-Hand Swing",      detail:"4 rip — potenza dalle anche, braccio rilassato",  t:"reps",c:"#ffb693"},
+      {n:"4",name:"Clean",               detail:"4 rip — al rack con movimento fluido",            t:"reps",c:"#ffb693"},
+      {n:"5",name:"Snatch",              detail:"4 rip — dallo swing sopra la testa",              t:"reps",c:"#ffb693"},
+      {n:"6",name:"Thruster",            detail:"4 rip — squat completo + press sopra la testa",   t:"reps",c:"#ffb693"},
+      {n:"7",name:"Half Turkish Get-Up", detail:"1 rip — controllo del KB sopra la testa",         t:"reps",c:"#ffb693"},
+    ],
+    tips:[
+      "Non appoggiare il kettlebell durante il complex — è la regola base.",
+      "Mantieni il core attivo in ogni fase, soprattutto su row e TGU.",
+      "Usa la spinta delle anche negli swing, clean e snatch: il braccio non tira.",
+      "Carico medio, che consenta tecnica pulita su tutti e 7 gli esercizi.",
+      "Qualità del movimento prima della velocità. Se perdi la forma, fermati."
+    ],
+    buildSeq:function(){
+      const R=5;
+      const moves=[
+        ["Push-up","4 rip","Corpo in linea — petto a terra"],
+        ["Bent Over Row","4 rip","Busto inclinato — tira verso l'anca"],
+        ["One-Hand Swing","4 rip","Anca esplosiva — braccio rilassato"],
+        ["Clean","4 rip","Al rack — movimento fluido, no impatto"],
+        ["Snatch","4 rip","Dallo swing sopra la testa in un tempo"],
+        ["Thruster","4 rip","Squat profondo → press esplosivo"],
+        ["Half Turkish Get-Up","1 rip","KB sempre sopra la testa — controllo"],
+      ];
+      const seq=[];
+      for(let r=1;r<=R;r++){
+        ["SX","DX"].forEach(function(lato){
+          moves.forEach(function(m){
+            seq.push({name:m[0],round:r,totalRounds:R,timerSec:null,type:"work",
+              repsOverride:m[1]+" "+lato,cueOverride:m[2]});
+          });
+        });
+        if(r<R) seq.push({name:"Rest",round:r,totalRounds:R,timerSec:75,type:"rest",
+          repsOverride:"60-90\" rest",cueOverride:"Respira — round "+(r+1)+"/"+R+" in arrivo"});
+      }
+      return seq;
+    }
+  },
+
   {
     id:"CORE7",
     label:"Core & Forza 7R",
@@ -3608,9 +3710,9 @@ const EXTRA_WORKOUTS=[
     rounds:7,
   },
   {
-    id:"BP20",yt:"https://youtu.be/JVazUjG1tgk",label:"Worst Complex Ever",emoji:"☠️",color:"#212121",
+    id:"BP20",kb:"2",desc:"Doppia KB: il più duro di tutti",yt:"https://youtu.be/JVazUjG1tgk",label:"Worst Complex Ever",emoji:"☠️",color:"#212121",
     title:"Worst Complex Ever",
-    meta:"Bellplex · ~25 min · 5 serie · DOPPIA KB",
+    meta:"Complex · ~25 min · 5 serie · DOPPIA KB",
     totalMin:25,
     how:"10 Rows + 10 Cleans + 10 Thrusters con DOPPIA KB. Il volume più alto di tutti i complexes. Non per principianti. 5 serie con 90\" rest. Testa la resistenza al limite.",
     structure:[["Serie","5"],["Schema","10 Double Row + 10 Double Clean + 10 Double Thruster"],["Stile","DOPPIA KB — volume estremo"],["Rest","90\""]],
@@ -3834,9 +3936,13 @@ function renderExtraDetail(){
         <span class="material-symbols-outlined" style="color:${accentHex}">arrow_back</span>
       </button>
       <div class="flex-1">
-        <p class="dm-sans text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">${isBP?"BELLPLEX COMPLEX":"EXTRA WORKOUT"}</p>
-        <h1 class="font-headline text-4xl leading-none" style="color:${accentHex}">${w.label}</h1>
-        <p class="dm-sans text-sm text-slate-400 mt-1">${w.title}</p>
+        <p class="dm-sans text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">${isBP?"COMPLEX":"EXTRA WORKOUT"}</p>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h1 class="font-headline text-4xl leading-none" style="color:${accentHex}">${w.label}</h1>
+          ${w.kb?`<span class="dm-sans text-[9px] font-bold uppercase tracking-wider px-2 py-1" style="background:${w.kb==='2'?'#ffb4ab':w.kb==='2h'?'#e9c176':'#50dad1'}1a;color:${w.kb==='2'?'#ffb4ab':w.kb==='2h'?'#e9c176':'#50dad1'}">${w.kb==='2'?'2 KB':w.kb==='2h'?'2 MANI':'1 KB'}</span>`:''}
+        </div>
+        ${w.desc?`<p class="dm-sans text-sm text-slate-300 mt-1.5">${w.desc}</p>`:''}
+        <p class="dm-sans text-xs text-slate-500 mt-0.5">${w.title}</p>
       </div>
     </header>
 
@@ -4210,7 +4316,7 @@ function exitBellplex(){
   function doSave(){
     var roundsDone=(state.bpSerie||1)-1;
     var w=getExtraById(state.extraWorkoutId)||{};
-    savePartialEntry(w.label||'Bellplex', roundsDone, state.startTime||null, (state.extraWorkoutId||''));
+    savePartialEntry(w.label||'Complex', roundsDone, state.startTime||null, (state.extraWorkoutId||''));
     doExit();
   }
   function doExit(){
@@ -4806,7 +4912,7 @@ function renderTrain(){
   };
   var BP_LEVELS=[
     {label:"🟢 Entry",      color:"#ffb4ab", ids:["BP1","BP3","BP6","BP7","BP10","BP13","BP14"]},
-    {label:"🟡 Intermedio", color:"#e9c176", ids:["BP2","BP4","BP5","BP8","BP9","BP15","BP18"]},
+    {label:"🟡 Intermedio", color:"#e9c176", ids:["BP2","BP4","BP5","BP8","BP9","BP15","BP18","BP21"]},
     {label:"🔴 Avanzato",   color:"#ffb693", ids:["BP11","BP12","BP16","BP17","BP19","BP20"]},
   ];
 
@@ -4814,7 +4920,7 @@ function renderTrain(){
   var TABS=[
     {id:"base",     label:"KB A·B·C",  color:"#ffb693"},
     {id:"alt",      label:"Extra",     color:"#ffb693"},
-    {id:"bellplex", label:"Bellplex",  color:"#ffb4ab"},
+    {id:"bellplex", label:"Complex",   color:"#ffb4ab"},
     {id:"flow",     label:"Flow",      color:"#50dad1"},
     {id:"axe",      label:"AXE",       color:"#8b5cf6"},
     {id:"kdp",      label:"KDP-26",    color:"#7A9A3A"},
@@ -4915,14 +5021,21 @@ function renderTrain(){
           '<span class="material-symbols-outlined text-gray-500 text-sm" style="transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s">expand_more</span>'+
         '</button>'+
         (isOpen?'<div class="space-y-px">'+
-          wks.map(function(w){return '<div onclick="openExtraDetail(\''+w.id+'\')"'+
+          wks.map(function(w){
+            var kbTxt = w.kb==='2'?'2 KB':w.kb==='2h'?'2 mani':'1 KB';
+            var kbCol = w.kb==='2'?'#ffb4ab':w.kb==='2h'?'#e9c176':'#50dad1';
+            return '<div onclick="openExtraDetail(\''+w.id+'\')"'+
             ' class="flex items-center gap-3 p-4 bg-surface-container-low cursor-pointer active:bg-surface-container">'+
-            '<span class="font-headline text-base w-8 flex-shrink-0 text-center" style="color:'+lv.color+'">'+
+            '<span class="font-headline text-base w-7 flex-shrink-0 text-center" style="color:'+lv.color+'">'+
               String(bpAll.indexOf(w)+1).padStart(2,'0')+
             '</span>'+
             '<div class="flex-1 min-w-0">'+
-              '<p class="font-headline text-base leading-none">'+w.label+' — '+w.title+'</p>'+
-              '<p class="font-label text-[9px] text-gray-500 mt-0.5">'+w.meta+'</p>'+
+              '<div class="flex items-center gap-2 flex-wrap">'+
+                '<p class="font-headline text-base leading-none">'+w.label+'</p>'+
+                '<span class="font-label text-[8px] uppercase tracking-wider px-1.5 py-0.5" style="background:'+kbCol+'1a;color:'+kbCol+'">'+kbTxt+'</span>'+
+              '</div>'+
+              '<p class="font-label text-[10px] text-gray-400 mt-1 leading-snug">'+(w.desc||'')+'</p>'+
+              '<p class="font-label text-[9px] text-gray-600 mt-0.5">'+(w.totalMin||20)+' min · '+((w.exercises||[]).length)+' esercizi</p>'+
             '</div>'+
             '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
           '</div>';}).join('')+
@@ -6714,11 +6827,11 @@ function getWorkoutSuggestion(){
                   {fn:function(){return daysAxe>=3;},  w:{title:'AXE Protocol',  icon:'🪓',color:'#8b5cf6',action:"forgeAxe();",priority:60}},
                   {fn:function(){return daysKb>=4;},   w:{title:'Giorno '+nextKbDay,icon:'🔥',color:'#ffb693',action:"forgeStartKb();",priority:40}}],
     forza:       [{fn:function(){return daysKb>=3;},   w:{title:'Giorno '+nextKbDay,icon:'🔥',color:'#ffb693',action:"forgeStartKb();",priority:70}},
-                  {fn:function(){return daysBP>=5;},   w:{title:'Bellplex',      icon:'🔴',color:'#ffb4ab',action:"forgeBellplex();",priority:65}},
+                  {fn:function(){return daysBP>=5;},   w:{title:'Complex',      icon:'🔴',color:'#ffb4ab',action:"forgeBellplex();",priority:65}},
                   {fn:function(){return daysCore7>=4;},w:{title:'Core & Forza',  icon:'💥',color:'#ffb693',action:"forgeCore7();",priority:60}},
                   {fn:function(){return daysDpu>=3;},  w:{title:'Deep Push-Up',  icon:'💪',color:'#50dad1',action:"forgeDpu();",priority:55}}],
     ipertrofia:  [{fn:function(){return daysKb>=3;},   w:{title:'Giorno '+nextKbDay,icon:'🔥',color:'#ffb693',action:"forgeStartKb();",priority:72}},
-                  {fn:function(){return daysBP>=4;},   w:{title:'Bellplex',      icon:'🔴',color:'#ffb4ab',action:"forgeBellplex();",priority:70}},
+                  {fn:function(){return daysBP>=4;},   w:{title:'Complex',      icon:'🔴',color:'#ffb4ab',action:"forgeBellplex();",priority:70}},
                   {fn:function(){return daysDpu>=3;},  w:{title:'Deep Push-Up',  icon:'💪',color:'#50dad1',action:"forgeDpu();",priority:65}},
                   {fn:function(){return daysCore7>=3;},w:{title:'Core & Forza',  icon:'💥',color:'#ffb693',action:"forgeCore7();",priority:60}}],
     mobilita:    [{fn:function(){return daysMorn>=2;}, w:{title:'Routine Mattutina',icon:'🌅',color:'#e9c176',action:"mrStart(60);",priority:70}},
@@ -6917,7 +7030,7 @@ function manualLogSave(){
 
 function renderManualLogForm(){
   var FILL = "font-variation-settings:'FILL' 1";
-  var TYPES = ['AXE — Snatch','AXE — Swing','KDP-26','Bellplex','Giorno A','Giorno B','Giorno C',
+  var TYPES = ['AXE — Snatch','AXE — Swing','KDP-26','Complex','Giorno A','Giorno B','Giorno C',
     'Deep Push-Up','Wim Hof','Corsa','SUP','Calisthenics','Yoga','Ciclismo','Nuoto','Altro'];
   var FEELINGS = ['😫','😐','💪','🔥'];
   var typeOpts = TYPES.map(function(t){
@@ -7039,7 +7152,7 @@ function forgeExportWeekly(){
     giorni_allenamento:(FORGE_PROFILE.trainingDays||[]).map(function(d){return DAY_NAMES[d];}),
     allenamenti_ultimi_7_giorni:all,
     dati_salute_ultimi_7_giorni:health7.map(function(h){return {data:h.date,peso_kg:h.weight||null,hrv:h.hrv||null,ore_sonno:h.sleep||null,qualita_sonno:h.sleepQ||null};}),
-    workout_disponibili:['AXE (aerobico anti-glicolitico)','KDP-26 (EMOM+AMRAP)','Giorno A (EMOM forza)','Giorno B (HIIT)','Giorno C (Ladder+AMRAP)','Bellplex BP1-BP20','Core & Forza 7R','Deep Push-Up EMOM','Condizionamento B4-B9','Flow FL1-FL4 (sequenze continue)','Routine Mattutina 8min','Wim Hof']
+    workout_disponibili:['AXE (aerobico anti-glicolitico)','KDP-26 (EMOM+AMRAP)','Giorno A (EMOM forza)','Giorno B (HIIT)','Giorno C (Ladder+AMRAP)','Complex CX1-CX21','Core & Forza 7R','Deep Push-Up EMOM','Condizionamento B4-B9','Flow FL1-FL4 (sequenze continue)','Routine Mattutina 8min','Wim Hof']
   };
 
   var prompt='Sei un coach di kettlebell. Analizza i dati e fornisci raccomandazioni per la settimana prossima.\n\n'+
@@ -7744,6 +7857,11 @@ function flowStepHTML(f,idx){
   var h='';
   h+='<p class="font-label text-[9px] uppercase tracking-widest text-gray-600 mb-1">STEP '+cur.n+' / '+f.sequenza.length+'</p>';
   h+='<div class="flex items-center flex-wrap mb-2"><h2 class="font-headline text-4xl leading-none" style="color:'+f.color+'">'+cur.nome+'</h2>'+latoBadge(cur.lato)+'</div>';
+  if(cur.transizione){
+    h+='<div class="flex gap-2 p-3 mb-3" style="background:'+f.color+'0f;border-left:2px solid '+f.color+'">';
+    h+='<span class="material-symbols-outlined text-sm flex-shrink-0" style="color:'+f.color+'">swipe_right_alt</span>';
+    h+='<p class="font-label text-[11px] leading-relaxed" style="color:'+f.color+'">'+cur.transizione+'</p></div>';
+  }
   h+='<p class="font-label text-xs text-gray-400 leading-relaxed mb-4">'+cur.descrizione+'</p>';
   if(nxt){
     h+='<div class="pt-3" style="border-top:1px solid rgba(255,255,255,0.06)">';
@@ -7806,6 +7924,10 @@ function renderFlowDetail(){
     if(s.lato) h+='<span class="font-label text-[8px] uppercase tracking-widest px-1.5 py-0.5 ml-2" style="background:'+f.color+'22;color:'+f.color+'">'+s.lato+'</span>';
     h+='</div>';
     h+='<p class="font-label text-[10px] text-gray-500 mt-1 leading-relaxed">'+s.descrizione+'</p>';
+    if(s.transizione){
+      h+='<div class="flex gap-1.5 mt-1.5"><span class="material-symbols-outlined text-[11px] flex-shrink-0" style="color:'+f.color+'99">swipe_right_alt</span>';
+      h+='<p class="font-label text-[9px] leading-relaxed" style="color:'+f.color+'99">'+s.transizione+'</p></div>';
+    }
     h+='</div></div>';
   });
   h+='</div>';
@@ -8515,7 +8637,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v76';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v79';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
