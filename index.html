@@ -1227,10 +1227,15 @@ function renderHome(){
       '<div class="space-y-1.5 mb-5">'+links+'</div>'+
 
       // Riscaldamento rapido
-      '<div>'+
+      '<div class="mb-6">'+
         '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">RISCALDAMENTO RAPIDO</p>'+
         '<div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none">'+warmupChips+'</div>'+
       '</div>'+
+
+      // Versione
+      '<button onclick="state.tab=\'changelog\';render()" class="w-full text-center py-2 active:scale-95">'+
+        '<span class="font-label text-[9px] uppercase tracking-widest text-gray-700">FORGE '+APP_VERSION+' · novità</span>'+
+      '</button>'+
 
     '</main>'+
     navHTML('home')+
@@ -6930,6 +6935,14 @@ function renderSettings(){
   h+='<button onclick="forgeExportWeekly()" class="w-full py-4 font-headline text-xl tracking-widest active:scale-95 mb-2" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;display:block">&#11015; ESPORTA DATI SETTIMANA</button>';
   h+='<button onclick="forgeImportAI()" class="w-full py-3.5 font-headline text-xl tracking-widest active:scale-95" style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;background:rgba(139,92,246,0.06);display:block">&#11014; IMPORTA PIANO AI</button>';
   h+='</section>';
+  h+='<section class="mt-6 pt-6" style="border-top:1px solid rgba(90,65,54,0.3)">';
+  h+='<button onclick="state.tab=\'changelog\';render()" class="w-full flex items-center justify-between p-4 active:scale-[0.98]" style="background:rgba(255,255,255,0.02);border:1px solid rgba(90,65,54,0.25)">';
+  h+='<div class="flex items-center gap-3">';
+  h+='<span class="material-symbols-outlined text-lg" style="color:#ffb693;'+FILL+'">update</span>';
+  h+='<div class="text-left"><p class="font-headline text-base leading-none">Versione '+APP_VERSION+'</p>';
+  h+='<p class="font-label text-[9px] text-gray-600 mt-0.5">Vedi le novità</p></div></div>';
+  h+='<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span></button>';
+  h+='</section>';
   h+='</main>'+navHTML('settings')+'</div>';
   return h;
 }
@@ -7762,7 +7775,12 @@ function flowTick(){
     var perStep=f.durataRound/f.sequenza.length;
     var elapsed=f.durataRound-s.remaining;
     var newIdx=Math.min(f.sequenza.length-1, Math.floor(elapsed/perStep));
-    if(newIdx!==s.stepIdx){ s.stepIdx=newIdx; kdpVib([60]); }
+    if(newIdx!==s.stepIdx){
+      s.stepIdx=newIdx; kdpVib([60]);
+      var nk=getTransKey(s.id,newIdx);
+      if(FA.open && nk) faStart(nk);
+      else if(FA.open && !nk) faStop();
+    }
   }
 
   // Beep ultimi 3 secondi
@@ -7817,6 +7835,7 @@ function flowExit(){
   }
   function doExit(){
     if(s.tid) clearInterval(s.tid);
+    faStop(); FA.open=false;
     releaseWakeLock();
     FLOW_STATE={id:null,round:1,totalRounds:3,phase:'idle',remaining:0,stepIdx:0,tid:null,startTs:null};
     state.tab='flow-detail'; render();
@@ -7840,12 +7859,147 @@ function flowSaveDone(){
   });
   saveExternalHistory();
   if(s.tid) clearInterval(s.tid);
+  faStop(); FA.open=false;
   releaseWakeLock();
   var seqText=(f?f.sequenza.map(function(x){return x.nome;}).join(' '):'');
   var flowName=(f?f.nome:'Flow');
   FLOW_STATE={id:null,round:1,totalRounds:3,phase:'idle',remaining:0,stepIdx:0,tid:null,startTs:null};
   showMuscleSummary(seqText,'train',{trainSubTab:'flow'},flowName);
 }
+
+// ══════════════════════════════════════════════════════════════════
+// FLOW — animazioni transizioni
+// ══════════════════════════════════════════════════════════════════
+var FLOW_TRANS = {
+  T1:{t:"Rack → presa 2 mani", poses:[
+    {c:"Kettlebell in rack, una mano sul manico",head:[104,42,15],torso:"M104,57 L100,132",armFar:"M102,76 L122,94 L112,110",armNear:"M102,76 L82,92 L98,106",legFar:"M100,132 L112,190 L114,248",legNear:"M100,132 L88,190 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[104,118],handle:[104,104],handA:"M94,104 L102,104",handB:"M94,104 L102,104"},
+    {c:"La seconda mano raggiunge il manico",head:[104,42,15],torso:"M104,57 L100,132",armFar:"M102,75 L120,93 L110,106",armNear:"M102,75 L84,91 L98,104",legFar:"M100,132 L112,190 L114,248",legNear:"M100,132 L88,190 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[103,117],handle:[103,103],handA:"M95,103 L101,103",handB:"M104,103 L110,103"},
+    {c:"Entrambe le mani sulle corna, KB allo sterno",head:[104,42,15],torso:"M104,57 L100,132",armFar:"M102,74 L118,92 L108,104",armNear:"M102,74 L86,90 L98,102",legFar:"M100,132 L112,190 L114,248",legNear:"M100,132 L88,190 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[103,116],handle:[103,102],handA:"M95,102 L101,102",handB:"M105,102 L111,102"}]},
+  T3:{t:"Snatch → Windmill", poses:[
+    {c:"Fine snatch: braccio bloccato in alto",head:[104,80,14],torso:"M104,94 L100,152",armFar:"M102,102 L114,124 L108,142",armNear:"M102,102 L98,76 L98,56",legFar:"M100,152 L112,198 L114,248",legNear:"M100,152 L88,198 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[97,42],handle:[97,54],handA:"M92,54 L102,54",handB:"M92,54 L102,54"},
+    {c:"Ruota i piedi ~45°, sguardo sul KB",head:[108,82,14],torso:"M108,96 L100,152",armFar:"M106,104 L118,128 L112,148",armNear:"M106,104 L100,78 L98,56",legFar:"M100,152 L120,198 L124,248",legNear:"M100,152 L82,198 L78,248",footFar:"M124,248 L138,250",footNear:"M78,248 L64,250",kb:[97,42],handle:[97,54],handA:"M92,54 L102,54",handB:"M92,54 L102,54"},
+    {c:"Spingi l'anca di lato, il busto scende",head:[118,96,14],torso:"M118,110 L96,162",armFar:"M116,118 L124,150 L120,178",armNear:"M116,118 L104,84 L100,60",legFar:"M96,162 L116,202 L124,248",legNear:"M96,162 L80,204 L74,248",footFar:"M124,248 L138,250",footNear:"M74,248 L60,250",kb:[99,46],handle:[99,58],handA:"M94,58 L104,58",handB:"M94,58 L104,58"},
+    {c:"Mano libera verso il piede, braccio teso",head:[132,120,14],torso:"M132,134 L94,172",armFar:"M128,142 L126,182 L118,218",armNear:"M128,142 L110,92 L102,64",legFar:"M94,172 L112,206 L122,248",legNear:"M94,172 L78,208 L70,248",footFar:"M122,248 L136,250",footNear:"M70,248 L56,250",kb:[101,50],handle:[101,62],handA:"M96,62 L106,62",handB:"M96,62 L106,62"}]},
+  T4:{t:"Windmill → Affondo braccio teso", poses:[
+    {c:"Fondo windmill, mano vicino al pavimento",head:[132,120,14],torso:"M132,134 L94,172",armFar:"M128,142 L126,182 L118,218",armNear:"M128,142 L110,92 L102,64",legFar:"M94,172 L112,206 L122,248",legNear:"M94,172 L78,208 L70,248",footFar:"M122,248 L136,250",footNear:"M70,248 L56,250",kb:[101,50],handle:[101,62],handA:"M96,62 L106,62",handB:"M96,62 L106,62"},
+    {c:"Risali senza abbassare il kettlebell",head:[114,94,14],torso:"M114,108 L100,158",armFar:"M112,116 L120,146 L116,172",armNear:"M112,116 L102,82 L98,58",legFar:"M100,158 L116,200 L120,248",legNear:"M100,158 L84,202 L80,248",footFar:"M120,248 L134,250",footNear:"M80,248 L66,250",kb:[97,44],handle:[97,56],handA:"M92,56 L102,56",handB:"M92,56 L102,56"},
+    {c:"In piedi, braccio bloccato in alto",head:[104,80,14],torso:"M104,94 L100,152",armFar:"M102,102 L114,124 L108,142",armNear:"M102,102 L98,76 L98,56",legFar:"M100,152 L112,198 L114,248",legNear:"M100,152 L88,198 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[97,42],handle:[97,54],handA:"M92,54 L102,54",handB:"M92,54 L102,54"},
+    {c:"Passo indietro: il braccio non si muove",head:[104,86,14],torso:"M104,100 L102,158",armFar:"M102,108 L116,132 L110,152",armNear:"M102,108 L98,80 L98,58",legFar:"M102,158 L128,196 L140,238",legNear:"M102,158 L92,202 L90,248",footFar:"M140,238 L152,242",footNear:"M90,248 L78,251",kb:[97,44],handle:[97,56],handA:"M92,56 L102,56",handB:"M92,56 L102,56"}]},
+  T5:{t:"Figure 8 → Snatch", poses:[
+    {c:"Otto tra le gambe, semi-squat",head:[104,72,15],torso:"M104,87 L102,142",armFar:"M102,100 L116,130 L108,152",armNear:"M102,100 L88,128 L98,150",legFar:"M102,142 L120,192 L120,248",legNear:"M102,142 L84,192 L82,248",footFar:"M120,248 L132,251",footNear:"M82,248 L70,251",kb:[104,164],handle:[104,152],handA:"M96,152 L104,152",handB:"M96,152 L104,152"},
+    {c:"Il KB passa nell'altra mano dietro la coscia",head:[104,72,15],torso:"M104,87 L102,142",armFar:"M102,100 L114,132 L106,154",armNear:"M102,100 L90,130 L100,152",legFar:"M102,142 L120,192 L120,248",legNear:"M102,142 L84,192 L82,248",footFar:"M120,248 L132,251",footNear:"M82,248 L70,251",kb:[106,166],handle:[106,154],handA:"M106,154 L114,154",handB:"M106,154 L114,154"},
+    {c:"Risali e carica lo swing",head:[104,60,15],torso:"M104,75 L100,138",armFar:"M102,88 L116,118 L108,142",armNear:"M102,88 L92,118 L100,142",legFar:"M100,138 L114,192 L116,248",legNear:"M100,138 L86,192 L84,248",footFar:"M116,248 L128,251",footNear:"M84,248 L72,251",kb:[102,156],handle:[102,144],handA:"M102,144 L110,144",handB:"M102,144 L110,144"},
+    {c:"Snatch: sopra la testa in un tempo",head:[104,80,14],torso:"M104,94 L100,152",armFar:"M102,102 L114,124 L108,142",armNear:"M102,102 L98,76 L98,56",legFar:"M100,152 L112,198 L114,248",legNear:"M100,152 L88,198 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[97,42],handle:[97,54],handA:"M92,54 L102,54",handB:"M92,54 L102,54"}]},
+  T6:{t:"Cambio mano in volo", poses:[
+    {c:"Swing in salita, KB su una mano",head:[104,50,15],torso:"M104,65 L100,132",armFar:"M102,78 L118,102 L110,120",armNear:"M102,78 L88,100 L96,118",legFar:"M100,132 L112,190 L114,248",legNear:"M100,132 L88,190 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[100,132],handle:[100,120],handA:"M92,120 L100,120",handB:"M92,120 L100,120"},
+    {c:"Punto morto in alto: il KB è senza peso",head:[104,46,15],torso:"M104,61 L100,130",armFar:"M102,74 L116,92 L112,104",armNear:"M102,74 L88,92 L92,104",legFar:"M100,130 L112,188 L114,248",legNear:"M100,130 L88,188 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[102,116],handle:[102,104],handA:"M96,104 L102,104",handB:"M96,104 L102,104"},
+    {c:"Molla e riprendi con l'altra mano",head:[104,46,15],torso:"M104,61 L100,130",armFar:"M102,74 L114,90 L110,102",armNear:"M102,74 L90,90 L94,102",legFar:"M100,130 L112,188 L114,248",legNear:"M100,130 L88,188 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[102,114],handle:[102,102],handA:"M104,102 L110,102",handB:"M104,102 L110,102"},
+    {c:"Discesa controllata con la mano nuova",head:[104,50,15],torso:"M104,65 L100,132",armFar:"M102,78 L116,102 L110,122",armNear:"M102,78 L90,100 L98,120",legFar:"M100,132 L112,190 L114,248",legNear:"M100,132 L88,190 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[102,134],handle:[102,122],handA:"M104,122 L112,122",handB:"M104,122 L112,122"}]},
+  T7:{t:"Get-Up: da terra a in piedi", poses:[
+    {c:"Sdraiato, braccio teso verso il soffitto",head:[62,216,15],torso:"M78,222 L128,228",armFar:"M84,222 L104,232 L124,236",armNear:"M84,220 L86,180 L88,150",legFar:"M128,228 L152,214 L172,228",legNear:"M128,230 L156,236 L178,238",footFar:"M172,228 L178,218",footNear:"M178,238 L186,242",kb:[88,140],handle:[88,150],handA:"M83,148 L93,148",handB:"M83,148 L93,148"},
+    {c:"Sali sul gomito, poi sulla mano",head:[74,180,15],torso:"M84,190 L126,224",armFar:"M86,196 L98,220 L112,238",armNear:"M86,192 L88,156 L90,132",legFar:"M126,224 L148,206 L168,224",legNear:"M126,226 L154,234 L176,236",footFar:"M168,224 L174,214",footNear:"M176,236 L184,240",kb:[90,122],handle:[90,132],handA:"M85,130 L95,130",handB:"M85,130 L95,130"},
+    {c:"Anca su, gamba sotto: posizione a ponte",head:[86,136,15],torso:"M92,148 L112,200",armFar:"M92,156 L104,196 L114,236",armNear:"M92,152 L92,110 L94,84",legFar:"M112,200 L138,212 L156,240",legNear:"M112,202 L96,224 L92,248",footFar:"M156,240 L166,244",footNear:"M92,248 L80,251",kb:[94,74],handle:[94,84],handA:"M89,82 L99,82",handB:"M89,82 L99,82"},
+    {c:"Affondo, poi in piedi. Il KB resta sopra",head:[104,80,14],torso:"M104,94 L100,152",armFar:"M102,102 L114,124 L108,142",armNear:"M102,102 L98,76 L98,56",legFar:"M100,152 L112,198 L114,248",legNear:"M100,152 L88,198 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[97,42],handle:[97,54],handA:"M92,54 L102,54",handB:"M92,54 L102,54"}]},
+  T8:{t:"Rack → cambio mano a terra", poses:[
+    {c:"Kettlebell in rack",head:[104,42,15],torso:"M104,57 L100,132",armFar:"M102,76 L122,94 L112,110",armNear:"M102,76 L82,92 L98,106",legFar:"M100,132 L112,190 L114,248",legNear:"M100,132 L88,190 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[104,118],handle:[104,104],handA:"M94,104 L102,104",handB:"M94,104 L102,104"},
+    {c:"Abbassa lungo il corpo, anche indietro",head:[102,58,15],torso:"M102,73 L104,140",armFar:"M100,86 L114,120 L110,150",armNear:"M100,86 L88,120 L94,152",legFar:"M104,140 L120,190 L120,248",legNear:"M104,140 L86,190 L84,248",footFar:"M120,248 L132,251",footNear:"M84,248 L72,251",kb:[98,166],handle:[98,154],handA:"M90,154 L98,154",handB:"M90,154 L98,154"},
+    {c:"Posizione di stacco: cambia presa",head:[100,72,15],torso:"M100,87 L106,150",armFar:"M98,100 L110,140 L106,176",armNear:"M98,100 L88,140 L94,178",legFar:"M106,150 L124,192 L122,248",legNear:"M106,150 L84,194 L82,248",footFar:"M122,248 L134,251",footNear:"M82,248 L70,251",kb:[100,192],handle:[100,180],handA:"M102,180 L110,180",handB:"M102,180 L110,180"},
+    {c:"Pronto a ripartire con l'altra mano",head:[104,54,15],torso:"M104,69 L102,138",armFar:"M102,82 L116,116 L112,146",armNear:"M102,82 L90,116 L96,148",legFar:"M102,138 L116,190 L118,248",legNear:"M102,138 L88,190 L86,248",footFar:"M118,248 L130,251",footNear:"M86,248 L74,251",kb:[100,162],handle:[100,150],handA:"M102,150 L110,150",handB:"M102,150 L110,150"}]},
+};
+
+// Mappa step → transizione (per flow e indice step)
+var FLOW_TRANS_MAP = {
+  FL1:{1:"T1", 3:"T3", 4:"T4", 7:"T5", 8:"T3", 9:"T4"},
+  FL2:{3:"T3", 4:"T4", 6:"T8", 10:"T3", 11:"T4"},
+  FL3:{4:"T6"},
+  FL4:{4:"T7", 6:"T8", 7:"T7"},
+};
+
+function getTransKey(flowId, stepIdx){
+  var m = FLOW_TRANS_MAP[flowId];
+  return m ? (m[stepIdx]||null) : null;
+}
+
+// ── Motore animazione ──────────────────────────────────────────
+var FA = {key:null, idx:0, t:0, raf:null, open:false};
+
+function faNums(d){ return d.match(/-?\d+\.?\d*/g).map(Number); }
+function faLerp(a,b,t){ return a+(b-a)*t; }
+function faLerpPath(d1,d2,t){
+  var n1=faNums(d1), n2=faNums(d2);
+  if(n1.length!==n2.length) return t<0.5?d1:d2;
+  var i=0;
+  return d1.replace(/-?\d+\.?\d*/g, function(){ return faLerp(n1[i],n2[i++],t).toFixed(1); });
+}
+function faSet(id,attr,val){ var e=document.getElementById(id); if(e) e.setAttribute(attr,val); }
+
+function faApply(p1,p2,t){
+  faSet('fa-head','cx',faLerp(p1.head[0],p2.head[0],t).toFixed(1));
+  faSet('fa-head','cy',faLerp(p1.head[1],p2.head[1],t).toFixed(1));
+  faSet('fa-head','r',p1.head[2]);
+  ['torso','armFar','armNear','legFar','legNear','footFar','footNear','handA','handB'].forEach(function(k){
+    faSet('fa-'+k,'d',faLerpPath(p1[k],p2[k],t));
+  });
+  var bx=faLerp(p1.kb[0],p2.kb[0],t), by=faLerp(p1.kb[1],p2.kb[1],t);
+  faSet('fa-kbBall','cx',bx.toFixed(1)); faSet('fa-kbBall','cy',by.toFixed(1));
+  var hx=faLerp(p1.handle[0],p2.handle[0],t), hy=faLerp(p1.handle[1],p2.handle[1],t);
+  faSet('fa-kbHandle','d','M'+(hx-8).toFixed(1)+','+(hy+7).toFixed(1)+' Q'+(hx-8).toFixed(1)+','+(hy-4).toFixed(1)+' '+hx.toFixed(1)+','+(hy-4).toFixed(1)+' Q'+(hx+8).toFixed(1)+','+(hy-4).toFixed(1)+' '+(hx+8).toFixed(1)+','+(hy+7).toFixed(1));
+}
+
+function faLoop(){
+  var T=FLOW_TRANS[FA.key];
+  if(!T){ faStop(); return; }
+  var P=T.poses;
+  FA.t += 0.014;
+  if(FA.t >= 1.35){ FA.t=0; FA.idx=(FA.idx+1)%P.length; }
+  var tt=Math.min(1,FA.t);
+  var e = tt<0.5 ? 2*tt*tt : 1-Math.pow(-2*tt+2,2)/2;
+  faApply(P[FA.idx], P[(FA.idx+1)%P.length], e);
+  var cur = tt<0.5 ? FA.idx : (FA.idx+1)%P.length;
+  var cueEl=document.getElementById('fa-cue');
+  if(cueEl) cueEl.textContent=P[cur].c;
+  var tr=document.getElementById('fa-track');
+  if(tr){ for(var i=0;i<tr.children.length;i++){ tr.children[i].style.background = (i===cur)?'#ffb693':'rgba(255,255,255,0.08)'; } }
+  FA.raf=requestAnimationFrame(faLoop);
+}
+function faStart(key){
+  FA.key=key; FA.idx=0; FA.t=0;
+  if(FA.raf) cancelAnimationFrame(FA.raf);
+  faLoop();
+}
+function faStop(){ if(FA.raf) cancelAnimationFrame(FA.raf); FA.raf=null; }
+
+function flowToggleAnim(){
+  FA.open=!FA.open;
+  var w=document.getElementById('fa-wrap');
+  var ic=document.getElementById('fa-icon');
+  if(w) w.style.maxHeight = FA.open ? '340px' : '0px';
+  if(ic) ic.textContent = FA.open ? 'expand_less' : 'play_arrow';
+  if(FA.open){
+    var s=FLOW_STATE, f=getFlowById(s.id);
+    var key=getTransKey(s.id, s.stepIdx);
+    if(key) faStart(key);
+  } else faStop();
+}
+
+function faSvgHTML(color){
+  var h='<div style="display:flex;justify-content:center;background:#0C1017;border:1px solid rgba(90,65,54,.25)">';
+  h+='<svg viewBox="0 0 200 280" style="width:100%;max-width:150px;height:auto" xmlns="http://www.w3.org/2000/svg">';
+  h+='<style>.fa-fig{fill:none;stroke:#e8e8e8;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.fa-far{stroke:#7d838b;stroke-width:4.5}.fa-head{fill:#e8e8e8}.fa-kbb{fill:#c97a4a}.fa-kbh{fill:none;stroke:'+color+';stroke-width:5;stroke-linecap:round}.fa-hand{fill:none;stroke:#fff;stroke-width:4.5;stroke-linecap:round}</style>';
+  h+='<line x1="20" y1="252" x2="180" y2="252" stroke="rgba(255,255,255,.1)" stroke-width="2"/>';
+  h+='<path class="fa-fig fa-far" id="fa-legFar"/><path class="fa-fig fa-far" id="fa-footFar"/><path class="fa-fig fa-far" id="fa-armFar"/>';
+  h+='<circle class="fa-head" id="fa-head"/><path class="fa-fig" id="fa-torso"/>';
+  h+='<path class="fa-fig" id="fa-legNear"/><path class="fa-fig" id="fa-footNear"/>';
+  h+='<circle class="fa-kbb" id="fa-kbBall" r="13"/><path class="fa-kbh" id="fa-kbHandle"/>';
+  h+='<path class="fa-fig" id="fa-armNear"/><path class="fa-hand" id="fa-handA"/><path class="fa-hand" id="fa-handB"/>';
+  h+='</svg></div>';
+  h+='<p id="fa-cue" style="text-align:center;font-size:10px;color:#94a3b8;padding:5px 4px 0;min-height:14px;line-height:1.3"></p>';
+  h+='<div id="fa-track" style="display:flex;gap:3px;padding:4px 0 0">';
+  h+='<div style="flex:1;height:2px;background:rgba(255,255,255,.08)"></div>'.repeat(4);
+  h+='</div>';
+  return h;
+}
+
 
 function flowStepHTML(f,idx){
   var cur=f.sequenza[idx];
@@ -7858,9 +8012,21 @@ function flowStepHTML(f,idx){
   h+='<p class="font-label text-[9px] uppercase tracking-widest text-gray-600 mb-1">STEP '+cur.n+' / '+f.sequenza.length+'</p>';
   h+='<div class="flex items-center flex-wrap mb-2"><h2 class="font-headline text-4xl leading-none" style="color:'+f.color+'">'+cur.nome+'</h2>'+latoBadge(cur.lato)+'</div>';
   if(cur.transizione){
-    h+='<div class="flex gap-2 p-3 mb-3" style="background:'+f.color+'0f;border-left:2px solid '+f.color+'">';
+    var tKey=getTransKey(f.id, idx);
+    h+='<div class="mb-3" style="background:'+f.color+'0f;border-left:2px solid '+f.color+'">';
+    h+='<div class="flex items-center gap-2 p-2.5">';
     h+='<span class="material-symbols-outlined text-sm flex-shrink-0" style="color:'+f.color+'">swipe_right_alt</span>';
-    h+='<p class="font-label text-[11px] leading-relaxed" style="color:'+f.color+'">'+cur.transizione+'</p></div>';
+    h+='<p class="font-label text-[11px] leading-snug flex-1" style="color:'+f.color+'">'+cur.transizione+'</p>';
+    if(tKey){
+      h+='<button onclick="flowToggleAnim()" class="flex items-center justify-center flex-shrink-0 w-8 h-8 active:scale-90" style="border:1px solid '+f.color+'59;color:'+f.color+'">';
+      h+='<span class="material-symbols-outlined text-sm" id="fa-icon">'+(FA.open?'expand_less':'play_arrow')+'</span></button>';
+    }
+    h+='</div>';
+    if(tKey){
+      h+='<div id="fa-wrap" style="max-height:'+(FA.open?'340px':'0px')+';overflow:hidden;transition:max-height .35s ease">';
+      h+='<div style="padding:0 10px 10px">'+faSvgHTML(f.color)+'</div></div>';
+    }
+    h+='</div>';
   }
   h+='<p class="font-label text-xs text-gray-400 leading-relaxed mb-4">'+cur.descrizione+'</p>';
   if(nxt){
@@ -8051,6 +8217,88 @@ function renderFlowWorkout(){
 }
 
 
+// ══════════════════════════════════════════════════════════════════
+// VERSIONE & CHANGELOG
+// ══════════════════════════════════════════════════════════════════
+var APP_VERSION = "v81";
+var APP_CHANGELOG = [
+  {v:"v81", data:"09/08/2026", items:[
+    "Flow: animazioni delle transizioni tra i movimenti",
+    "Tocca il tasto play accanto alla transizione per vederla",
+  ]},
+  {v:"v80", data:"09/08/2026", items:[
+    "Aggiunto changelog: ora vedi la versione installata e le novità",
+  ]},
+  {v:"v79", data:"09/08/2026", items:[
+    "Flow: ogni round ora è simmetrico (destra e sinistra bilanciate)",
+    "Flow: aggiunte le transizioni tra un movimento e l'altro",
+    "Grind Flow: lato sinistro esploso step per step, round da 120s",
+  ]},
+  {v:"v78", data:"09/08/2026", items:[
+    "Bellplex rinominati in Complex",
+    "Badge attrezzatura (1 KB / 2 mani / 2 KB) su ogni complex",
+    "Descrizione breve di cosa allena ogni complex",
+  ]},
+  {v:"v77", data:"09/08/2026", items:[
+    "Nuovo complex: 6½ Complex (7 movimenti total body)",
+  ]},
+  {v:"v76", data:"09/08/2026", items:[
+    "Nuova sezione FLOW con 4 sequenze continue (FL1-FL4)",
+    "Runner Flow con step guidati e recupero automatico",
+    "Flow integrati nel piano AI e nel log",
+  ]},
+  {v:"v75", data:"09/08/2026", items:[
+    "Morning: separata in Routine e Piano AI",
+    "Home: card piano settimanale del giorno",
+  ]},
+  {v:"v72-74", data:"09/08/2026", items:[
+    "Home ridisegnata: più pulita, solo rimandi",
+    "Train: tab riequilibrate, A/B/C espandibili con lista esercizi",
+  ]},
+  {v:"v68-71", data:"09/08/2026", items:[
+    "Body map muscoli a fine sessione (vista anteriore/posteriore)",
+    "AXE: set successivo parte automatico dopo il recupero",
+    "AXE: sessioni ora visibili nel log",
+    "CORE7 ripristinato",
+  ]},
+  {v:"v65-67", data:"09/08/2026", items:[
+    "Accesso rapido in Home: finisher ed esercizi singoli",
+    "SUP aggiunto ai tipi di allenamento",
+    "Backup completo (include tutti i dati, non solo KB)",
+  ]},
+];
+
+
+function renderChangelog(){
+  var h='<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">';
+  h+='<div class="flex-shrink-0 flex justify-between items-start px-5 pt-5 pb-4" style="border-bottom:1px solid rgba(90,65,54,0.3)">';
+  h+='<div><p class="font-label text-[9px] uppercase tracking-[0.25em] mb-1" style="color:#ffb693">NOVITÀ</p>';
+  h+='<h1 class="font-headline text-3xl leading-none">CHANGELOG</h1>';
+  h+='<p class="font-label text-[10px] text-gray-500 mt-1">Versione installata: '+APP_VERSION+'</p></div>';
+  h+='<button onclick="switchTab(\'settings\')" class="w-9 h-9 flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.05)">';
+  h+='<span class="material-symbols-outlined text-gray-500 text-base">close</span></button></div>';
+
+  h+='<div class="flex-1 overflow-y-auto px-5 py-4">';
+  APP_CHANGELOG.forEach(function(rel,i){
+    var isLatest = i===0;
+    h+='<div class="mb-4 pl-4" style="border-left:2px solid '+(isLatest?'#ffb693':'rgba(90,65,54,0.4)')+'">';
+    h+='<div class="flex items-center gap-2 mb-2">';
+    h+='<span class="font-headline text-xl" style="color:'+(isLatest?'#ffb693':'#94a3b8')+'">'+rel.v+'</span>';
+    if(isLatest) h+='<span class="font-label text-[8px] uppercase tracking-widest px-1.5 py-0.5" style="background:rgba(255,182,147,0.15);color:#ffb693">ATTUALE</span>';
+    h+='<span class="font-label text-[9px] text-gray-600 ml-auto">'+rel.data+'</span>';
+    h+='</div>';
+    rel.items.forEach(function(it){
+      h+='<div class="flex gap-2 mb-1.5">';
+      h+='<span class="text-gray-700 text-[10px] mt-0.5">▸</span>';
+      h+='<p class="font-label text-[11px] text-gray-400 leading-relaxed">'+it+'</p></div>';
+    });
+    h+='</div>';
+  });
+  h+='</div></div>';
+  return h;
+}
+
+
 function render(){
   const app=document.getElementById("app");
   if(state.tab==="workout")          app.innerHTML=renderWorkout();
@@ -8070,6 +8318,7 @@ function render(){
   else if(state.tab==="muscle-summary")  app.innerHTML=renderMuscleSummaryScreen();
   else if(state.tab==="flow-detail")     app.innerHTML=renderFlowDetail();
   else if(state.tab==="flow-workout")    app.innerHTML=renderFlowWorkout();
+  else if(state.tab==="changelog")       app.innerHTML=renderChangelog();
   else if(state.tab==="single-ex")     app.innerHTML=renderSingleEx();
   else if(state.tab==="morning-go")   app.innerHTML=renderMorningWorkout();
   else if(state.tab==="wim-hof")      app.innerHTML=renderWimHof();
@@ -8637,7 +8886,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v79';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v81';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
