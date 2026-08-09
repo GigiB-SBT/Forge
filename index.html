@@ -854,7 +854,7 @@ function renderManualLogForm(){
   var h='<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:#e9c176">';
   h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-4">AGGIUNGI SESSIONE</p>';
   h+='<div class="mb-3"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">ALLENAMENTO</p>';
-  h+='<input type="text" placeholder="DFW, SUP, Corsa..." class="log-input w-full" value="'+(e.type||'')+'" oninput="state.manualEntry.type=this.value"/></div>';
+  h+='<input type="text" placeholder="DFW, SUP, Wing Foil, Corsa..." class="log-input w-full" value="'+(e.type||'')+'" oninput="state.manualEntry.type=this.value"/></div>';
   h+='<div class="mb-3"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">CATEGORIA</p><div class="flex gap-2 flex-wrap">';
   for(var i=0;i<WORKOUT_TYPES.length;i++){
     var t=WORKOUT_TYPES[i]; var active=e.category===t.id;
@@ -1571,7 +1571,7 @@ function renderLog(){
     });
     const visible=filter==="kb"?allSessions.filter(h=>h._src==="kb"):filter==="external"?allSessions.filter(h=>h._src==="ext"):allSessions;
     const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
-    const EXT_C={"Calisthenics":"#50dad1","Corsa":"#ffb693","SUP":"#06b6d4","Yoga":"#8b5cf6","Ciclismo":"#e9c176","Nuoto":"#0891b2","Calcio":"#22c55e","Altro":"#64748b"};
+    const EXT_C={"Calisthenics":"#50dad1","Corsa":"#ffb693","SUP":"#06b6d4","Wing Foil":"#38bdf8","Yoga":"#8b5cf6","Ciclismo":"#e9c176","Nuoto":"#0891b2","Calcio":"#22c55e","Altro":"#64748b"};
 
     const filterBar=`<div class="flex gap-2 mb-5">
       ${[{id:"all",l:"Tutti"},{id:"kb",l:"KB"},{id:"external",l:"Altri"}].map(f=>`<button onclick="setStatsFilter('${f.id}')"
@@ -1590,7 +1590,7 @@ function renderLog(){
     </div>`;
 
     const ef=state.logExtForm;
-    const extTypes=["Calisthenics","Corsa","SUP","Yoga","Ciclismo","Nuoto","Calcio","Altro"];
+    const extTypes=["Calisthenics","Corsa","SUP","Wing Foil","Yoga","Ciclismo","Nuoto","Calcio","Altro"];
     const feelOpts=[{v:"😫",l:"Pesante"},{v:"😐",l:"Normale"},{v:"💪",l:"Bene"},{v:"🔥",l:"Ottimo"}];
     const extForm=state.showExtForm?`<div class="bg-surface-container ghost-border p-5 border-l-2 border-l-tertiary mb-4 space-y-4">
       <p class="font-label text-[9px] uppercase tracking-widest text-tertiary">Tipo attività</p>
@@ -7072,7 +7072,7 @@ function manualLogSave(){
 function renderManualLogForm(){
   var FILL = "font-variation-settings:'FILL' 1";
   var TYPES = ['AXE — Snatch','AXE — Swing','KDP-26','Complex','Giorno A','Giorno B','Giorno C',
-    'Deep Push-Up','Wim Hof','Corsa','SUP','Calisthenics','Yoga','Ciclismo','Nuoto','Altro'];
+    'Deep Push-Up','Wim Hof','Corsa','SUP','Wing Foil','Calisthenics','Yoga','Ciclismo','Nuoto','Altro'];
   var FEELINGS = ['😫','😐','💪','🔥'];
   var typeOpts = TYPES.map(function(t){
     var sel = MANUAL_FORM.type===t;
@@ -8286,8 +8286,11 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v84";
+var APP_VERSION = "v85";
 var APP_CHANGELOG = [
+  {v:"v85", data:"09/08/2026", items:[
+    "Wing Foil aggiunto ai tipi di allenamento",
+  ]},
   {v:"v84", data:"09/08/2026", items:[
     "Full Body Flow: alternanza DX, SX, DX, SX (23 step)",
     "Corretto: l animazione ora cambia davvero a ogni transizione",
@@ -8968,7 +8971,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v84';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v85';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
