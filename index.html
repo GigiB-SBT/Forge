@@ -847,40 +847,6 @@ function saveManualLog(){
   state.showManualLog=false; state.manualEntry=null;
   showToast('✅ Allenamento salvato','ok'); render();
 }
-function renderManualLogForm(){
-  if(!state.showManualLog) return '';
-  var e=state.manualEntry||{};
-  var today=(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})();
-  var h='<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:#e9c176">';
-  h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-4">AGGIUNGI SESSIONE</p>';
-  h+='<div class="mb-3"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">ALLENAMENTO</p>';
-  h+='<input type="text" placeholder="DFW, SUP, Wing Foil, Corsa..." class="log-input w-full" value="'+(e.type||'')+'" oninput="state.manualEntry.type=this.value"/></div>';
-  h+='<div class="mb-3"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">CATEGORIA</p><div class="flex gap-2 flex-wrap">';
-  for(var i=0;i<WORKOUT_TYPES.length;i++){
-    var t=WORKOUT_TYPES[i]; var active=e.category===t.id;
-    h+='<button data-cat="'+t.id+'" onclick="setManualCategory(this.dataset.cat)" class="px-3 py-1.5 font-label text-xs active:scale-90" style="background:'+(active?t.color:'transparent')+';color:'+(active?'#000':t.color)+';border:1px solid '+t.color+'44">'+t.icon+' '+t.label+'</button>';
-  }
-  h+='</div></div>';
-  h+='<div class="grid grid-cols-2 gap-2 mb-3">';
-  h+='<div><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">DATA (GG/MM/AAAA)</p>';
-  h+='<input type="text" placeholder="'+today+'" class="log-input w-full" value="'+(e.date||'')+'" oninput="state.manualEntry.date=this.value"/></div>';
-  h+='<div><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">DURATA (min)</p>';
-  h+='<input type="number" placeholder="30" class="log-input w-full" value="'+(e.duration||'')+'" oninput="state.manualEntry.duration=this.value" inputmode="numeric"/></div></div>';
-  h+='<div class="mb-4"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">NOTE</p>';
-  h+='<input type="text" placeholder="15 set snatch, W1D1..." class="log-input w-full" value="'+(e.notes||'')+'" oninput="state.manualEntry.notes=this.value"/></div>';
-  h+='<div class="mb-4"><p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">FEELING</p><div class="flex gap-2">';
-  var ff=[{v:1,e:'😫'},{v:2,e:'😐'},{v:3,e:'💪'},{v:4,e:'🔥'}];
-  for(var j=0;j<ff.length;j++){
-    var f=ff[j]; var sel=e.feeling===f.v;
-    h+='<button data-feel="'+f.v+'" onclick="setManualFeeling(parseInt(this.dataset.feel))" class="w-10 h-10 text-lg active:scale-90" style="background:'+(sel?'rgba(255,182,147,0.2)':'transparent')+';border:1px solid '+(sel?'#ffb693':'rgba(90,65,54,0.3)')+'">'+f.e+'</button>';
-  }
-  h+='</div></div>';
-  h+='<div class="flex gap-2">';
-  h+='<button onclick="saveManualLog()" class="flex-1 py-3 font-headline text-xl tracking-widest active:scale-95" style="background:#ffb693;color:#000">SALVA</button>';
-  h+='<button onclick="state.showManualLog=false;render()" class="w-16 py-3 font-headline text-lg active:scale-95" style="border:1px solid rgba(90,65,54,0.4);color:#64748b">✕</button>';
-  h+='</div></div>';
-  return h;
-}
 
 // ── Recovery DFW lunedì 09/06/2026 ──────────────────────────────
 (function(){
@@ -2433,38 +2399,42 @@ var FLOWS = [
   },
   {
     id:"FL2", nome:"Grind Flow", sottotitolo:"Lento e controllato: il flow della forza",
-    livello:"Avanzato", color:"#e9c176", durataRound:120, rest:60, roundsMin:2, roundsMax:4,
+    livello:"Avanzato", color:"#e9c176", durataRound:135, rest:60, roundsMin:2, roundsMax:4,
     quando:"Giorno dedicato alla forza, in alternativa al Giorno A",
-    focus:["Forza","Controllo","Core","Stabilità"],
+    focus:["Forza","Controllo","Core","Stabilita"],
     sequenza:[
       {n:1, nome:"Clean", lato:"DX", descrizione:"Porta il kettlebell in rack con la mano destra.",
-       transizione:"Dalla posizione di partenza: swing indietro, spinta d'anca, gomito stretto al corpo."},
-      {n:2, nome:"Strict Press ×2", lato:"DX", descrizione:"Due spinte sopra la testa senza aiuto delle gambe.",
+       transizione:"Dalla posizione di partenza: swing indietro, spinta d anca, gomito stretto al corpo."},
+      {n:2, nome:"Strict Press x2", lato:"DX", descrizione:"Due spinte sopra la testa senza aiuto delle gambe.",
        transizione:"Dal rack: espira e spingi. Dopo la prima ripetizione torna in rack controllato."},
-      {n:3, nome:"Rack Squat ×2", lato:"DX", descrizione:"Due accosciate con il kettlebell in rack sul lato DX.",
-       transizione:"Dall'ultimo press: abbassa in rack, stabilizza il core contro l'asimmetria, poi scendi."},
-      {n:4, nome:"Press → Windmill", lato:"DX", descrizione:"Braccio teso in alto, discesa laterale lenta e controllata.",
-       transizione:"Dal rack: un press per bloccare il braccio in alto, poi ruota i piedi 45° e apri l'anca."},
-      {n:5, nome:"Affondo + braccio teso ×2", lato:"DX", descrizione:"Kettlebell teso in alto, passo indietro e risalita. Il braccio non si muove.",
+      {n:3, nome:"Rack Squat x2", lato:"DX", descrizione:"Due accosciate con il kettlebell in rack sul lato DX.",
+       transizione:"Dall ultimo press: abbassa in rack, stabilizza il core contro l asimmetria, poi scendi."},
+      {n:4, nome:"Press e Windmill", lato:"DX", descrizione:"Braccio teso in alto, discesa laterale lenta. Le gambe restano quasi dritte: il lavoro e d anca.",
+       transizione:"Dal rack: un press per bloccare il braccio in alto, poi ruota i piedi 45 gradi e apri l anca."},
+      {n:5, nome:"Affondo e braccio teso x2", lato:"DX", descrizione:"Kettlebell teso in alto, passo indietro e risalita. Il braccio non si muove.",
        transizione:"Risali dal windmill mantenendo il braccio bloccato in alto: non abbassare mai."},
-      {n:6, nome:"Bent Press o Half Get-Up", lato:"DX", descrizione:"Discesa e risalita lente mantenendo il kettlebell in alto.",
-       transizione:"Il braccio è già teso: continua il lavoro senza abbassare il kettlebell."},
-      {n:7, nome:"Cambio mano", lato:null, descrizione:"Abbassa in rack, poi passa il kettlebell alla mano sinistra.",
-       transizione:"Abbassa lentamente in rack DX, scendi in posizione di stacco, cambia presa."},
-      {n:8, nome:"Clean", lato:"SX", descrizione:"Porta il kettlebell in rack con la mano sinistra.",
-       transizione:"Il kettlebell è già nella mano SX: swing indietro, spinta d'anca, gomito stretto."},
-      {n:9, nome:"Strict Press ×2", lato:"SX", descrizione:"Due spinte sopra la testa senza aiuto delle gambe.",
+      {n:6, nome:"Torna in Rack", lato:"DX", descrizione:"Abbassa il kettlebell al petto, gomito stretto. Piedi piu larghi delle spalle, punte leggermente in fuori.",
+       transizione:"Il bent press parte dal rack, non dall alto: abbassa in modo controllato e allarga la posizione."},
+      {n:7, nome:"Bent Press", lato:"DX", descrizione:"Non spingi il peso: scendi tu sotto di esso. Piega le anche dal lato del KB, torci il busto, braccio libero come contrappeso. Il braccio si distende da solo.",
+       transizione:"Dal rack: sguardo sul kettlebell, spingi il gomito verso la tasca posteriore e scendi ruotando."},
+      {n:8, nome:"Cambio mano", lato:null, descrizione:"Abbassa in rack, poi passa il kettlebell alla mano sinistra.",
+       transizione:"Risali dal bent press, abbassa lentamente in rack DX, scendi in stacco e cambia presa."},
+      {n:9, nome:"Clean", lato:"SX", descrizione:"Porta il kettlebell in rack con la mano sinistra.",
+       transizione:"Il kettlebell e gia nella mano SX: swing indietro, spinta d anca, gomito stretto."},
+      {n:10, nome:"Strict Press x2", lato:"SX", descrizione:"Due spinte sopra la testa senza aiuto delle gambe.",
        transizione:"Dal rack SX: espira e spingi, poi torna in rack controllato."},
-      {n:10, nome:"Rack Squat ×2", lato:"SX", descrizione:"Due accosciate con il kettlebell in rack sul lato SX.",
-       transizione:"Dall'ultimo press: abbassa in rack, stabilizza il core, poi scendi."},
-      {n:11, nome:"Press → Windmill", lato:"SX", descrizione:"Braccio teso in alto, discesa laterale lenta e controllata.",
-       transizione:"Dal rack: un press per bloccare il braccio, poi ruota i piedi e apri l'anca SX."},
-      {n:12, nome:"Affondo + braccio teso ×2", lato:"SX", descrizione:"Kettlebell teso in alto, passo indietro e risalita.",
+      {n:11, nome:"Rack Squat x2", lato:"SX", descrizione:"Due accosciate con il kettlebell in rack sul lato SX.",
+       transizione:"Dall ultimo press: abbassa in rack, stabilizza il core, poi scendi."},
+      {n:12, nome:"Press e Windmill", lato:"SX", descrizione:"Braccio teso in alto, discesa laterale lenta e controllata.",
+       transizione:"Dal rack: un press per bloccare il braccio, poi ruota i piedi e apri l anca SX."},
+      {n:13, nome:"Affondo e braccio teso x2", lato:"SX", descrizione:"Kettlebell teso in alto, passo indietro e risalita.",
        transizione:"Risali dal windmill mantenendo il braccio bloccato in alto: non abbassare mai."},
-      {n:13, nome:"Bent Press o Half Get-Up", lato:"SX", descrizione:"Discesa e risalita lente mantenendo il kettlebell in alto.",
-       transizione:"Il braccio è già teso: continua senza abbassare il kettlebell."},
+      {n:14, nome:"Torna in Rack", lato:"SX", descrizione:"Abbassa il kettlebell al petto. Piedi larghi, punte in fuori.",
+       transizione:"Il bent press parte dal rack: abbassa in modo controllato e allarga la posizione."},
+      {n:15, nome:"Bent Press", lato:"SX", descrizione:"Scendi sotto il peso ruotando il busto. Il braccio si distende da solo mentre ti abbassi.",
+       transizione:"Dal rack: sguardo sul kettlebell, gomito verso la tasca posteriore, scendi ruotando."},
     ],
-    attenzione:["Nessun movimento esplosivo: qui si va piano","Respira sotto sforzo, non in apnea","Se il 10 kg ti sembra leggero, aggiungi ripetizioni prima di aumentare il peso"]
+    attenzione:["Nessun movimento esplosivo: qui si va piano","Windmill e Bent Press sono diversi: nel primo il braccio e gia teso, nel secondo si distende scendendo","Nel bent press il kettlebell non sale: sei tu che scendi sotto","Se il gomito si piega o il polso cede, il carico e troppo"]
   },
   {
     id:"FL3", nome:"Ballistic Flow", sottotitolo:"Veloce e metabolico: il flow che fa bruciare",
@@ -7034,6 +7004,30 @@ var MANUAL_FORM = {
   feeling: null,
 };
 
+function fmtDateStore(d){
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+}
+function dateStoreToISO(s){
+  var p=(s||'').split('/');
+  if(p.length!==3) return '';
+  return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+}
+function dateISOToStore(s){
+  var p=(s||'').split('-');
+  if(p.length!==3) return '';
+  return p[2]+'/'+p[1]+'/'+p[0];
+}
+function manualSetDaysAgo(n){
+  var d=new Date(); d.setDate(d.getDate()-n);
+  MANUAL_FORM.date=fmtDateStore(d);
+  render();
+}
+function manualSetDateISO(iso){
+  MANUAL_FORM.date=dateISOToStore(iso);
+  render();
+}
+
+
 function manualLogOpen(){
   var now = new Date();
   MANUAL_FORM.open = true;
@@ -7050,6 +7044,12 @@ function manualLogSet(k,v){ MANUAL_FORM[k]=v; }
 function manualLogSave(){
   if(!MANUAL_FORM.type){ alert('Inserisci il tipo di allenamento'); return; }
   if(!MANUAL_FORM.date){ alert('Inserisci la data'); return; }
+  var _dp=MANUAL_FORM.date.split('/');
+  if(_dp.length!==3){ alert('Formato data non valido (GG/MM/AAAA)'); return; }
+  var _dt=new Date(Number(_dp[2]),Number(_dp[1])-1,Number(_dp[0]));
+  if(isNaN(_dt.getTime())){ alert('Data non valida'); return; }
+  var _now=new Date(); _now.setHours(23,59,59,999);
+  if(_dt>_now){ alert('Non puoi registrare un allenamento nel futuro'); return; }
   if(!state.externalHistory) state.externalHistory=[];
   var isAxe = MANUAL_FORM.type.toLowerCase().indexOf('axe')>=0;
   var isKdp = MANUAL_FORM.type.toLowerCase().indexOf('kdp')>=0;
@@ -7074,6 +7074,16 @@ function renderManualLogForm(){
   var TYPES = ['AXE — Snatch','AXE — Swing','KDP-26','Complex','Giorno A','Giorno B','Giorno C',
     'Deep Push-Up','Wim Hof','Corsa','SUP','Wing Foil','Calisthenics','Yoga','Ciclismo','Nuoto','Altro'];
   var FEELINGS = ['😫','😐','💪','🔥'];
+  // Chip giorni rapidi
+  var GG=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  var dayChips='';
+  for(var dd=0; dd<5; dd++){
+    var d=new Date(); d.setDate(d.getDate()-dd);
+    var lbl = dd===0?'Oggi' : dd===1?'Ieri' : GG[d.getDay()]+' '+d.getDate();
+    var sel = MANUAL_FORM.date===fmtDateStore(d);
+    dayChips += '<button onclick="manualSetDaysAgo('+dd+')" class="flex-1 py-2 font-label text-[10px] uppercase tracking-wider active:scale-95" style="border:1px solid '+(sel?'#8b5cf6':'rgba(90,65,54,0.3)')+';color:'+(sel?'#8b5cf6':'#64748b')+';background:'+(sel?'rgba(139,92,246,0.12)':'transparent')+'">'+lbl+'</button>';
+  }
+
   var typeOpts = TYPES.map(function(t){
     var sel = MANUAL_FORM.type===t;
     return '<button onclick="manualLogSet(\'type\',\''+t+'\');render()" class="px-3 py-1 font-label text-[10px] font-bold uppercase tracking-wider active:scale-95 transition-transform" style="border:1px solid '+(sel?'#8b5cf6':'rgba(90,65,54,0.3)')+';color:'+(sel?'#8b5cf6':'#64748b')+';background:'+(sel?'rgba(139,92,246,0.12)':'transparent')+'">'+t+'</button>';
@@ -7086,9 +7096,11 @@ function renderManualLogForm(){
     +'<p class="font-label text-[9px] uppercase tracking-widest mb-3" style="color:#8b5cf6">✏️ AGGIUNGI LOG MANUALE</p>'
     +'<p class="font-label text-[9px] text-gray-500 mb-2">TIPO ALLENAMENTO</p>'
     +'<div class="flex flex-wrap gap-1.5 mb-4">'+typeOpts+'</div>'
+    +'<label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">QUANDO</label>'
+    +'<div class="flex gap-1.5 mb-2">'+dayChips+'</div>'
     +'<div class="grid grid-cols-2 gap-3 mb-3">'
-    +'<div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">DATA (GG/MM/AAAA)</label>'
-    +'<input class="log-input w-full" type="text" placeholder="03/06/2026" value="'+MANUAL_FORM.date+'" oninput="manualLogSet(\'date\',this.value)"/></div>'
+    +'<div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">DATA</label>'
+    +'<input class="log-input w-full" type="date" value="'+dateStoreToISO(MANUAL_FORM.date)+'" max="'+dateStoreToISO(fmtDateStore(new Date()))+'" onchange="manualSetDateISO(this.value)"/></div>'
     +'<div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">DURATA (min)</label>'
     +'<input class="log-input w-full" type="number" placeholder="20" value="'+(MANUAL_FORM.duration||'')+'" oninput="manualLogSet(\'duration\',this.value)" inputmode="numeric"/></div>'
     +'</div>'
@@ -7761,7 +7773,8 @@ function renderMuscleSummaryScreen(){
 // ══════════════════════════════════════════════════════════════════
 // FLOW — logica runner
 // ══════════════════════════════════════════════════════════════════
-var FLOW_STATE = {id:null, round:1, totalRounds:3, phase:'idle', remaining:0, stepIdx:0, tid:null, startTs:null};
+var FLOW_STATE = {id:null, round:1, totalRounds:3, phase:'idle', remaining:0, stepIdx:0, tid:null, startTs:null, speed:1};
+var FLOW_SPEEDS = [{v:0.8,l:'LENTO'},{v:1,l:'NORMALE'},{v:1.25,l:'VELOCE'}];
 
 function openFlowDetail(id){ state.flowDetailId=id; state.tab='flow-detail'; render(); }
 function closeFlowDetail(){ state.flowDetailId=null; state.trainSubTab='flow'; state.tab='train'; render(); }
@@ -7779,7 +7792,7 @@ function flowStart(){
   unlockAudio(); requestWakeLock();
   FLOW_STATE={
     id:f.id, round:1, totalRounds:state.flowRounds||f.roundsMin,
-    phase:'work', remaining:f.durataRound, stepIdx:0, tid:null, startTs:Date.now()
+    phase:'work', remaining:Math.round(f.durataRound/(state.flowSpeed||1)), stepIdx:0, tid:null, startTs:Date.now(), speed:(state.flowSpeed||1)
   };
   FA.key = getTransKey(f.id, 0);
   forgeShowTrans(f.nome.toUpperCase(), f.sottotitolo, function(){
@@ -7801,8 +7814,9 @@ function flowTick(){
 
   // Avanzamento step durante la fase work
   if(s.phase==='work'){
-    var perStep=f.durataRound/f.sequenza.length;
-    var elapsed=f.durataRound-s.remaining;
+    var durEff=Math.round(f.durataRound/(s.speed||1));
+    var perStep=durEff/f.sequenza.length;
+    var elapsed=durEff-s.remaining;
     var newIdx=Math.min(f.sequenza.length-1, Math.floor(elapsed/perStep));
     if(newIdx!==s.stepIdx){
       s.stepIdx=newIdx; kdpVib([60]);
@@ -7829,7 +7843,7 @@ function flowTick(){
       s.phase='rest'; s.remaining=f.rest; s.stepIdx=0;
     } else {
       kdpBeep(880,0.3,0.4); kdpVib([200]);
-      s.round++; s.phase='work'; s.remaining=f.durataRound; s.stepIdx=0;
+      s.round++; s.phase='work'; s.remaining=Math.round(f.durataRound/(s.speed||1)); s.stepIdx=0;
     }
     render(); return;
   }
@@ -7840,6 +7854,25 @@ function flowTick(){
   // step wrap aggiornato solo al cambio step (vedi sopra)
 }
 
+function flowCycleSpeed(){
+  var s=FLOW_STATE, f=getFlowById(s.id);
+  if(!f) return;
+  var cur=s.speed||1;
+  var i=0;
+  for(var k=0;k<FLOW_SPEEDS.length;k++){ if(FLOW_SPEEDS[k].v===cur){ i=k; break; } }
+  var next=FLOW_SPEEDS[(i+1)%FLOW_SPEEDS.length];
+  // Ricalcola il residuo mantenendo la stessa frazione di round
+  var durOld = s.phase==='work' ? Math.round(f.durataRound/cur) : f.rest;
+  var frac = durOld>0 ? (s.remaining/durOld) : 1;
+  s.speed = next.v;
+  var durNew = s.phase==='work' ? Math.round(f.durataRound/next.v) : f.rest;
+  s.remaining = Math.max(1, Math.round(durNew*frac));
+  state.flowSpeed = next.v;
+  showToast('Ritmo: '+next.l,'ok');
+  render();
+}
+
+
 function flowAddRound(){
   FLOW_STATE.totalRounds++;
   showToast('Round aggiunto: '+FLOW_STATE.totalRounds+' totali','ok');
@@ -7849,6 +7882,7 @@ function flowAddRound(){
 function flowFinishNow(){
   var s=FLOW_STATE, f=getFlowById(s.id);
   if(!f) return;
+  if(!confirm('Chiudere il flow?\n\nRound completati: '+s.round+'/'+s.totalRounds+'\nLa durata salvata sara quella effettiva.')) return;
   if(s.tid) clearInterval(s.tid);
   faStop(); FA.open=false;
   // Round completati: quelli finiti + frazione dello attuale
@@ -7962,12 +7996,18 @@ var FLOW_TRANS = {
     {c:"Sali al viso, gomiti alti e larghi",head:[104,54,15],torso:"M104,69 L100,138",armFar:"M102,78 L124,80 L116,64",armNear:"M102,78 L82,80 L90,64",legFar:"M100,138 L112,192 L114,248",legNear:"M100,138 L88,192 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[103,74],handle:[103,62],handA:"M95,62 L101,62",handB:"M105,62 L111,62"},
     {c:"Il KB gira di lato alla testa...",head:[104,54,15],torso:"M104,69 L100,138",armFar:"M102,78 L128,70 L134,54",armNear:"M102,78 L86,74 L94,58",legFar:"M100,138 L112,192 L114,248",legNear:"M100,138 L88,192 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[142,46],handle:[138,56],handA:"M130,54 L138,50",handB:"M130,54 L138,50"},
     {c:"...passa dietro e torna: un giro completo",head:[104,54,15],torso:"M104,69 L100,138",armFar:"M102,78 L120,58 L112,40",armNear:"M102,78 L84,60 L92,42",legFar:"M100,138 L112,192 L114,248",legNear:"M100,138 L88,192 L86,248",footFar:"M114,248 L126,251",footNear:"M86,248 L74,251",kb:[102,30],handle:[102,40],handA:"M96,40 L108,38",handB:"M96,40 L108,38"}]},
+  T10:{t:"Rack a Bent Press", level:true, poses:[
+    {c:"Rack, piedi larghi e punte in fuori",head:[104,58,15],torso:"M104,73 L100,142",armFar:"M102,90 L120,106 L112,122",armNear:"M102,90 L86,104 L98,118",legFar:"M100,142 L120,196 L124,248",legNear:"M100,142 L80,196 L76,248",footFar:"M124,248 L138,251",footNear:"M76,248 L62,251",kb:[104,130],handle:[104,116],handA:"M94,116 L102,116",handB:"M94,116 L102,116"},
+    {c:"Braccio libero di traverso: contrappeso",head:[106,60,15],torso:"M106,75 L100,142",armFar:"M104,92 L86,108 L74,118",armNear:"M104,92 L88,106 L100,120",legFar:"M100,142 L120,196 L124,248",legNear:"M100,142 L80,196 L76,248",footFar:"M124,248 L138,251",footNear:"M76,248 L62,251",kb:[106,132],handle:[106,118],handA:"M96,118 L104,118",handB:"M96,118 L104,118"},
+    {c:"Scendi ruotando: gomito verso la tasca",head:[120,80,15],torso:"M120,95 L98,152",armFar:"M118,104 L96,124 L80,138",armNear:"M118,104 L112,86 L108,68",legFar:"M98,152 L118,198 L124,248",legNear:"M98,152 L78,200 L72,248",footFar:"M124,248 L138,251",footNear:"M72,248 L58,251",kb:[108,52],handle:[108,64],handA:"M102,64 L114,64",handB:"M102,64 L114,64"},
+    {c:"Il braccio si distende mentre scendi",head:[134,104,15],torso:"M134,118 L96,166",armFar:"M130,126 L106,150 L88,168",armNear:"M130,126 L118,90 L110,62",legFar:"M96,166 L116,202 L124,248",legNear:"M96,166 L76,206 L68,248",footFar:"M124,248 L138,251",footNear:"M68,248 L54,251",kb:[108,48],handle:[108,60],handA:"M102,60 L114,60",handB:"M102,60 L114,60"},
+    {c:"Lockout: KB sopra la spalla, ora risali",head:[140,124,15],torso:"M140,138 L94,176",armFar:"M136,146 L112,172 L94,192",armNear:"M136,146 L122,96 L112,60",legFar:"M94,176 L114,208 L122,248",legNear:"M94,176 L74,210 L66,248",footFar:"M122,248 L136,251",footNear:"M66,248 L52,251",kb:[110,46],handle:[110,58],handA:"M104,58 L116,58",handB:"M104,58 L116,58"}]},
 };
 
 // Mappa step → transizione (per flow e indice step)
 var FLOW_TRANS_MAP = {
   FL1:{1:"T1", 3:"T3", 5:"T9", 7:"T5", 8:"T3", 10:"T9", 12:"T5", 13:"T3", 15:"T9", 17:"T5", 18:"T3", 20:"T9"},
-  FL2:{3:"T3", 6:"T8", 10:"T3"},
+  FL2:{3:"T3", 6:"T10", 7:"T8", 11:"T3", 14:"T10"},
   FL3:{4:"T6"},
   FL4:{0:"T9", 4:"T7", 6:"T8", 7:"T7"},
 };
@@ -8047,6 +8087,7 @@ function faSvgHTML(color){
   var trDef=FLOW_TRANS[FA.key]||{};
   if(trDef.orbit) h+='<ellipse cx="104" cy="52" rx="42" ry="26" fill="none" stroke="rgba(255,182,147,.35)" stroke-width="2" stroke-dasharray="5 4"/>';
   if(trDef.arc)   h+='<path d="M76,168 Q104,148 132,168" fill="none" stroke="rgba(255,182,147,.3)" stroke-width="2" stroke-dasharray="4 4"/>';
+  if(trDef.level) h+='<line x1="60" y1="52" x2="160" y2="52" stroke="rgba(255,182,147,.4)" stroke-width="2" stroke-dasharray="4 3"/>';
   h+='<path class="fa-fig fa-far" id="fa-legFar"/><path class="fa-fig fa-far" id="fa-footFar"/><path class="fa-fig fa-far" id="fa-armFar"/>';
   h+='<circle class="fa-head" id="fa-head"/><path class="fa-fig" id="fa-torso"/>';
   h+='<path class="fa-fig" id="fa-legNear"/><path class="fa-fig" id="fa-footNear"/>';
@@ -8107,7 +8148,8 @@ function renderFlowDetail(){
   var f=getFlowById(state.flowDetailId);
   if(!f){ state.tab='train'; render(); return ''; }
   var rounds=state.flowRounds||f.roundsMin;
-  var totMin=Math.round((f.durataRound*rounds + f.rest*(rounds-1))/60);
+  var _sp=state.flowSpeed||1;
+  var totMin=Math.round((Math.round(f.durataRound/_sp)*rounds + f.rest*(rounds-1))/60);
 
   var h='<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">';
   // Header
@@ -8176,6 +8218,18 @@ function renderFlowDetail(){
   h+='<p class="font-label text-[9px] text-gray-600 mt-0.5">~'+totMin+' min totali</p></div>';
   h+='<button onclick="flowSetRounds('+(rounds+1)+')" class="w-12 h-12 flex items-center justify-center active:scale-90" style="border:1px solid rgba(90,65,54,0.4);color:'+(rounds<f.roundsMax?f.color:'#3a3a3a')+'"><span class="material-symbols-outlined">add</span></button>';
   h+='</div>';
+
+  // Ritmo
+  var curSpd=state.flowSpeed||1;
+  h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-2 mt-4">RITMO</p>';
+  h+='<div class="flex gap-2 mb-2">';
+  FLOW_SPEEDS.forEach(function(sp){
+    var on = curSpd===sp.v;
+    var c = sp.v<1?'#50dad1':sp.v>1?'#ffb4ab':'#94a3b8';
+    h+='<button onclick="state.flowSpeed='+sp.v+';render()" class="flex-1 py-2.5 font-headline text-base tracking-widest active:scale-95" style="background:'+(on?c:'transparent')+';color:'+(on?'#000':c)+';border:1px solid '+c+(on?'':'59')+'">'+sp.l+'</button>';
+  });
+  h+='</div>';
+  h+='<p class="font-label text-[9px] text-gray-600 mb-2">Round da '+Math.round(f.durataRound/curSpd)+'s · modificabile durante il flow</p>';
 
   h+='</div>';
 
@@ -8272,6 +8326,12 @@ function renderFlowWorkout(){
     });
     h+='</div>';
   }
+  var spd=s.speed||1;
+  var spdLbl='NORMALE';
+  for(var si=0;si<FLOW_SPEEDS.length;si++){ if(FLOW_SPEEDS[si].v===spd) spdLbl=FLOW_SPEEDS[si].l; }
+  var spdCol = spd<1 ? '#50dad1' : spd>1 ? '#ffb4ab' : '#94a3b8';
+  h+='<button onclick="flowCycleSpeed()" class="w-full py-2.5 font-headline text-base tracking-widest active:scale-95 mb-2 flex items-center justify-center gap-2" style="border:1px solid '+spdCol+'59;color:'+spdCol+';background:'+spdCol+'0f">';
+  h+='<span class="material-symbols-outlined text-base">speed</span> RITMO: '+spdLbl+'</button>';
   h+='<div class="flex gap-2">';
   h+='<button onclick="flowAddRound()" class="flex-1 py-2.5 font-headline text-base tracking-widest active:scale-95" style="border:1px solid rgba(255,255,255,0.15);color:#94a3b8;background:transparent">+ 1 ROUND</button>';
   h+='<button onclick="flowFinishNow()" class="flex-1 py-2.5 font-headline text-base tracking-widest active:scale-95" style="border:1px solid '+f.color+'59;color:'+f.color+';background:'+f.color+'0f">✓ FINE FLOW</button>';
@@ -8286,8 +8346,20 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v85";
+var APP_VERSION = "v87";
 var APP_CHANGELOG = [
+  {v:"v87", data:"09/08/2026", items:[
+    "Log manuale: calendario per scegliere la data",
+    "Scorciatoie Oggi / Ieri / ultimi 5 giorni",
+    "Blocco delle date future",
+  ]},
+  {v:"v86", data:"09/08/2026", items:[
+    "Grind Flow: il Bent Press ora parte dal rack (era sbagliato)",
+    "Nuova animazione: Rack verso Bent Press",
+    "Flow: pulsante RITMO per accelerare o rallentare durante la sessione",
+    "Flow: scelta del ritmo anche prima di iniziare",
+    "Fine flow ora chiede conferma",
+  ]},
   {v:"v85", data:"09/08/2026", items:[
     "Wing Foil aggiunto ai tipi di allenamento",
   ]},
@@ -8971,7 +9043,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v85';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v87';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
