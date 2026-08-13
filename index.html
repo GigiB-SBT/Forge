@@ -1150,7 +1150,7 @@ function renderHome(){
   // Link rapidi alle sezioni principali
   var links = [
     {label:'Morning',      sub:'Routine + Wim Hof',     icon:'wb_sunny',        color:'#e9c176', action:"switchTab('morning')"},
-    {label:'Tutti i workout', sub:'Train · AXE · KDP · BP', icon:'fitness_center', color:'#ffb693', action:"switchTab('train')"},
+    {label:'Tutti i workout', sub:'KB · Complex · Flow · AXE · KDP', icon:'fitness_center', color:'#ffb693', action:"switchTab('train')"},
     {label:'⚡ Finisher',   sub:'5 min AMRAP Snatch',   icon:'bolt',            color:'#e9c176', action:"state.finisherReturnTab='home';finStart()"},
   ].map(function(l){
     return '<button onclick="'+l.action+'"'+
@@ -1162,6 +1162,20 @@ function renderHome(){
         '<p class="font-label text-[9px] text-gray-600 mt-0.5">'+l.sub+'</p>'+
       '</div>'+
       '<span class="material-symbols-outlined text-gray-700">chevron_right</span>'+
+    '</button>';
+  }).join('');
+
+  // Chip Flow
+  var flowChips = FLOWS.map(function(fl){
+    var totMin=Math.round((fl.durataRound*fl.roundsMin + fl.rest*(fl.roundsMin-1))/60);
+    return '<button onclick="openFlowDetail(\''+fl.id+'\')"'+
+      ' class="flex-shrink-0 px-3 py-2.5 text-left active:scale-95"'+
+      ' style="background:'+fl.color+'0f;border:1px solid '+fl.color+'40;min-width:135px">'+
+      '<div class="flex items-center gap-1.5 mb-0.5">'+
+        '<span class="font-headline text-xs" style="color:'+fl.color+'">'+fl.id+'</span>'+
+        '<span class="font-headline text-sm leading-none">'+fl.nome.replace(' Flow','')+'</span>'+
+      '</div>'+
+      '<p class="font-label text-[8px] text-gray-500">'+fl.livello+' · ~'+totMin+' min</p>'+
     '</button>';
   }).join('');
 
@@ -1187,6 +1201,15 @@ function renderHome(){
           '<button onclick="switchTab(\'train\')" class="font-label text-[9px] uppercase tracking-widest text-gray-600">Tutti →</button>'+
         '</div>'+
         '<div class="grid grid-cols-3 gap-2">'+dayChips+'</div>'+
+      '</div>'+
+
+      // Flow
+      '<div class="mb-5">'+
+        '<div class="flex justify-between items-center mb-2">'+
+          '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500">FLOW · sequenze continue</p>'+
+          '<button onclick="state.trainSubTab=\'flow\';switchTab(\'train\')" class="font-label text-[9px] uppercase tracking-widest text-gray-600">Tutti →</button>'+
+        '</div>'+
+        '<div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none">'+flowChips+'</div>'+
       '</div>'+
 
       // Link sezioni
@@ -8346,8 +8369,11 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v87";
+var APP_VERSION = "v88";
 var APP_CHANGELOG = [
+  {v:"v88", data:"09/08/2026", items:[
+    "Home: sezione Flow con accesso diretto ai 4 flow",
+  ]},
   {v:"v87", data:"09/08/2026", items:[
     "Log manuale: calendario per scegliere la data",
     "Scorciatoie Oggi / Ieri / ultimi 5 giorni",
@@ -9043,7 +9069,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v87';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v88';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
