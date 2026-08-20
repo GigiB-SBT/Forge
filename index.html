@@ -1165,6 +1165,18 @@ function renderHome(){
     '</button>';
   }).join('');
 
+  // Chip Wing Foil
+  var wfChips = ['WF1','WF2','WF3','WFB'].map(function(id){
+    var w=getExtraById(id);
+    if(!w) return '';
+    return '<button onclick="openExtraDetail(\''+id+'\')"'+
+      ' class="flex-shrink-0 px-3 py-2.5 text-left active:scale-95"'+
+      ' style="background:'+w.color+'0f;border:1px solid '+w.color+'40;min-width:130px">'+
+      '<p class="font-headline text-sm leading-tight">'+w.label.replace('WF ','')+'</p>'+
+      '<p class="font-label text-[8px] text-gray-500 mt-0.5">'+w.totalMin+' min · '+(w.kb==='0'?'corpo libero':'1 KB')+'</p>'+
+    '</button>';
+  }).join('');
+
   // Chip Flow
   var flowChips = FLOWS.map(function(fl){
     var totMin=Math.round((fl.durataRound*fl.roundsMin + fl.rest*(fl.roundsMin-1))/60);
@@ -1189,6 +1201,70 @@ function renderHome(){
     '</button>';
   }).join('');
 
+
+  // ── TAB WING FOIL ──────────────────────────────────────────────
+  function tabWingFoil(){
+    var WF_IDS=["WFW","WF1","WF2","WF3","WFB"];
+    var h='<div class="p-4 mb-3" style="background:rgba(56,189,248,0.05);border-left:2px solid #38bdf8">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:#38bdf8">PREPARAZIONE WING FOIL</p>'+
+      '<p class="font-label text-[11px] text-gray-400 leading-relaxed mb-2">Equilibrio, stabilita del core, potenza dell anca e controllo delle spalle. 2-3 sessioni a settimana, tecnica prima del carico.</p>'+
+      '<p class="font-label text-[10px] leading-relaxed" style="color:#38bdf8">⚡ Deve lasciarti piu coordinato, non solo piu stanco.</p>'+
+    '</div>';
+
+    WF_IDS.forEach(function(id){
+      var w=getExtraById(id);
+      if(!w) return;
+      var kbTxt = w.kb==='0'?'Corpo libero':w.kb==='2'?'2 KB':'1 KB';
+      h+='<div onclick="openExtraDetail(\''+id+'\')" class="mb-2 cursor-pointer active:scale-[0.99] transition-transform"'+
+        ' style="border-left:2px solid '+w.color+';background:rgba(255,255,255,0.02);border-top:1px solid rgba(90,65,54,0.2);border-right:1px solid rgba(90,65,54,0.2);border-bottom:1px solid rgba(90,65,54,0.2)">'+
+        '<div class="p-4">'+
+          '<div class="flex justify-between items-start mb-1">'+
+            '<div class="min-w-0 flex-1">'+
+              '<div class="flex items-center gap-2 flex-wrap mb-0.5">'+
+                '<span class="font-headline text-lg leading-none">'+w.emoji+' '+w.label+'</span>'+
+                '<span class="font-label text-[8px] uppercase tracking-wider px-1.5 py-0.5" style="background:'+w.color+'1a;color:'+w.color+'">'+kbTxt+'</span>'+
+              '</div>'+
+              '<p class="font-label text-[10px] text-gray-400 leading-snug">'+w.desc+'</p>'+
+            '</div>'+
+            '<span class="material-symbols-outlined text-gray-700 text-sm flex-shrink-0 ml-2">chevron_right</span>'+
+          '</div>'+
+          '<div class="flex gap-3 mt-2">'+
+            '<span class="font-label text-[9px] text-gray-600">'+w.totalMin+' min</span>'+
+            '<span class="font-label text-[9px] text-gray-600">'+w.exercises.length+' esercizi</span>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    });
+
+    // Settimana tipo
+    h+='<div class="p-4 mt-4" style="background:rgba(255,255,255,0.02);border:1px solid rgba(90,65,54,0.25)">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-3">SETTIMANA TIPO</p>';
+    [['Lunedi','WF Complex — 2-3 round','#0284c7'],
+     ['Mercoledi','Balance & Core — 15 min','#22d3ee'],
+     ['Venerdi','WF Base o WF Dynamic','#38bdf8'],
+     ['Giorno in acqua','Solo wing foil, niente pesi','#7dd3fc']].forEach(function(r){
+      h+='<div class="flex justify-between items-center py-2" style="border-bottom:1px solid rgba(255,255,255,0.05)">'+
+        '<p class="font-label text-[10px] text-gray-500">'+r[0]+'</p>'+
+        '<span class="font-label text-[10px] text-right" style="color:'+r[2]+'">'+r[1]+'</span>'+
+      '</div>';
+    });
+    h+='</div>';
+
+    // Progressione
+    h+='<div class="p-4 mt-3" style="background:rgba(56,189,248,0.04);border-left:2px solid #38bdf8">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-2" style="color:#38bdf8">PROGRESSIONE 6 SETTIMANE</p>';
+    [['Sett. 1-2','2-3 round · carichi conservativi · massima attenzione alla tecnica'],
+     ['Sett. 3-4','3-4 round · aumenta la continuita, riduci le pause'],
+     ['Sett. 5-6','3-4 round · lavora su fluidita e controllo, non serve alzare il peso']].forEach(function(r){
+      h+='<div class="mb-2"><p class="font-headline text-sm" style="color:#38bdf8">'+r[0]+'</p>'+
+        '<p class="font-label text-[10px] text-gray-400 leading-relaxed">'+r[1]+'</p></div>';
+    });
+    h+='<p class="font-label text-[10px] text-gray-500 mt-3 leading-relaxed">Non aumentare peso, volume e densita nello stesso momento.</p>';
+    h+='</div>';
+
+    return h;
+  }
+
   return '<div class="screen bg-background" style="padding-top:64px;">'+
     '<main class="px-5 pt-5 pb-24">'+
 
@@ -1201,6 +1277,15 @@ function renderHome(){
           '<button onclick="switchTab(\'train\')" class="font-label text-[9px] uppercase tracking-widest text-gray-600">Tutti →</button>'+
         '</div>'+
         '<div class="grid grid-cols-3 gap-2">'+dayChips+'</div>'+
+      '</div>'+
+
+      // Wing Foil
+      '<div class="mb-5">'+
+        '<div class="flex justify-between items-center mb-2">'+
+          '<p class="font-label text-[9px] uppercase tracking-widest" style="color:#38bdf8">🏄 WING FOIL · preparazione</p>'+
+          '<button onclick="state.trainSubTab=\'wf\';switchTab(\'train\')" class="font-label text-[9px] uppercase tracking-widest text-gray-600">Tutti →</button>'+
+        '</div>'+
+        '<div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none">'+wfChips+'</div>'+
       '</div>'+
 
       // Flow
@@ -1621,13 +1706,14 @@ function renderLog(){
         const editKey=isExt?`ext_${realIdx}`:`kb_${realIdx}`;
         const isEditing=state.editingEntry===editKey;
         const isBP=!isExt&&h.day&&h.day.startsWith("extra_BP");
+        const isWF=!isExt&&h.day&&h.day.startsWith("extra_WF");
         const isKDP=isExt&&h._kdp;
         const isFinisher=isExt&&h._finisher;
         const isAxeEntry=isExt&&h._axe;
         const isFlowEntry=isExt&&h._flow;
         const col=isExt
           ?(isFlowEntry?"#50dad1":isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#64748b"))
-          :(isBP?"#ffb4ab":(KPhex[h.day]||"#ffb693"));
+          :(isWF?"#38bdf8":isBP?"#ffb4ab":(KPhex[h.day]||"#ffb693"));
         const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
         const bpW=rawId.startsWith("BP")?getExtraById(rawId):null;
         const label=isExt
@@ -3181,6 +3267,205 @@ const EXTRA_WORKOUTS=[
   // Fonte: Bellplex Training Systems · rest 60-90" tra serie · 5 serie
   // ══════════════════════════════════════════════════════════════════════════
 
+
+  // ── WF1: Wing Foil Base ───────────────────────────────────────────────────
+  {
+    id:"WF1",kb:"1",desc:"Preparazione Wing Foil: equilibrio e catena posteriore",
+    label:"WF Base",emoji:"🏄",color:"#38bdf8",
+    title:"Wing Foil — Flow Base",
+    meta:"Wing Foil · ~18 min · 3-4 round · KB singola",
+    totalMin:18,
+    how:"Sequenza propedeutica al Wing Foil. Ogni esercizio su entrambi i lati. Tecnica e controllo prima del carico: mai a cedimento. 60-90 secondi di recupero tra i round.",
+    structure:[["Round","3-4"],["Esercizi","5 (x2 lati)"],["Rest tra round","60-90\""],["Carico","16kg swing/deadlift · 10kg resto"]],
+    exercises:[
+      {n:"1",name:"One-Arm Swing",       detail:"5 rip per lato — 16 kg · potenza d anca",       t:"reps",c:"#38bdf8"},
+      {n:"2",name:"Suitcase Deadlift",   detail:"5 rip per lato — 16 kg · anti-inclinazione",    t:"reps",c:"#38bdf8"},
+      {n:"3",name:"Reverse Lunge + Press",detail:"3 rip per lato — 10 kg · controllo del peso",  t:"reps",c:"#38bdf8"},
+      {n:"4",name:"Windmill",            detail:"2 rip per lato — 10 kg · controllo laterale",   t:"reps",c:"#38bdf8"},
+      {n:"5",name:"Turkish Get-Up",      detail:"1 rip per lato — 10 kg · lento e controllato",  t:"reps",c:"#38bdf8"},
+    ],
+    tips:[
+      "Qualita prima del volume: il flow deve renderti piu coordinato, non solo piu stanco.",
+      "Niente cedimento: chiudi la serie quando la tecnica inizia a degradarsi.",
+      "Swing: la potenza viene dall estensione dell anca, non dalle braccia.",
+      "Turkish Get-Up lento e controllato: e un esercizio tecnico, non veloce.",
+      "Windmill con carico moderato: privilegia mobilita e stabilita.",
+      "Se il giorno dopo hai il wing foil, fermati a 2-3 round a intensita bassa."
+    ],
+    buildSeq:function(){
+      const R=4;
+      const moves=[
+        ["One-Arm Swing","5 rip","Anca esplosiva — 16 kg"],
+        ["Suitcase Deadlift","5 rip","Tronco dritto, non inclinarti — 16 kg"],
+        ["Reverse Lunge + Press","3 rip","Passo indietro, poi press — 10 kg"],
+        ["Windmill","2 rip","Lento, sguardo sul KB — 10 kg"],
+        ["Turkish Get-Up","1 rip","Controllo totale — 10 kg"],
+      ];
+      const seq=[];
+      for(let r=1;r<=R;r++){
+        moves.forEach(function(m){
+          ["DX","SX"].forEach(function(lato){
+            seq.push({name:m[0],round:r,totalRounds:R,timerSec:null,type:"work",
+              repsOverride:m[1]+" "+lato,cueOverride:m[2]});
+          });
+        });
+        if(r<R) seq.push({name:"Rest",round:r,totalRounds:R,timerSec:75,type:"rest",
+          repsOverride:"60-90\" rest",cueOverride:"Respira — round "+(r+1)+"/"+R});
+      }
+      return seq;
+    }
+  },
+
+  // ── WF2: Wing Foil Dynamic ────────────────────────────────────────────────
+  {
+    id:"WF2",kb:"1",desc:"Preparazione Wing Foil: trasferimento del peso e continuita",
+    label:"WF Dynamic",emoji:"🏄",color:"#0ea5e9",
+    title:"Wing Foil — Flow Dynamic",
+    meta:"Wing Foil · ~20 min · 3 round · KB singola",
+    totalMin:20,
+    how:"Versione piu continua del flow base. Introduce il cambio mano in volo e il carry per lavorare sul trasferimento del carico tra i lati. 3 round con 60-90 secondi di recupero.",
+    structure:[["Round","3"],["Esercizi","7 blocchi"],["Rest tra round","60-90\""],["Carico","10kg tecnica · 16kg swing/carry"]],
+    exercises:[
+      {n:"1",name:"One-Arm Swing DX",     detail:"3-5 rip · avvio della sequenza",              t:"reps",c:"#0ea5e9"},
+      {n:"2",name:"Hand-to-Hand Swing",   detail:"5 rip · cambio mano in volo",                 t:"reps",c:"#0ea5e9"},
+      {n:"3",name:"Reverse Lunge",        detail:"3 rip per lato · controllo del peso",         t:"reps",c:"#0ea5e9"},
+      {n:"4",name:"Suitcase Carry",       detail:"5 passi per lato · anti-inclinazione",        t:"reps",c:"#0ea5e9"},
+      {n:"5",name:"Windmill",             detail:"2 rip per lato · controllo laterale",         t:"reps",c:"#0ea5e9"},
+      {n:"6",name:"Half Turkish Get-Up",  detail:"1 rip per lato · coordinazione globale",      t:"reps",c:"#0ea5e9"},
+    ],
+    tips:[
+      "Il cambio mano in volo si fa al punto morto dello swing, senza posare il KB.",
+      "Nel carry il tronco resta verticale: non inclinarti dal lato opposto.",
+      "10 kg per tutta la sequenza all inizio; 16 kg solo su swing e carry quando la tecnica e solida.",
+      "Se perdi equilibrio o il bacino ruota, fermati e riparti piu leggero."
+    ],
+    buildSeq:function(){
+      const R=3;
+      const seq=[];
+      for(let r=1;r<=R;r++){
+        seq.push({name:"One-Arm Swing",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"3-5 rip DX",cueOverride:"Anca esplosiva, braccio rilassato"});
+        seq.push({name:"Hand-to-Hand Swing",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"5 rip",cueOverride:"Cambio mano al punto morto in alto"});
+        seq.push({name:"One-Arm Swing",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"3-5 rip SX",cueOverride:"Anca esplosiva, braccio rilassato"});
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Reverse Lunge",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"3 rip "+l,cueOverride:"Passo indietro controllato"}); });
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Suitcase Carry",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"5 passi "+l,cueOverride:"Tronco verticale, spalle pari"}); });
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Windmill",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"2 rip "+l,cueOverride:"Lento, sguardo sul KB"}); });
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Half Turkish Get-Up",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"1 rip "+l,cueOverride:"Sali al gomito poi alla mano"}); });
+        if(r<R) seq.push({name:"Rest",round:r,totalRounds:R,timerSec:75,type:"rest",repsOverride:"60-90\" rest",cueOverride:"Respira — round "+(r+1)+"/"+R});
+      }
+      return seq;
+    }
+  },
+
+  // ── WF3: Wing Foil Complex completo ───────────────────────────────────────
+  {
+    id:"WF3",kb:"1",desc:"Preparazione Wing Foil: complex completo a 4 blocchi",
+    label:"WF Complex",emoji:"🏄",color:"#0284c7",
+    title:"Wing Foil — Complex 4 Blocchi",
+    meta:"Wing Foil · ~25 min · 2-3 round · KB singola",
+    totalMin:25,
+    how:"Complex completo diviso in 4 blocchi: hinge/potenza, stabilita/spostamento, anti-rotazione, coordinazione globale. Senza appoggiare il KB dove possibile. RPE 6-8, mai a cedimento tecnico.",
+    structure:[["Round","2-3"],["Blocchi","4"],["Rest tra round","90-120\""],["RPE","6-8"]],
+    exercises:[
+      {n:"A",name:"Hinge → Power",        detail:"Deadlift 5 · Swing 5+5 — 16 kg",              t:"blocco",c:"#0284c7"},
+      {n:"B",name:"Stabilità → Sposta.",  detail:"Clean + Lunge&Press per lato — 10 kg",        t:"blocco",c:"#0284c7"},
+      {n:"C",name:"Anti-rotazione",       detail:"Carry 20-30m + Windmill per lato",            t:"blocco",c:"#0284c7"},
+      {n:"D",name:"Coordinazione",        detail:"Half TGU + Push-Up + Balance",                t:"blocco",c:"#0284c7"},
+    ],
+    tips:[
+      "Il complex deve lasciarti piu coordinato, non solo piu stanco.",
+      "Interrompi il round se: perdi equilibrio, il clean diventa rumoroso, il bacino ruota, il TGU diventa instabile.",
+      "Non aumentare peso, volume e densita nello stesso momento.",
+      "Se il wing foil e il giorno dopo: solo 2 round a RPE 6-7.",
+      "Qualita del movimento > peso > numero di round."
+    ],
+    buildSeq:function(){
+      const R=3;
+      const seq=[];
+      for(let r=1;r<=R;r++){
+        // Blocco A
+        seq.push({name:"KB Deadlift",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"5 rip · 16 kg",cueOverride:"BLOCCO A — hip hinge pulita"});
+        ["DX","SX"].forEach(function(l){ seq.push({name:"One-Arm Swing",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"5 rip "+l+" · 16 kg",cueOverride:"BLOCCO A — potenza d anca"}); });
+        // Blocco B
+        seq.push({name:"Clean DX",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"3 rip · 10 kg",cueOverride:"BLOCCO B — al rack senza impatto"});
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Reverse Lunge + Press",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"3 rip "+l+" · 10 kg",cueOverride:"BLOCCO B — controllo tra le gambe"}); });
+        seq.push({name:"Clean SX",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"3 rip · 10 kg",cueOverride:"BLOCCO B — al rack senza impatto"});
+        // Blocco C
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Suitcase Carry",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"20-30 m "+l,cueOverride:"BLOCCO C — tronco verticale"}); });
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Windmill",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"2 rip "+l+" · 10 kg",cueOverride:"BLOCCO C — controllo laterale"}); });
+        // Blocco D
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Half Turkish Get-Up",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"2 rip "+l,cueOverride:"BLOCCO D — lento e controllato"}); });
+        seq.push({name:"Push-Up",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"8-12 rip",cueOverride:"BLOCCO D — corpo in linea"});
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Single-Leg Balance",round:r,totalRounds:R,timerSec:25,type:"work",repsOverride:"20-30\" "+l,cueOverride:"BLOCCO D — bacino stabile"}); });
+        if(r<R) seq.push({name:"Rest",round:r,totalRounds:R,timerSec:105,type:"rest",repsOverride:"90-120\" rest",cueOverride:"Respira — round "+(r+1)+"/"+R});
+      }
+      return seq;
+    }
+  },
+
+  // ── WFB: Balance & Core (bodyweight) ──────────────────────────────────────
+  {
+    id:"WFB",kb:"0",desc:"Equilibrio, core e anti-rotazione per il Wing Foil",
+    label:"WF Balance & Core",emoji:"⚖️",color:"#22d3ee",
+    title:"Wing Foil — Balance & Core",
+    meta:"Wing Foil · ~15 min · 2-3 giri · corpo libero + KB leggera",
+    totalMin:15,
+    how:"Sessione complementare da fare tra i due flow o nei giorni in cui non vuoi un allenamento metabolico. Lavora su equilibrio monopodalico, stabilita del tronco e catena posteriore.",
+    structure:[["Giri","2-3"],["Esercizi","4"],["Attrezzo","KB 10 kg per il RDL"],["Focus","Equilibrio e controllo"]],
+    exercises:[
+      {n:"1",name:"Single-Leg RDL",     detail:"6-8 rip per lato · KB 10 kg",       t:"reps",c:"#22d3ee"},
+      {n:"2",name:"Side Plank",         detail:"30-45\" per lato",                  t:"tempo",c:"#22d3ee"},
+      {n:"3",name:"Push-Up",            detail:"10-15 rip · controllato",          t:"reps",c:"#22d3ee"},
+      {n:"4",name:"Single-Leg Balance", detail:"30-45\" per lato · 4 progressioni", t:"tempo",c:"#22d3ee"},
+    ],
+    tips:[
+      "Single-Leg RDL: bacino parallelo al pavimento, non ruotare.",
+      "Single-Leg Balance, progressione: 1) equilibrio semplice 2) piccolo squat 3) reach laterale della gamba libera 4) controllo del bacino.",
+      "Push-up controllati, senza arrivare al cedimento.",
+      "E la sessione ideale nei giorni tra un flow e l altro."
+    ],
+    buildSeq:function(){
+      const R=3;
+      const seq=[];
+      for(let r=1;r<=R;r++){
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Single-Leg RDL",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"6-8 rip "+l,cueOverride:"Bacino parallelo, non ruotare — KB 10 kg"}); });
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Side Plank",round:r,totalRounds:R,timerSec:40,type:"work",repsOverride:"30-45\" "+l,cueOverride:"Corpo in linea, anca alta"}); });
+        seq.push({name:"Push-Up",round:r,totalRounds:R,timerSec:null,type:"work",repsOverride:"10-15 rip",cueOverride:"Controllato, no cedimento"});
+        ["DX","SX"].forEach(function(l){ seq.push({name:"Single-Leg Balance",round:r,totalRounds:R,timerSec:40,type:"work",repsOverride:"30-45\" "+l,cueOverride:"Progressione: fermo, squat, reach"}); });
+        if(r<R) seq.push({name:"Rest",round:r,totalRounds:R,timerSec:60,type:"rest",repsOverride:"60\" rest",cueOverride:"Giro "+(r+1)+"/"+R});
+      }
+      return seq;
+    }
+  },
+
+  // ── WFW: Warm-up Wing Foil ────────────────────────────────────────────────
+  {
+    id:"WFW",kb:"0",desc:"Riscaldamento specifico prima di flow, complex o wing foil",
+    label:"WF Warm-up",emoji:"🔆",color:"#7dd3fc",
+    title:"Wing Foil — Warm-up",
+    meta:"Wing Foil · ~5 min · 1 giro · corpo libero",
+    totalMin:5,
+    how:"Riscaldamento rapido da fare prima dei flow, del complex o della sessione in acqua. Attiva anche mobilita toracica ed equilibrio.",
+    structure:[["Giri","1"],["Esercizi","6"],["Durata","4-5 min"],["Attrezzo","Nessuno"]],
+    exercises:[
+      {n:"1",name:"Jumping Jack",       detail:"60\" · attivazione generale",   t:"tempo",c:"#7dd3fc"},
+      {n:"2",name:"Hip Hinge",          detail:"10 rip · senza carico",         t:"reps",c:"#7dd3fc"},
+      {n:"3",name:"Squat",              detail:"10 rip · corpo libero",         t:"reps",c:"#7dd3fc"},
+      {n:"4",name:"Affondo inverso",    detail:"5 rip per lato",                t:"reps",c:"#7dd3fc"},
+      {n:"5",name:"Rotazioni toraciche",detail:"5 rip per lato",                t:"reps",c:"#7dd3fc"},
+      {n:"6",name:"Single-Leg Balance", detail:"20\" per lato",                 t:"tempo",c:"#7dd3fc"},
+    ],
+    tips:["Non e un allenamento: serve solo ad attivare.","Falla anche prima di andare in acqua."],
+    buildSeq:function(){
+      const seq=[];
+      seq.push({name:"Jumping Jack",round:1,totalRounds:1,timerSec:60,type:"work",repsOverride:"60\"",cueOverride:"Attivazione generale"});
+      seq.push({name:"Hip Hinge",round:1,totalRounds:1,timerSec:null,type:"work",repsOverride:"10 rip",cueOverride:"Anca indietro, schiena neutra"});
+      seq.push({name:"Squat",round:1,totalRounds:1,timerSec:null,type:"work",repsOverride:"10 rip",cueOverride:"Scendi profondo, petto alto"});
+      ["DX","SX"].forEach(function(l){ seq.push({name:"Affondo inverso",round:1,totalRounds:1,timerSec:null,type:"work",repsOverride:"5 rip "+l,cueOverride:"Passo indietro controllato"}); });
+      ["DX","SX"].forEach(function(l){ seq.push({name:"Rotazione toracica",round:1,totalRounds:1,timerSec:null,type:"work",repsOverride:"5 rip "+l,cueOverride:"Ruota il torace, bacino fermo"}); });
+      ["DX","SX"].forEach(function(l){ seq.push({name:"Single-Leg Balance",round:1,totalRounds:1,timerSec:20,type:"work",repsOverride:"20\" "+l,cueOverride:"Occhi su un punto fisso"}); });
+      return seq;
+    }
+  },
   // ── BP1: PD Special ──────────────────────────────────────────────────────
   {
     id:"BP1",kb:"1",desc:"Tirata, slancio e spinta",yt:"https://youtu.be/kujifegkkq4",label:"PD Special",emoji:"⭐",color:"#E53935",
@@ -4950,6 +5235,7 @@ function renderTrain(){
     {id:"flow",     label:"Flow",      color:"#50dad1"},
     {id:"axe",      label:"AXE",       color:"#8b5cf6"},
     {id:"kdp",      label:"KDP-26",    color:"#7A9A3A"},
+    {id:"wf",       label:"🏄 Wing Foil", color:"#38bdf8"},
   ];
   function tBtn(t){
     var on=sub===t.id;
@@ -4960,7 +5246,8 @@ function renderTrain(){
   }
   var tabBar=
     '<div class="flex gap-1.5 mb-1.5">'+TABS.slice(0,3).map(tBtn).join('')+'</div>'+
-    '<div class="flex gap-1.5 mb-5">'+TABS.slice(3,6).map(tBtn).join('')+'</div>';
+    '<div class="flex gap-1.5 mb-1.5">'+TABS.slice(3,6).map(tBtn).join('')+'</div>'+
+    '<div class="flex gap-1.5 mb-5">'+TABS.slice(6).map(tBtn).join('')+'</div>';
 
   // ── TAB KB A·B·C ───────────────────────────────────────────────
   function tabBase(){
@@ -5236,7 +5523,7 @@ function renderTrain(){
     '<main class="px-5 pt-5 pb-24">'+
       '<h1 class="font-headline text-5xl tracking-tight leading-none mb-4">TRAIN</h1>'+
       tabBar+
-      (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():tabKdp())+
+      (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():tabKdp())+
     '</main>'+
     navHTML("train")+
   '</div>';
@@ -6739,6 +7026,11 @@ function aiWorkoutToAction(workoutName){
     if(fid) return {action:'openFlowDetail(\''+fid+'\');',icon:'🌊',color:'#50dad1'};
     return {action:"state.trainSubTab='flow';switchTab('train');",icon:'🌊',color:'#50dad1'};
   }
+  if(n.indexOf('wing')>=0||n.indexOf('foil')>=0||n.indexOf('wf')===0){
+    var wid = n.indexOf('wf1')>=0||n.indexOf('base')>=0?'WF1':n.indexOf('wf2')>=0||n.indexOf('dynamic')>=0?'WF2':n.indexOf('wf3')>=0||n.indexOf('complex')>=0?'WF3':n.indexOf('balance')>=0?'WFB':n.indexOf('warm')>=0?'WFW':null;
+    if(wid) return {action:"openExtraDetail('"+wid+"');",icon:'🏄',color:'#38bdf8'};
+    return {action:"state.trainSubTab='wf';switchTab('train');",icon:'🏄',color:'#38bdf8'};
+  }
   if(n.indexOf('axe')>=0) return {action:'forgeAxe();',icon:'🪓',color:'#8b5cf6'};
   if(n.indexOf('kdp')>=0) return {action:'forgeKdp();',icon:'⚡',color:'#7A9A3A'};
   if(n.indexOf('bellplex')>=0) return {action:'forgeBellplex();',icon:'🔴',color:'#ffb4ab'};
@@ -7228,7 +7520,7 @@ function forgeExportWeekly(){
     giorni_allenamento:(FORGE_PROFILE.trainingDays||[]).map(function(d){return DAY_NAMES[d];}),
     allenamenti_ultimi_7_giorni:all,
     dati_salute_ultimi_7_giorni:health7.map(function(h){return {data:h.date,peso_kg:h.weight||null,hrv:h.hrv||null,ore_sonno:h.sleep||null,qualita_sonno:h.sleepQ||null};}),
-    workout_disponibili:['AXE (aerobico anti-glicolitico)','KDP-26 (EMOM+AMRAP)','Giorno A (EMOM forza)','Giorno B (HIIT)','Giorno C (Ladder+AMRAP)','Complex CX1-CX21','Core & Forza 7R','Deep Push-Up EMOM','Condizionamento B4-B9','Flow FL1-FL4 (sequenze continue)','Routine Mattutina 8min','Wim Hof']
+    workout_disponibili:['AXE (aerobico anti-glicolitico)','KDP-26 (EMOM+AMRAP)','Giorno A (EMOM forza)','Giorno B (HIIT)','Giorno C (Ladder+AMRAP)','Complex CX1-CX21','Wing Foil WF1-WF3 + Balance&Core','Core & Forza 7R','Deep Push-Up EMOM','Condizionamento B4-B9','Flow FL1-FL4 (sequenze continue)','Routine Mattutina 8min','Wim Hof']
   };
 
   var prompt='Sei un coach di kettlebell. Analizza i dati e fornisci raccomandazioni per la settimana prossima.\n\n'+
@@ -8369,8 +8661,15 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v88";
+var APP_VERSION = "v89";
 var APP_CHANGELOG = [
+  {v:"v89", data:"09/08/2026", items:[
+    "Nuova sezione Wing Foil in TRAIN",
+    "WF Base, WF Dynamic, WF Complex a 4 blocchi",
+    "Balance & Core: equilibrio e anti-rotazione a corpo libero",
+    "Warm-up specifico prima dei flow o della sessione in acqua",
+    "Settimana tipo e progressione 6 settimane",
+  ]},
   {v:"v88", data:"09/08/2026", items:[
     "Home: sezione Flow con accesso diretto ai 4 flow",
   ]},
@@ -9069,7 +9368,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v88';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v89';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
