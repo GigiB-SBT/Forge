@@ -1535,8 +1535,8 @@ function renderDone(){
           </div>
         </div>
 
-        <!-- HR + Weight -->
-        <div class="grid grid-cols-3 gap-3">
+        <!-- HR -->
+        <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">HR Media</label>
             <input class="log-input w-full" type="number" placeholder="150" inputmode="numeric"
@@ -1547,12 +1547,10 @@ function renderDone(){
             <input class="log-input w-full" type="number" placeholder="175" inputmode="numeric"
               value="${f.hrMax}" oninput="setLogField('hrMax',this.value)"/>
           </div>
-          <div>
-            <label class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">Peso KB</label>
-            <input class="log-input w-full" type="number" placeholder="10" inputmode="decimal" step="0.5"
-              value="${f.weight||'10'}" oninput="setLogField('weight',this.value)"/>
-          </div>
         </div>
+
+        <!-- Carichi per esercizio -->
+        ${weightsBlockHTML(accentHex)}
 
         <!-- Talk test -->
         <div>
@@ -1728,6 +1726,10 @@ function renderLog(){
             <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">HR Max</label>
             <input class="log-input w-full" type="number" placeholder="bpm" value="${h.hrMax||''}" onchange="editEntryField('${editKey}','hrMax',this.value)" inputmode="numeric"/></div>
           </div>
+          ${h.weights&&Object.keys(h.weights).length?`<div>
+            <label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Carichi</label>
+            <div class="flex flex-wrap gap-1.5">${Object.keys(h.weights).map(k=>`<span class="font-label text-[9px] px-2 py-1" style="border:1px solid rgba(233,193,118,0.35);color:#e9c176">${k} · ${h.weights[k]}kg</span>`).join("")}</div>
+          </div>`:''}
           <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Note</label>
           <input class="log-input w-full" type="text" placeholder="Note..." value="${h.notes||''}" onchange="editEntryField('${editKey}','notes',this.value)"/></div>
           <button onclick="closeEdit()" class="w-full py-3 font-headline text-lg tracking-widest" style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">✓ CHIUDI</button>
@@ -1743,6 +1745,7 @@ function renderLog(){
               ${h.duration?`<span class="font-label text-[9px] text-gray-500 uppercase">${h.duration} min</span>`:''}
               ${h.hrAvg?`<span class="font-label text-[9px] uppercase" style="color:#ffb4ab">❤️ ${h.hrAvg}</span>`:''}
               ${h.feeling?`<span class="font-label text-[9px] text-gray-500">${h.feeling}</span>`:''}
+              ${h.weights&&weightsSummary(h.weights)?`<span class="font-label text-[9px] uppercase" style="color:#e9c176">🏋 ${weightsSummary(h.weights)}</span>`:''}
             </div>
             ${h.notes?`<p class="font-label text-[10px] italic text-gray-600 mt-1">"${h.notes}"</p>`:''}
             ${editBlock}
@@ -4444,6 +4447,8 @@ function renderBellplexWorkout(){
           <input class="log-input w-full" type="number" placeholder="150" inputmode="numeric"
             value="${state.logForm.hrAvg||''}" oninput="state.logForm.hrAvg=this.value"/>
         </div>
+        <!-- Carichi per esercizio -->
+        ${weightsBlockHTML(accentHex)}
         <!-- Finisher -->
         <div class="bg-surface-container ghost-border p-4 border-l-2" style="border-color:#e9c176">
           <p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:#e9c176">⚡ FINISHER — 5 MIN AMRAP SNATCH</p>
@@ -4649,19 +4654,23 @@ function exitBellplex(){
 function saveBellplexDone(){
   const id=state.extraWorkoutId;
   const w=getExtraById(id);
+  const bpExW=collectExWeights();
   const entry={
     day:"extra_"+id,
     date:(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})(),
     duration:w?.totalMin||20,
     feeling:state.logForm.feeling,
     hrAvg:state.logForm.hrAvg?Number(state.logForm.hrAvg):null,
-    weight:state.logForm.weight||"10",
+    weight:Object.keys(bpExW).length?dominantWeight(bpExW,state.logForm.weight||"10"):(state.logForm.weight||"10"),
+    weights:bpExW,
     notes:(state.logForm.notes||"")||((state.bpSerie||5)+" round completati"),
     talkTest:null,
     rounds:state.bpSerie||5,
   };
   state.history.push(entry);
   saveHistory();
+  commitExWeightMemory(bpExW);
+  resetExWeights();
   if(bpRestInterval) clearInterval(bpRestInterval);
   releaseWakeLock();
   var bpLabel=(w?(w.label+' — '+w.title):'Bellplex');
@@ -8661,8 +8670,16 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v89";
+var APP_VERSION = "v90";
 var APP_CHANGELOG = [
+  {v:"v90", data:"20/08/2026", items:[
+    "Carico per singolo esercizio a fine allenamento",
+    "Chip rapide 10 / 16 kg, corpo libero e campo libero",
+    "Pulsante «tutti» per applicare lo stesso peso a tutta la sessione",
+    "Precompilazione dai carichi indicati nel workout (es. Wing Foil)",
+    "Memoria dell'ultimo carico usato per ogni esercizio",
+    "Log: riepilogo carichi nella sessione e dettaglio in modifica",
+  ]},
   {v:"v89", data:"09/08/2026", items:[
     "Nuova sezione Wing Foil in TRAIN",
     "WF Base, WF Dynamic, WF Complex a 4 blocchi",
@@ -8844,8 +8861,9 @@ function startWorkoutImmediate(key){
   clearTimerInterval();
   requestWakeLock();
   const step=DAYS[key].seq[0];
+  resetExWeights();
   state={...state,
-    tab:"workout",dayKey:key,stepIdx:0,
+    tab:"workout",dayKey:key,stepIdx:0,extraWorkoutId:null,
     remaining:step.timerSec??0,timerRunning:true,startTime:Date.now(),
     logForm:{feeling:null,hrAvg:"",hrMax:"",weight:"10",talkTest:null,notes:""}
   };
@@ -8886,7 +8904,7 @@ function exitWorkout(){
     doExit();
   }
 }
-function goHome(){clearTimerInterval();releaseWakeLock();state.extraWorkoutId=null;state.tab="home";state.timerRunning=false;render();}
+function goHome(){clearTimerInterval();releaseWakeLock();resetExWeights();state.extraWorkoutId=null;state.tab="home";state.timerRunning=false;render();}
 
 function nextStep(){
   clearTimerInterval();
@@ -8957,6 +8975,165 @@ function clearTimerInterval(){
   if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
 }
 
+// ── PESI PER ESERCIZIO (v90) ──────────────────────────────────────────────────
+var EX_WEIGHT_OPTS=["10","16"];
+
+function isBodyweightEx(name){
+  var n=(name||"").toLowerCase();
+  if(/swing|clean|press|snatch|goblet|windmill|get-?up|deadlift|halo|rack|thruster|high pull|figure|kettlebell|\bkb\b|suitcase|carry|renegade/.test(n))return false;
+  return /push-?up|plank|pull-?up|chin-?up|\bdip\b|burpee|mountain climber|jump|hold|l-?sit|hanging|knee raise|leg raise|body row|inverted row|walkout|fallout|skater|bulgarian|dead bug|hip hinge|crunch|sit-?up|superman|bridge|squat 1\.5|1\.5 squat|face pull|leg curl|sprawl/.test(n);
+}
+
+function loadExWeightMemory(){
+  try{return JSON.parse(localStorage.getItem("kb-ex-weights")||"{}");}catch(e){return {};}
+}
+function saveExWeightMemory(m){
+  try{localStorage.setItem("kb-ex-weights",JSON.stringify(m));}catch(e){}
+}
+
+function getSessionExercises(){
+  var out=[],seen={};
+  function add(name,detail){
+    if(!name)return;
+    if(/^rest$/i.test(name)||/^amrap/i.test(name)||/^recupero/i.test(name)||/^pausa/i.test(name))return;
+    if(seen[name])return;
+    seen[name]=1;
+    out.push({name:name,detail:detail||""});
+  }
+  var id=null;
+  if(state.tab==="bp-workout")id=state.extraWorkoutId;
+  else if(state.dayKey&&state.dayKey.indexOf("extra_")===0)id=state.dayKey.replace("extra_","");
+  var w=id?getExtraById(id):null;
+  if(w&&w.exercises&&w.exercises.length){
+    w.exercises.forEach(function(e){add(e.name,e.detail);});
+    return out;
+  }
+  var d=state.dayKey?DAYS[state.dayKey]:null;
+  if(d&&d.seq)d.seq.forEach(function(s){add(s.name,s.cueOverride||s.repsOverride||"");});
+  return out;
+}
+
+function inferExWeight(ex){
+  if(isBodyweightEx(ex.name))return "bw";
+  var m=(ex.detail||"").match(/(\d+(?:[.,]\d+)?)\s*kg/i);
+  if(m)return String(m[1]).replace(",",".");
+  var mem=loadExWeightMemory();
+  if(mem[ex.name])return String(mem[ex.name]);
+  return String((state.logForm&&state.logForm.weight)||"10");
+}
+
+function ensureExWeights(){
+  var key=(state.dayKey||"")+"|"+(state.tab==="bp-workout"?(state.extraWorkoutId||""):"");
+  if(state.exWeightsKey!==key||!state.exWeights){
+    state.exWeightsKey=key;
+    state.exWeights={};
+    getSessionExercises().forEach(function(ex){state.exWeights[ex.name]=inferExWeight(ex);});
+  }
+  return state.exWeights;
+}
+
+function resetExWeights(){state.exWeights=null;state.exWeightsKey=null;}
+
+function setExWeight(name,val){
+  ensureExWeights();
+  state.exWeights[name]=val;
+  render();
+}
+
+function setExWeightCustom(name,val){
+  ensureExWeights();
+  var v=String(val||"").replace(",",".").trim();
+  if(!v||isNaN(Number(v))||Number(v)<=0){render();return;}
+  state.exWeights[name]=v;
+  render();
+}
+
+function setAllExWeights(val){
+  ensureExWeights();
+  getSessionExercises().forEach(function(ex){
+    if(val==="bw"||!isBodyweightEx(ex.name))state.exWeights[ex.name]=val;
+  });
+  render();
+}
+
+function collectExWeights(){
+  var w=state.exWeights||{},out={};
+  Object.keys(w).forEach(function(k){
+    var v=w[k];
+    if(v&&v!=="bw"&&!isNaN(Number(v))&&Number(v)>0)out[k]=Number(v);
+  });
+  return out;
+}
+
+function commitExWeightMemory(weights){
+  var mem=loadExWeightMemory();
+  Object.keys(weights).forEach(function(k){mem[k]=weights[k];});
+  saveExWeightMemory(mem);
+}
+
+function dominantWeight(weights,fallback){
+  var vals=Object.keys(weights).map(function(k){return weights[k];});
+  if(!vals.length)return String(fallback||"10");
+  var count={};
+  vals.forEach(function(v){count[v]=(count[v]||0)+1;});
+  var best=vals[0];
+  vals.forEach(function(v){
+    if(count[v]>count[best]||(count[v]===count[best]&&Number(v)>Number(best)))best=v;
+  });
+  return String(best);
+}
+
+function weightsSummary(weights){
+  if(!weights)return "";
+  var vals=Object.keys(weights).map(function(k){return Number(weights[k]);});
+  if(!vals.length)return "";
+  var uniq=[];
+  vals.forEach(function(v){if(uniq.indexOf(v)<0)uniq.push(v);});
+  uniq.sort(function(a,b){return a-b;});
+  return uniq.join("/")+" kg";
+}
+
+// Blocco UI riusabile — schermata fine allenamento
+function weightsBlockHTML(accentHex){
+  var list=getSessionExercises();
+  var f=state.logForm||{};
+  if(!list.length){
+    return '<div><label class="font-label text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">PESO KB</label>'
+      +'<input class="log-input w-full" type="number" placeholder="10" inputmode="decimal" step="0.5" value="'+(f.weight||"10")+'" oninput="setLogField(\'weight\',this.value)"/></div>';
+  }
+  var w=ensureExWeights();
+  var h='';
+  h+='<div>';
+  h+='<div class="flex items-center justify-between mb-3">';
+  h+='<p class="font-label text-[9px] font-bold text-slate-500 tracking-widest uppercase">CARICHI</p>';
+  h+='<div class="flex gap-1.5">';
+  h+='<span class="font-label text-[8px] uppercase tracking-wider text-gray-600 self-center mr-1">tutti</span>';
+  EX_WEIGHT_OPTS.forEach(function(o){
+    h+='<button data-w="'+o+'" onclick="setAllExWeights(this.dataset.w)" class="px-2.5 py-1 font-label text-[10px] font-bold active:scale-95 transition-transform" style="border:1px solid '+accentHex+'55;color:'+accentHex+';background:transparent">'+o+'</button>';
+  });
+  h+='</div></div>';
+  h+='<div style="border:1px solid rgba(90,65,54,0.25)">';
+  list.forEach(function(ex,i){
+    var cur=String(w[ex.name]!=null?w[ex.name]:"");
+    var isCustom=cur!=="bw"&&cur!==""&&EX_WEIGHT_OPTS.indexOf(cur)<0;
+    h+='<div class="flex items-center gap-2 px-3 py-2"'+(i?' style="border-top:1px solid rgba(90,65,54,0.18)"':'')+'>';
+    h+='<span class="font-label text-[11px] text-gray-300 truncate" style="flex:1;min-width:0">'+ex.name+'</span>';
+    h+='<div class="flex gap-1 flex-shrink-0">';
+    EX_WEIGHT_OPTS.forEach(function(o){
+      var sel=cur===o;
+      h+='<button data-n="'+ex.name+'" data-w="'+o+'" onclick="setExWeight(this.dataset.n,this.dataset.w)" class="font-label text-[10px] font-bold active:scale-95 transition-transform" style="width:32px;height:28px;border:1px solid '+(sel?accentHex:"rgba(90,65,54,0.35)")+';color:'+(sel?accentHex:"#64748b")+';background:'+(sel?accentHex+"1f":"transparent")+'">'+o+'</button>';
+    });
+    var selBw=cur==="bw";
+    h+='<button data-n="'+ex.name+'" onclick="setExWeight(this.dataset.n,\'bw\')" title="corpo libero" class="font-label text-[10px] font-bold active:scale-95 transition-transform" style="width:28px;height:28px;border:1px solid '+(selBw?"#50dad1":"rgba(90,65,54,0.35)")+';color:'+(selBw?"#50dad1":"#64748b")+';background:'+(selBw?"rgba(80,218,209,0.12)":"transparent")+'">—</button>';
+    h+='<input data-n="'+ex.name+'" type="number" inputmode="decimal" step="0.5" placeholder="kg" value="'+(isCustom?cur:"")+'" onchange="setExWeightCustom(this.dataset.n,this.value)" class="font-label text-[10px] text-center" style="width:40px;height:28px;background:#0C1017;border:1px solid '+(isCustom?accentHex:"rgba(90,65,54,0.35)")+';color:'+(isCustom?accentHex:"#94a3b8")+'"/>';
+    h+='</div></div>';
+  });
+  h+='</div>';
+  h+='<p class="font-label text-[9px] text-gray-600 mt-2">— = corpo libero · campo libero per carichi diversi</p>';
+  h+='</div>';
+  return h;
+}
+
 // Log form helpers
 function setLogField(field,val){
   state.logForm[field]=val;
@@ -8967,12 +9144,14 @@ function setLogField(field,val){
 function saveSession(){
   const f=state.logForm;
   const isExtra=state.dayKey&&state.dayKey.startsWith("extra_");
+  const exW=collectExWeights();
   const entry={
     day:state.dayKey,
     date:(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})(),
     duration:state.workoutMins,
     completedSteps:state.workoutSteps,
-    weight:f.weight||"10",
+    weight:Object.keys(exW).length?dominantWeight(exW,f.weight||"10"):(f.weight||"10"),
+    weights:exW,
     hrAvg:f.hrAvg?Number(f.hrAvg):null,
     hrMax:f.hrMax?Number(f.hrMax):null,
     feeling:f.feeling||null,
@@ -8983,6 +9162,8 @@ function saveSession(){
   };
   state.history.push(entry);
   saveHistory();
+  commitExWeightMemory(exW);
+  resetExWeights();
   state.partial=false;
   state.extraWorkoutId=null;
   state.timerRunning=false;
@@ -8992,6 +9173,7 @@ function saveSession(){
 }
 
 function skipSave(){
+  resetExWeights();
   state.extraWorkoutId=null;
   state.tab="home";state.timerRunning=false;render();
 }
@@ -9368,7 +9550,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v89';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v90';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
