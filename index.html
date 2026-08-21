@@ -381,6 +381,10 @@ const BW_EXERCISES={
   "Inverted Row":      {reps:"8-12 rip",yt:"https://www.youtube.com/results?search_query=inverted+row+technique+table+barbell",cue:"Corpo rigido · tira il petto verso la barra · gomiti a 45° · scendi lento"},
   "Burpee":            {reps:"10 rip",yt:"https://www.youtube.com/results?search_query=burpee+perfect+form+tutorial",cue:"Plank → push-up → salto con mani in alto · ritmo costante"},
   "Mountain Climber":  {reps:"20 rip",yt:"https://www.youtube.com/results?search_query=mountain+climber+exercise+tutorial+core",cue:"Plank alto · ginocchia alternate veloci · fianchi giù · core stabile"},
+  // Beginner phase
+  "Bodyweight Squat":  {reps:"10-15 rip",yt:"https://www.youtube.com/results?search_query=bodyweight+squat+technique+tutorial",cue:"Petto alto · ginocchia in linea con i piedi · scendi sotto il parallelo se possibile"},
+  "Straight Arm Hold": {reps:"max tempo",yt:"https://www.youtube.com/results?search_query=straight+arm+support+hold+rings+dip",cue:"Salta in cima alla posizione alta di un dip su anelli/parallele · tieni piu a lungo possibile"},
+  "Straight Arm Plank":{reps:"20-40\"",yt:"https://www.youtube.com/results?search_query=straight+arm+plank+technique",cue:"Corpo rigido come una tavola · spalle sopra i polsi · non far cedere i fianchi"},
 };
 // Merge in EXERCISES
 Object.assign(EXERCISES, BW_EXERCISES);
@@ -1202,68 +1206,6 @@ function renderHome(){
   }).join('');
 
 
-  // ── TAB WING FOIL ──────────────────────────────────────────────
-  function tabWingFoil(){
-    var WF_IDS=["WFW","WF1","WF2","WF3","WFB"];
-    var h='<div class="p-4 mb-3" style="background:rgba(56,189,248,0.05);border-left:2px solid #38bdf8">'+
-      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:#38bdf8">PREPARAZIONE WING FOIL</p>'+
-      '<p class="font-label text-[11px] text-gray-400 leading-relaxed mb-2">Equilibrio, stabilita del core, potenza dell anca e controllo delle spalle. 2-3 sessioni a settimana, tecnica prima del carico.</p>'+
-      '<p class="font-label text-[10px] leading-relaxed" style="color:#38bdf8">⚡ Deve lasciarti piu coordinato, non solo piu stanco.</p>'+
-    '</div>';
-
-    WF_IDS.forEach(function(id){
-      var w=getExtraById(id);
-      if(!w) return;
-      var kbTxt = w.kb==='0'?'Corpo libero':w.kb==='2'?'2 KB':'1 KB';
-      h+='<div onclick="openExtraDetail(\''+id+'\')" class="mb-2 cursor-pointer active:scale-[0.99] transition-transform"'+
-        ' style="border-left:2px solid '+w.color+';background:rgba(255,255,255,0.02);border-top:1px solid rgba(90,65,54,0.2);border-right:1px solid rgba(90,65,54,0.2);border-bottom:1px solid rgba(90,65,54,0.2)">'+
-        '<div class="p-4">'+
-          '<div class="flex justify-between items-start mb-1">'+
-            '<div class="min-w-0 flex-1">'+
-              '<div class="flex items-center gap-2 flex-wrap mb-0.5">'+
-                '<span class="font-headline text-lg leading-none">'+w.emoji+' '+w.label+'</span>'+
-                '<span class="font-label text-[8px] uppercase tracking-wider px-1.5 py-0.5" style="background:'+w.color+'1a;color:'+w.color+'">'+kbTxt+'</span>'+
-              '</div>'+
-              '<p class="font-label text-[10px] text-gray-400 leading-snug">'+w.desc+'</p>'+
-            '</div>'+
-            '<span class="material-symbols-outlined text-gray-700 text-sm flex-shrink-0 ml-2">chevron_right</span>'+
-          '</div>'+
-          '<div class="flex gap-3 mt-2">'+
-            '<span class="font-label text-[9px] text-gray-600">'+w.totalMin+' min</span>'+
-            '<span class="font-label text-[9px] text-gray-600">'+w.exercises.length+' esercizi</span>'+
-          '</div>'+
-        '</div>'+
-      '</div>';
-    });
-
-    // Settimana tipo
-    h+='<div class="p-4 mt-4" style="background:rgba(255,255,255,0.02);border:1px solid rgba(90,65,54,0.25)">'+
-      '<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-3">SETTIMANA TIPO</p>';
-    [['Lunedi','WF Complex — 2-3 round','#0284c7'],
-     ['Mercoledi','Balance & Core — 15 min','#22d3ee'],
-     ['Venerdi','WF Base o WF Dynamic','#38bdf8'],
-     ['Giorno in acqua','Solo wing foil, niente pesi','#7dd3fc']].forEach(function(r){
-      h+='<div class="flex justify-between items-center py-2" style="border-bottom:1px solid rgba(255,255,255,0.05)">'+
-        '<p class="font-label text-[10px] text-gray-500">'+r[0]+'</p>'+
-        '<span class="font-label text-[10px] text-right" style="color:'+r[2]+'">'+r[1]+'</span>'+
-      '</div>';
-    });
-    h+='</div>';
-
-    // Progressione
-    h+='<div class="p-4 mt-3" style="background:rgba(56,189,248,0.04);border-left:2px solid #38bdf8">'+
-      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-2" style="color:#38bdf8">PROGRESSIONE 6 SETTIMANE</p>';
-    [['Sett. 1-2','2-3 round · carichi conservativi · massima attenzione alla tecnica'],
-     ['Sett. 3-4','3-4 round · aumenta la continuita, riduci le pause'],
-     ['Sett. 5-6','3-4 round · lavora su fluidita e controllo, non serve alzare il peso']].forEach(function(r){
-      h+='<div class="mb-2"><p class="font-headline text-sm" style="color:#38bdf8">'+r[0]+'</p>'+
-        '<p class="font-label text-[10px] text-gray-400 leading-relaxed">'+r[1]+'</p></div>';
-    });
-    h+='<p class="font-label text-[10px] text-gray-500 mt-3 leading-relaxed">Non aumentare peso, volume e densita nello stesso momento.</p>';
-    h+='</div>';
-
-    return h;
-  }
 
   return '<div class="screen bg-background" style="padding-top:64px;">'+
     '<main class="px-5 pt-5 pb-24">'+
@@ -1705,15 +1647,16 @@ function renderLog(){
         const isEditing=state.editingEntry===editKey;
         const isBP=!isExt&&h.day&&h.day.startsWith("extra_BP");
         const isWF=!isExt&&h.day&&h.day.startsWith("extra_WF");
+        const isBWJ=!isExt&&h.day&&h.day.indexOf("extra_BWJ-")===0;
         const isKDP=isExt&&h._kdp;
         const isFinisher=isExt&&h._finisher;
         const isAxeEntry=isExt&&h._axe;
         const isFlowEntry=isExt&&h._flow;
         const col=isExt
           ?(isFlowEntry?"#50dad1":isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#64748b"))
-          :(isWF?"#38bdf8":isBP?"#ffb4ab":(KPhex[h.day]||"#ffb693"));
+          :(isWF?"#38bdf8":isBP?"#ffb4ab":isBWJ?"#43A047":(KPhex[h.day]||"#ffb693"));
         const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
-        const bpW=rawId.startsWith("BP")?getExtraById(rawId):null;
+        const bpW=(rawId.startsWith("BP")||rawId.indexOf("BWJ-")===0)?getExtraById(rawId):null;
         const label=isExt
           ?(isFlowEntry?((getFlowById((h.type||'').replace('KB Flow_',''))||{}).nome||h.type):isAxeEntry?"AXE Protocol":isKDP?"KDP-26":isFinisher?"Finisher Snatch":h.type)
           :(bpW?(bpW.label+" — "+bpW.title):rawId?rawId:`Giorno ${h.day}`);
@@ -1729,6 +1672,10 @@ function renderLog(){
           ${h.weights&&Object.keys(h.weights).length?`<div>
             <label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Carichi</label>
             <div class="flex flex-wrap gap-1.5">${Object.keys(h.weights).map(k=>`<span class="font-label text-[9px] px-2 py-1" style="border:1px solid rgba(233,193,118,0.35);color:#e9c176">${k} · ${h.weights[k]}kg</span>`).join("")}</div>
+          </div>`:''}
+          ${h.reps&&Object.keys(h.reps).length?`<div>
+            <label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Ripetizioni</label>
+            <div class="flex flex-wrap gap-1.5">${Object.keys(h.reps).map(k=>`<span class="font-label text-[9px] px-2 py-1" style="border:1px solid rgba(67,160,71,0.35);color:#43A047">${k} · ${h.reps[k]}</span>`).join("")}</div>
           </div>`:''}
           <div><label class="font-label text-[8px] uppercase tracking-widest text-gray-500 block mb-1">Note</label>
           <input class="log-input w-full" type="text" placeholder="Note..." value="${h.notes||''}" onchange="editEntryField('${editKey}','notes',this.value)"/></div>
@@ -1746,6 +1693,7 @@ function renderLog(){
               ${h.hrAvg?`<span class="font-label text-[9px] uppercase" style="color:#ffb4ab">❤️ ${h.hrAvg}</span>`:''}
               ${h.feeling?`<span class="font-label text-[9px] text-gray-500">${h.feeling}</span>`:''}
               ${h.weights&&weightsSummary(h.weights)?`<span class="font-label text-[9px] uppercase" style="color:#e9c176">🏋 ${weightsSummary(h.weights)}</span>`:''}
+              ${h.reps&&Object.keys(h.reps).length?`<span class="font-label text-[9px] uppercase" style="color:#43A047">🔁 ${h.rounds||1} round</span>`:''}
             </div>
             ${h.notes?`<p class="font-label text-[10px] italic text-gray-600 mt-1">"${h.notes}"</p>`:''}
             ${editBlock}
@@ -4124,6 +4072,295 @@ const EXTRA_WORKOUTS=[
       });
       return seq;
     }
+  },
+  // ══ BODYWEIGHT — Jack Coulson "Bodyweight Jacked" ═══════════════════════════
+  {
+    id:"BWJ-BEG-1",kb:"0",desc:"Bodyweight Jacked — Beginner · Corpo libero",
+    label:"Beginner · W1",emoji:"🌱",color:"#94a3b8",
+    title:"Circuito introduttivo",
+    meta:"Bodyweight · ~20 min · 3 round · Corpo libero",
+    totalMin:20,
+    bwGroup:"beg",
+    roundsMin:3,roundsMax:3,roundsDefault:3,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-3"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Bodyweight Squat",detail:"10-15 rip",t:"reps",c:"#94a3b8"},
+      {n:"2",name:"Push-up",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
+      {n:"3",name:"Body Row",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
+      {n:"4",name:"Straight Arm Hold",detail:"max tempo",t:"reps",c:"#94a3b8"},
+      {n:"5",name:"Straight Arm Plank",detail:"20-40\"",t:"reps",c:"#94a3b8"},
+    ],
+    tips:[
+      "Salta in cima alla posizione alta di un dip su anelli e tieni piu a lungo possibile.",
+      "Round 3-3: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-BEG-2",kb:"0",desc:"Bodyweight Jacked — Beginner · Corpo libero",
+    label:"Beginner · W2",emoji:"🌱",color:"#94a3b8",
+    title:"Circuito introduttivo",
+    meta:"Bodyweight · ~20 min · 3 round · Corpo libero",
+    totalMin:20,
+    bwGroup:"beg",
+    roundsMin:3,roundsMax:3,roundsDefault:3,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-3"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Chin-up Knee Raise",detail:"3-5 rip",t:"reps",c:"#94a3b8"},
+      {n:"2",name:"Push-up",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
+      {n:"3",name:"Face Pull",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
+      {n:"4",name:"Reverse Lunge",detail:"8-10 rip/gamba",t:"reps",c:"#94a3b8"},
+      {n:"5",name:"Side Plank",detail:"20-40\" per lato",t:"reps",c:"#94a3b8"},
+    ],
+    tips:[
+      "Se il Chin-up Knee Raise non e ancora possibile, sostituisci con Body Row.",
+      "Round 3-3: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-BEG-3",kb:"0",desc:"Bodyweight Jacked — Beginner · Corpo libero",
+    label:"Beginner · W3",emoji:"🌱",color:"#94a3b8",
+    title:"Circuito introduttivo",
+    meta:"Bodyweight · ~20 min · 3 round · Corpo libero",
+    totalMin:20,
+    bwGroup:"beg",
+    roundsMin:3,roundsMax:3,roundsDefault:3,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-3"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Bodyweight Squat",detail:"10-15 rip",t:"reps",c:"#94a3b8"},
+      {n:"2",name:"Push-up",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
+      {n:"3",name:"Body Row",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
+      {n:"4",name:"Straight Arm Hold",detail:"max tempo",t:"reps",c:"#94a3b8"},
+      {n:"5",name:"Hanging Knee Raise",detail:"5-10 rip",t:"reps",c:"#94a3b8"},
+    ],
+    tips:[
+      "Stessa struttura di W1 con le Hanging Knee Raise al posto del plank.",
+      "Round 3-3: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-P1-1",kb:"0",desc:"Bodyweight Jacked — Fase 1 · Corpo libero",
+    label:"Fase 1 · W1",emoji:"🤸",color:"#43A047",
+    title:"Full Body Circuit",
+    meta:"Bodyweight · ~26 min · 4 round · Corpo libero",
+    totalMin:26,
+    bwGroup:"p1",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-5"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"TMB Pull-up",detail:"3-8 rip",t:"reps",c:"#43A047"},
+      {n:"2",name:"Push-up",detail:"max rip",t:"reps",c:"#43A047"},
+      {n:"3",name:"Squat 1.5",detail:"15 rip",t:"reps",c:"#43A047"},
+      {n:"4",name:"Jump Squat",detail:"5-8 rip",t:"reps",c:"#43A047"},
+      {n:"5",name:"Hanging Knee Raise",detail:"8-10 rip",t:"reps",c:"#43A047"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-P1-2",kb:"0",desc:"Bodyweight Jacked — Fase 1 · Corpo libero",
+    label:"Fase 1 · W2",emoji:"🤸",color:"#43A047",
+    title:"Full Body Circuit",
+    meta:"Bodyweight · ~26 min · 4 round · Corpo libero",
+    totalMin:26,
+    bwGroup:"p1",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-5"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Body Row",detail:"8-12 rip",t:"reps",c:"#43A047"},
+      {n:"2",name:"Close Grip Push-up",detail:"10-20 rip",t:"reps",c:"#43A047"},
+      {n:"3",name:"Reverse Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#43A047"},
+      {n:"4",name:"Split Jump",detail:"5-8 rip/gamba",t:"reps",c:"#43A047"},
+      {n:"5",name:"Plank Walkout",detail:"5-10 rip",t:"reps",c:"#43A047"},
+    ],
+    tips:[
+      "Se 12 rip sono troppo facili, aggiungi una pausa di 1-2\" a fine rep.",
+      "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-P1-3",kb:"0",desc:"Bodyweight Jacked — Fase 1 · Corpo libero",
+    label:"Fase 1 · W3",emoji:"🤸",color:"#43A047",
+    title:"Full Body Circuit",
+    meta:"Bodyweight · ~26 min · 4 round · Corpo libero",
+    totalMin:26,
+    bwGroup:"p1",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-5"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Chin-up",detail:"3-10 rip",t:"reps",c:"#43A047"},
+      {n:"2",name:"1.5 Push-up",detail:"8-15 rip",t:"reps",c:"#43A047"},
+      {n:"3",name:"Bulgarian Split Squat",detail:"10-15 rip/gamba",t:"reps",c:"#43A047"},
+      {n:"4",name:"Side Plank",detail:"30-60\" per lato",t:"reps",c:"#43A047"},
+      {n:"5",name:"Leg Raise",detail:"8-10 rip",t:"reps",c:"#43A047"},
+    ],
+    tips:[
+      "Pausa di 1\" in fondo a ogni rep dello Squat Bulgaro.",
+      "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-P2-1",kb:"0",desc:"Bodyweight Jacked — Fase 2 · Anelli · Anelli",
+    label:"Fase 2 · W1",emoji:"🔩",color:"#0891b2",
+    title:"Circuit anelli",
+    meta:"Bodyweight · ~30 min · 4 round · Anelli",
+    totalMin:30,
+    bwGroup:"p2",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Ring Pull-up",detail:"6-12 rip",t:"reps",c:"#0891b2"},
+      {n:"2",name:"Ring Dip",detail:"5-10 rip",t:"reps",c:"#0891b2"},
+      {n:"3",name:"Bulgarian Split Squat",detail:"10-15 rip/gamba",t:"reps",c:"#0891b2"},
+      {n:"4",name:"Body Row",detail:"8-12 rip (rest-pause)",t:"reps",c:"#0891b2"},
+      {n:"5",name:"Push-up",detail:"10-20 rip (rest-pause)",t:"reps",c:"#0891b2"},
+      {n:"6",name:"Hanging Knee Raise",detail:"5-10 rip",t:"reps",c:"#0891b2"},
+    ],
+    tips:[
+      "Se Ring Dip non ancora possibile: salta in cima e scendi piu lento possibile — 1 rep.",
+      "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-P2-2",kb:"0",desc:"Bodyweight Jacked — Fase 2 · Anelli · Anelli",
+    label:"Fase 2 · W2",emoji:"🔩",color:"#0891b2",
+    title:"Circuit anelli",
+    meta:"Bodyweight · ~30 min · 4 round · Anelli",
+    totalMin:30,
+    bwGroup:"p2",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Chin-up Knee Raise",detail:"5-8 rip",t:"reps",c:"#0891b2"},
+      {n:"2",name:"Judo Push-up",detail:"8-12 rip",t:"reps",c:"#0891b2"},
+      {n:"3",name:"Sliding Leg Curl",detail:"10-15 rip",t:"reps",c:"#0891b2"},
+      {n:"4",name:"Leg Raise",detail:"10-15 rip",t:"reps",c:"#0891b2"},
+      {n:"5",name:"Face Pull",detail:"10-15 rip (rest-pause)",t:"reps",c:"#0891b2"},
+      {n:"6",name:"Walking Lunge",detail:"10-12 rip/gamba",t:"reps",c:"#0891b2"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-P2-3",kb:"0",desc:"Bodyweight Jacked — Fase 2 · Anelli · Anelli",
+    label:"Fase 2 · W3",emoji:"🔩",color:"#0891b2",
+    title:"Circuit anelli",
+    meta:"Bodyweight · ~30 min · 4 round · Anelli",
+    totalMin:30,
+    bwGroup:"p2",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Body Row",detail:"8-12 rip (iso countdown)",t:"reps",c:"#0891b2"},
+      {n:"2",name:"Ring 1.5 Push-up",detail:"8-12 rip",t:"reps",c:"#0891b2"},
+      {n:"3",name:"Skater Squat",detail:"3-6 rip/gamba",t:"reps",c:"#0891b2"},
+      {n:"4",name:"Reverse Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#0891b2"},
+      {n:"5",name:"L-Sit Hold",detail:"max tempo",t:"reps",c:"#0891b2"},
+      {n:"6",name:"Plank Walkout",detail:"8-12 rip",t:"reps",c:"#0891b2"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-P3-1",kb:"0",desc:"Bodyweight Jacked — Fase 3 · Anelli · Anelli",
+    label:"Fase 3 · W1",emoji:"🏆",color:"#ffb693",
+    title:"Circuit avanzato",
+    meta:"Bodyweight · ~30 min · 4 round · Anelli",
+    totalMin:30,
+    bwGroup:"p3",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Ring Pull-up",detail:"5-10 rip (iso countdown)",t:"reps",c:"#ffb693"},
+      {n:"2",name:"Ring Dip",detail:"5-10 rip",t:"reps",c:"#ffb693"},
+      {n:"3",name:"Skater Squat",detail:"5-10 rip (rest-pause)",t:"reps",c:"#ffb693"},
+      {n:"4",name:"1.5 Body Row",detail:"8-12 rip",t:"reps",c:"#ffb693"},
+      {n:"5",name:"L-Sit Hold",detail:"max tempo",t:"reps",c:"#ffb693"},
+      {n:"6",name:"Side Plank",detail:"60-90\" per lato",t:"reps",c:"#ffb693"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-P3-2",kb:"0",desc:"Bodyweight Jacked — Fase 3 · Anelli · Anelli",
+    label:"Fase 3 · W2",emoji:"🏆",color:"#ffb693",
+    title:"Circuit avanzato",
+    meta:"Bodyweight · ~30 min · 4 round · Anelli",
+    totalMin:30,
+    bwGroup:"p3",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"TMB Chin-up",detail:"5-10 rip",t:"reps",c:"#ffb693"},
+      {n:"2",name:"Close Grip Push-up",detail:"8-12 rip (pausa 2\")",t:"reps",c:"#ffb693"},
+      {n:"3",name:"Sliding Leg Curl",detail:"10-20 rip",t:"reps",c:"#ffb693"},
+      {n:"4",name:"Reverse Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#ffb693"},
+      {n:"5",name:"Face Pull",detail:"10-15 rip",t:"reps",c:"#ffb693"},
+      {n:"6",name:"Leg Raise",detail:"10-15 rip",t:"reps",c:"#ffb693"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  {
+    id:"BWJ-P3-3",kb:"0",desc:"Bodyweight Jacked — Fase 3 · Anelli · Anelli",
+    label:"Fase 3 · W3",emoji:"🏆",color:"#ffb693",
+    title:"Circuit avanzato",
+    meta:"Bodyweight · ~30 min · 4 round · Anelli",
+    totalMin:30,
+    bwGroup:"p3",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
+    structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Ring Pull-up",detail:"5-10 rip (pausa top 1\")",t:"reps",c:"#ffb693"},
+      {n:"2",name:"Ring Dip",detail:"5-10 rip (pausa basso)",t:"reps",c:"#ffb693"},
+      {n:"3",name:"Skater Squat",detail:"5-10 rip/gamba",t:"reps",c:"#ffb693"},
+      {n:"4",name:"Ring Fallout",detail:"5-10 rip",t:"reps",c:"#ffb693"},
+      {n:"5",name:"Body Row",detail:"max rip",t:"reps",c:"#ffb693"},
+      {n:"6",name:"L-Sit Hold",detail:"max tempo",t:"reps",c:"#ffb693"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
+      "Recupero 25s tra esercizi · 120s tra i round."
+    ],
   }
 ];
 
@@ -4241,6 +4478,7 @@ function renderExtraDetail(){
   const w=getExtraById(state.extraDetailId);
   if(!w){state.tab="train";return renderTrain();}
   const isBP=w.id.startsWith("BP");
+  const isBW=w.id.indexOf("BWJ-")===0;
   const accentHex=isBP?"#ffb4ab":(w.color||"#ffb693");
 
   return `<div class="screen bg-background overflow-y-auto">
@@ -4250,10 +4488,10 @@ function renderExtraDetail(){
         <span class="material-symbols-outlined" style="color:${accentHex}">arrow_back</span>
       </button>
       <div class="flex-1">
-        <p class="dm-sans text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">${isBP?"COMPLEX":"EXTRA WORKOUT"}</p>
+        <p class="dm-sans text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">${isBP?"COMPLEX":isBW?"BODYWEIGHT":"EXTRA WORKOUT"}</p>
         <div class="flex items-center gap-2 flex-wrap">
           <h1 class="font-headline text-4xl leading-none" style="color:${accentHex}">${w.label}</h1>
-          ${w.kb?`<span class="dm-sans text-[9px] font-bold uppercase tracking-wider px-2 py-1" style="background:${w.kb==='2'?'#ffb4ab':w.kb==='2h'?'#e9c176':'#50dad1'}1a;color:${w.kb==='2'?'#ffb4ab':w.kb==='2h'?'#e9c176':'#50dad1'}">${w.kb==='2'?'2 KB':w.kb==='2h'?'2 MANI':'1 KB'}</span>`:''}
+          ${w.kb!=null?`<span class="dm-sans text-[9px] font-bold uppercase tracking-wider px-2 py-1" style="background:${w.kb==='2'?'#ffb4ab':w.kb==='2h'?'#e9c176':w.kb==='0'?'#43A047':'#50dad1'}1a;color:${w.kb==='2'?'#ffb4ab':w.kb==='2h'?'#e9c176':w.kb==='0'?'#43A047':'#50dad1'}">${w.kb==='2'?'2 KB':w.kb==='2h'?'2 MANI':w.kb==='0'?'CORPO LIBERO':'1 KB'}</span>`:''}
         </div>
         ${w.desc?`<p class="dm-sans text-sm text-slate-300 mt-1.5">${w.desc}</p>`:''}
         <p class="dm-sans text-xs text-slate-500 mt-0.5">${w.title}</p>
@@ -4340,6 +4578,27 @@ function startExtraWorkoutImmediate(id){
   requestWakeLock();
   const w=getExtraById(id);
   if(!w)return;
+
+  // Bodyweight Jacked: flusso dedicato a round con rest timer e log ripetizioni
+  if(id.indexOf("BWJ-")===0){
+    state={...state,
+      tab:"bw-workout",
+      extraWorkoutId:id,
+      bw:{
+        round:1,
+        maxRounds:w.roundsDefault,
+        exIdx:0,
+        phase:"exercise",
+        remaining:0,
+        reps:{},
+      },
+      startTime:Date.now(),
+      logForm:{feeling:null,hrAvg:"",hrMax:"",weight:"10",talkTest:null,notes:""}
+    };
+    bwEnterExercise();
+    render();
+    return;
+  }
 
   // Bellplex complexes: flusso dedicato con vista round completa
   if(id.startsWith("BP")){
@@ -4683,6 +4942,380 @@ function saveBellplexDone(){
   showMuscleSummary(bpText,'train',{trainSubTab:'bellplex'},bpLabel);
 }
 // ── END BELLPLEX WORKOUT ──────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════
+// BODYWEIGHT RUNNER — round con rest timer definito e log ripetizioni
+// ══════════════════════════════════════════════════════════════════
+
+// Interpreta la stringa "detail" di un esercizio (es. "8-12 rip", "max tempo",
+// "30-60\" per lato") e restituisce {unit, min, max, def, freeform}.
+// Le note tra parentesi (es. "(pausa 2\")") sono ignorate nel determinare
+// sia l'unità che il valore, per evitare falsi positivi su "sec".
+function parseBwQuantity(str, memory){
+  var full=(str||"").toLowerCase();
+  var s = full.replace(/\([^)]*\)/g, "").trim();
+  var isTime = s.indexOf('"')>=0 || s.indexOf('sec')>=0 || s.indexOf('tempo')>=0;
+  var unit = isTime ? "sec" : "rip";
+  var m = s.match(/(\d+)\s*-\s*(\d+)/);
+  if(m){
+    var lo=Number(m[1]), hi=Number(m[2]);
+    return {unit:unit, min:lo, max:hi, def:(memory!=null?memory:hi), freeform:false};
+  }
+  var m2 = s.match(/(\d+)/);
+  if(m2){
+    var v=Number(m2[1]);
+    return {unit:unit, min:v, max:v, def:(memory!=null?memory:v), freeform:false};
+  }
+  var fallback = unit==="sec" ? 30 : 10;
+  return {unit:unit, min:null, max:null, def:(memory!=null?memory:fallback), freeform:true};
+}
+
+function loadBwRepsMemory(){
+  try{return JSON.parse(localStorage.getItem("kb-bw-reps")||"{}");}catch(e){return {};}
+}
+function saveBwRepsMemory(m){
+  try{localStorage.setItem("kb-bw-reps",JSON.stringify(m));}catch(e){}
+}
+function commitBwRepsMemory(reps){
+  var mem=loadBwRepsMemory();
+  Object.keys(reps).forEach(function(k){mem[k]=reps[k];});
+  saveBwRepsMemory(mem);
+}
+
+// Prepara state.bw per mostrare l'esercizio corrente (usato all'avvio,
+// dopo il recupero tra esercizi e dopo "+ ROUND").
+function bwEnterExercise(){
+  var w=getExtraById(state.extraWorkoutId);
+  if(!w||!state.bw)return;
+  var ex=w.exercises[state.bw.exIdx];
+  var mem=loadBwRepsMemory();
+  var known = state.bw.reps[ex.name]!=null ? state.bw.reps[ex.name] : mem[ex.name];
+  var q=parseBwQuantity(ex.detail, known);
+  state.bw.phase="exercise";
+  state.bw.curVal=q.def;
+  state.bw.curUnit=q.unit;
+  state.bw.curFreeform=q.freeform;
+  state.bw.curMin=q.min;
+}
+
+function bwQtyDelta(delta){
+  if(!state.bw)return;
+  var step = state.bw.curUnit==="sec" ? 5 : 1;
+  state.bw.curVal = Math.max(0, (state.bw.curVal||0) + delta*step);
+  render();
+}
+
+let bwRestInterval=null;
+function clearBwRestInterval(){
+  if(bwRestInterval){clearInterval(bwRestInterval);bwRestInterval=null;}
+}
+
+function startBwRestTimer(){
+  clearBwRestInterval();
+  bwRestInterval=setInterval(function(){
+    if(!state.bw || (state.bw.phase!=="restEx" && state.bw.phase!=="restRound")){
+      clearBwRestInterval();return;
+    }
+    state.bw.remaining--;
+    if(state.bw.remaining<=0){
+      clearBwRestInterval();
+      if(navigator.vibrate) navigator.vibrate([100,50,200]);
+      if(state.bw.phase==="restEx"){
+        bwEnterExercise();
+      } else {
+        state.bw.phase="askContinue";
+        state.bw.remaining=0;
+      }
+      render();
+    } else {
+      var el=document.querySelector('[data-bw-timer]');
+      if(el) el.textContent=state.bw.remaining+'"';
+      else render();
+    }
+  },1000);
+}
+
+function bwSkipRest(){
+  clearBwRestInterval();
+  if(!state.bw)return;
+  if(state.bw.phase==="restEx"){
+    bwEnterExercise();
+  } else if(state.bw.phase==="restRound"){
+    state.bw.phase="askContinue";
+    state.bw.remaining=0;
+  }
+  render();
+}
+
+function bwExerciseDone(){
+  if(!state.bw)return;
+  var w=getExtraById(state.extraWorkoutId);
+  if(!w)return;
+  var ex=w.exercises[state.bw.exIdx];
+  var val=state.bw.curVal;
+  var prev=state.bw.reps[ex.name];
+  state.bw.reps[ex.name] = (prev==null) ? val : Math.max(prev, val);
+
+  var isLastEx = state.bw.exIdx >= w.exercises.length-1;
+  if(!isLastEx){
+    state.bw.exIdx++;
+    state.bw.phase="restEx";
+    state.bw.remaining=w.restBetweenEx;
+    render();
+    startBwRestTimer();
+    return;
+  }
+  // ultimo esercizio del round
+  if(state.bw.round >= state.bw.maxRounds){
+    state.bw.phase="done";
+    releaseWakeLock();
+    render();
+    return;
+  }
+  state.bw.phase="restRound";
+  state.bw.remaining=w.restBetweenRounds;
+  render();
+  startBwRestTimer();
+}
+
+function bwContinueRound(){
+  if(!state.bw)return;
+  state.bw.round++;
+  state.bw.exIdx=0;
+  bwEnterExercise();
+  render();
+}
+
+function bwFinishNow(){
+  if(!state.bw)return;
+  clearBwRestInterval();
+  state.bw.phase="done";
+  releaseWakeLock();
+  render();
+}
+
+function collectBwReps(){
+  if(!state.bw)return {};
+  var out={};
+  Object.keys(state.bw.reps).forEach(function(k){
+    var v=state.bw.reps[k];
+    if(v!=null && !isNaN(v)) out[k]=v;
+  });
+  return out;
+}
+
+function bwSaveDone(){
+  var id=state.extraWorkoutId;
+  var w=getExtraById(id);
+  var reps=collectBwReps();
+  var mins = state.startTime ? Math.round((Date.now()-state.startTime)/60000) : (w?w.totalMin:20);
+  var entry={
+    day:"extra_"+id,
+    date:(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})(),
+    duration:mins||1,
+    feeling:state.logForm.feeling,
+    hrAvg:state.logForm.hrAvg?Number(state.logForm.hrAvg):null,
+    notes:(state.logForm.notes||"")||((state.bw.round||1)+" round completati"),
+    reps:reps,
+    rounds:state.bw.round||1,
+    talkTest:null,
+  };
+  state.history.push(entry);
+  saveHistory();
+  commitBwRepsMemory(reps);
+  releaseWakeLock();
+  var bwLabel=(w?(w.label+' — '+w.title):'Bodyweight');
+  var bwText=(w&&w.title||'')+' '+(w&&w.how||'');
+  state.extraWorkoutId=null;
+  state.bw=null;
+  showMuscleSummary(bwText,'train',{trainSubTab:'bw'},bwLabel);
+}
+
+function exitBw(){
+  clearBwRestInterval();
+  releaseWakeLock();
+
+  function doSave(){
+    var roundsDone=Math.max(0,(state.bw&&state.bw.round||1)-1);
+    var w=getExtraById(state.extraWorkoutId)||{};
+    savePartialEntry(w.label||'Bodyweight', roundsDone, state.startTime||null, (state.extraWorkoutId||''));
+    doExit();
+  }
+  function doExit(){
+    state.tab="extra-detail";
+    state.extraDetailId=state.extraWorkoutId;
+    state.extraWorkoutId=null;
+    state.bw=null;
+    render();
+  }
+
+  var roundsDone=Math.max(0,(state.bw&&state.bw.round||1)-1);
+  var exDone = state.bw ? state.bw.exIdx : 0;
+  if(roundsDone>0 || exDone>0){
+    showExitDialog(doSave, doExit);
+  } else {
+    doExit();
+  }
+}
+
+// ── RENDER BODYWEIGHT WORKOUT ─────────────────────────────────────────────────
+function renderBwWorkout(){
+  var id=state.extraWorkoutId;
+  var w=getExtraById(id);
+  if(!w || !state.bw) return renderHome();
+  var accentHex=w.color||"#43A047";
+  var bw=state.bw;
+
+  // ── DONE ──
+  if(bw.phase==="done"){
+    var repsKeys=Object.keys(bw.reps);
+    return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="flex-shrink-0 px-5 pt-5 pb-4" style="border-bottom:1px solid ${accentHex}26">
+        <p class="font-label text-[9px] uppercase tracking-[0.25em] text-gray-500">SESSIONE COMPLETATA</p>
+        <div class="flex items-baseline gap-3 mt-1">
+          <span class="font-headline leading-none" style="font-size:56px;color:${accentHex}">${bw.round}</span>
+          <span class="font-headline text-2xl text-gray-500">ROUND · ${w.label}</span>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+        <div>
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">SENSAZIONE</p>
+          <div class="grid grid-cols-4 gap-2">
+            ${["😫","😐","💪","🔥"].map(f=>`<button data-f="${f}" onclick="setLogField('feeling',this.dataset.f)"
+              class="py-3 text-2xl transition-all"
+              style="background:${state.logForm.feeling===f?accentHex+'26':'transparent'};border:1px solid ${state.logForm.feeling===f?accentHex:'rgba(90,65,54,0.3)'}">${f}</button>`).join("")}
+          </div>
+        </div>
+        <div>
+          <label class="font-label text-[9px] uppercase tracking-widest text-gray-500 block mb-1">HR MEDIA (bpm)</label>
+          <input class="log-input w-full" type="number" placeholder="140" inputmode="numeric"
+            value="${state.logForm.hrAvg||''}" oninput="setLogField('hrAvg',this.value)"/>
+        </div>
+        <div>
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">RIPETIZIONI REGISTRATE</p>
+          <div style="border:1px solid rgba(90,65,54,0.25)">
+            ${repsKeys.map((k,i)=>{
+              var ex=w.exercises.find(function(e){return e.name===k;});
+              var unit=ex?parseBwQuantity(ex.detail,null).unit:"rip";
+              return `<div class="flex items-center justify-between px-3 py-2"${i?' style="border-top:1px solid rgba(90,65,54,0.18)"':''}>
+                <span class="font-label text-[11px] text-gray-300">${k}</span>
+                <span class="font-headline text-lg" style="color:${accentHex}">${bw.reps[k]}${unit==="sec"?'"':' rip'}</span>
+              </div>`;
+            }).join("")}
+          </div>
+        </div>
+        <div>
+          <label class="font-label text-[9px] uppercase tracking-widest text-gray-500 block mb-1">NOTE</label>
+          <textarea class="log-input w-full resize-none" rows="2" placeholder="Come è andata..."
+            oninput="setLogField('notes',this.value)">${state.logForm.notes||""}</textarea>
+        </div>
+      </div>
+      <div class="flex-shrink-0 px-5 pb-6 pt-3 space-y-2" style="background:#0C1017;box-shadow:0 -8px 24px rgba(0,0,0,0.6)">
+        <button onclick="bwSaveDone()"
+          class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
+          style="background:linear-gradient(135deg,${accentHex},${accentHex}99);color:#000">
+          SALVA SESSIONE
+          <span class="material-symbols-outlined">check</span>
+        </button>
+        <button onclick="exitBw()"
+          class="w-full py-3 font-headline text-lg tracking-widest text-gray-500"
+          style="border:1px solid rgba(90,65,54,0.3)">ANNULLA</button>
+      </div>
+    </div>`;
+  }
+
+  // ── ASK CONTINUE ──
+  if(bw.phase==="askContinue"){
+    return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;">
+      <div class="w-16 h-16 flex items-center justify-center mb-6" style="background:${accentHex}1a;border:2px solid ${accentHex}">
+        <span class="font-headline text-4xl" style="color:${accentHex}">${bw.round}</span>
+      </div>
+      <p class="font-label text-[9px] uppercase tracking-[0.25em] text-gray-500 mb-2">ROUND COMPLETATO</p>
+      <h2 class="font-headline text-5xl mb-2">${w.label}</h2>
+      <p class="font-label text-sm text-gray-500 mb-10">${bw.round} di ${w.roundsMin}-${w.roundsMax} round consigliati</p>
+
+      <button onclick="bwContinueRound()"
+        class="w-full py-5 font-headline text-2xl tracking-widest flex justify-between items-center px-6 mb-3 active:scale-95 transition-transform"
+        style="background:linear-gradient(135deg,${accentHex},${accentHex}99);color:#000">
+        + ROUND ${bw.round+1}
+        <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1">add_circle</span>
+      </button>
+      <button onclick="bwFinishNow()"
+        class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-6 active:scale-95 transition-transform"
+        style="background:transparent;border:1px solid rgba(90,65,54,0.4);color:#64748b">
+        FINE — SALVA
+        <span class="material-symbols-outlined">check</span>
+      </button>
+    </div>`;
+  }
+
+  // ── REST (tra esercizi o tra round) ──
+  if(bw.phase==="restEx" || bw.phase==="restRound"){
+    var isRoundRest = bw.phase==="restRound";
+    var nextEx = isRoundRest ? w.exercises[0] : w.exercises[bw.exIdx];
+    var totalRest = isRoundRest ? w.restBetweenRounds : w.restBetweenEx;
+    var pct = totalRest>0 ? ((totalRest-bw.remaining)/totalRest*100) : 100;
+    return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;">
+      <p class="font-label text-[9px] uppercase tracking-[0.25em] text-gray-500 mb-2">${isRoundRest?'RECUPERO TRA ROUND':'RECUPERO'}</p>
+      <div class="relative flex items-center justify-center mb-6" style="width:180px;height:180px">
+        <svg viewBox="0 0 100 100" style="width:180px;height:180px;transform:rotate(-90deg)">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="6"/>
+          <circle cx="50" cy="50" r="44" fill="none" stroke="${accentHex}" stroke-width="6" stroke-linecap="round"
+            stroke-dasharray="${2*Math.PI*44}" stroke-dashoffset="${2*Math.PI*44*(1-pct/100)}"/>
+        </svg>
+        <span data-bw-timer class="font-headline absolute" style="font-size:56px;color:${accentHex}">${bw.remaining}"</span>
+      </div>
+      <p class="font-label text-[10px] uppercase tracking-widest text-gray-600 mb-1">${isRoundRest?'PROSSIMO ROUND':'PROSSIMO ESERCIZIO'}</p>
+      <h2 class="font-headline text-3xl mb-10 text-center">${isRoundRest?('Round '+(bw.round+1)):nextEx.name}</h2>
+      <button onclick="bwSkipRest()"
+        class="py-3 px-8 font-headline text-lg tracking-widest text-gray-500 active:scale-95 transition-transform"
+        style="border:1px solid rgba(90,65,54,0.4)">SALTA</button>
+    </div>`;
+  }
+
+  // ── EXERCISE (default) ──
+  var ex = w.exercises[bw.exIdx];
+  var unitLabel = bw.curUnit==="sec" ? '"' : ' rip';
+  return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-4" style="border-bottom:1px solid rgba(255,255,255,0.05)">
+      <button onclick="exitBw()" class="p-1"><span class="material-symbols-outlined text-gray-600">close</span></button>
+      <div class="text-center">
+        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">${w.label} · ROUND ${bw.round}/${bw.maxRounds}</p>
+        <p class="font-label text-[10px] text-gray-600 mt-0.5">Esercizio ${bw.exIdx+1} di ${w.exercises.length}</p>
+      </div>
+      <div style="width:32px"></div>
+    </div>
+
+    <div class="flex-1 flex flex-col items-center justify-center px-6">
+      <p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:${accentHex}">${ex.detail}</p>
+      <h2 class="font-headline text-4xl text-center mb-10 leading-tight">${ex.name}</h2>
+
+      <div class="flex items-center gap-6 mb-10">
+        <button onclick="bwQtyDelta(-1)" class="w-14 h-14 flex items-center justify-center active:scale-90 transition-transform"
+          style="border:1px solid rgba(90,65,54,0.4);color:#64748b">
+          <span class="material-symbols-outlined text-2xl">remove</span>
+        </button>
+        <div class="text-center" style="min-width:100px">
+          <span class="font-headline leading-none" style="font-size:64px;color:${accentHex}">${bw.curVal}</span>
+          <p class="font-label text-xs text-gray-500 uppercase tracking-widest">${bw.curUnit==="sec"?"secondi":"ripetizioni"}</p>
+        </div>
+        <button onclick="bwQtyDelta(1)" class="w-14 h-14 flex items-center justify-center active:scale-90 transition-transform"
+          style="border:1px solid rgba(90,65,54,0.4);color:#64748b">
+          <span class="material-symbols-outlined text-2xl">add</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex-shrink-0 px-5 pb-8">
+      <button onclick="bwExerciseDone()"
+        class="w-full py-5 font-headline text-xl tracking-widest flex justify-between items-center px-6 active:scale-95 transition-transform"
+        style="background:linear-gradient(135deg,${accentHex},${accentHex}99);color:#000">
+        FATTO — ${bw.curVal}${unitLabel}
+        <span class="material-symbols-outlined">check</span>
+      </button>
+    </div>
+  </div>`;
+}
 
 
 // ── RENDER HEALTH ─────────────────────────────────────────────────────────────
@@ -5245,6 +5878,7 @@ function renderTrain(){
     {id:"axe",      label:"AXE",       color:"#8b5cf6"},
     {id:"kdp",      label:"KDP-26",    color:"#7A9A3A"},
     {id:"wf",       label:"🏄 Wing Foil", color:"#38bdf8"},
+    {id:"bw",       label:"🤸 Bodyweight", color:"#43A047"},
   ];
   function tBtn(t){
     var on=sub===t.id;
@@ -5480,6 +6114,112 @@ function renderTrain(){
 
 
   // ── TAB FLOW ───────────────────────────────────────────────────
+  // ── TAB BODYWEIGHT ────────────────────────────────────────────
+  var BW_GROUPS=[
+    {id:"beg", label:"🌱 Beginner",      color:"#94a3b8"},
+    {id:"p1",  label:"Fase 1",           color:"#43A047"},
+    {id:"p2",  label:"Fase 2 · Anelli",  color:"#0891b2"},
+    {id:"p3",  label:"Fase 3 · Anelli",  color:"#ffb693"},
+  ];
+  function tabBodyweight(){
+    var bwAll=EXTRA_WORKOUTS.filter(function(w){return w.id.indexOf("BWJ-")===0;});
+    var h='<div class="p-4 mb-3" style="background:rgba(67,160,71,0.05);border-left:2px solid #43A047">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:#43A047">BODYWEIGHT JACKED</p>'+
+      '<p class="font-label text-[11px] text-gray-400 leading-relaxed">Circuiti a corpo libero — Jack Coulson. Round completo di tutti gli esercizi, recupero breve tra un esercizio e l\'altro, recupero piu lungo tra i round. Tu decidi quanti round fare in base a tempo ed energia.</p>'+
+    '</div>';
+
+    h+=BW_GROUPS.map(function(g){
+      var wks=bwAll.filter(function(w){return w.bwGroup===g.id;});
+      var accKey="bw_"+g.id;
+      var isOpen=state.plan.openAcc===accKey;
+      return '<div class="mb-2">'+
+        '<button onclick="toggleAcc(\''+accKey+'\')"'+
+          ' class="w-full flex justify-between items-center p-4 bg-surface-container ghost-border border-l-2 active:scale-[0.99]"'+
+          ' style="border-left-color:'+g.color+'">'+
+          '<span class="font-headline text-lg">'+g.label+'</span>'+
+          '<span class="material-symbols-outlined text-gray-500 text-sm" style="transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s">expand_more</span>'+
+        '</button>'+
+        (isOpen?'<div class="space-y-px">'+
+          wks.map(function(w){
+            return '<div onclick="openExtraDetail(\''+w.id+'\')"'+
+            ' class="flex items-center gap-3 p-4 bg-surface-container-low cursor-pointer active:bg-surface-container">'+
+            '<span class="text-xl flex-shrink-0">'+w.emoji+'</span>'+
+            '<div class="flex-1 min-w-0">'+
+              '<p class="font-headline text-base leading-none">'+w.label+'</p>'+
+              '<p class="font-label text-[10px] text-gray-500 mt-1">'+w.totalMin+' min · '+w.roundsMin+'-'+w.roundsMax+' round · '+w.exercises.length+' esercizi</p>'+
+            '</div>'+
+            '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
+            '</div>';
+          }).join('')+
+        '</div>':'');
+    }).join('');
+
+    return h;
+  }
+
+  // ── TAB WING FOIL ──────────────────────────────────────────────
+  function tabWingFoil(){
+    var WF_IDS=["WFW","WF1","WF2","WF3","WFB"];
+    var h='<div class="p-4 mb-3" style="background:rgba(56,189,248,0.05);border-left:2px solid #38bdf8">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:#38bdf8">PREPARAZIONE WING FOIL</p>'+
+      '<p class="font-label text-[11px] text-gray-400 leading-relaxed mb-2">Equilibrio, stabilita del core, potenza dell anca e controllo delle spalle. 2-3 sessioni a settimana, tecnica prima del carico.</p>'+
+      '<p class="font-label text-[10px] leading-relaxed" style="color:#38bdf8">⚡ Deve lasciarti piu coordinato, non solo piu stanco.</p>'+
+    '</div>';
+
+    WF_IDS.forEach(function(id){
+      var w=getExtraById(id);
+      if(!w) return;
+      var kbTxt = w.kb==='0'?'Corpo libero':w.kb==='2'?'2 KB':'1 KB';
+      h+='<div onclick="openExtraDetail(\''+id+'\')" class="mb-2 cursor-pointer active:scale-[0.99] transition-transform"'+
+        ' style="border-left:2px solid '+w.color+';background:rgba(255,255,255,0.02);border-top:1px solid rgba(90,65,54,0.2);border-right:1px solid rgba(90,65,54,0.2);border-bottom:1px solid rgba(90,65,54,0.2)">'+
+        '<div class="p-4">'+
+          '<div class="flex justify-between items-start mb-1">'+
+            '<div class="min-w-0 flex-1">'+
+              '<div class="flex items-center gap-2 flex-wrap mb-0.5">'+
+                '<span class="font-headline text-lg leading-none">'+w.emoji+' '+w.label+'</span>'+
+                '<span class="font-label text-[8px] uppercase tracking-wider px-1.5 py-0.5" style="background:'+w.color+'1a;color:'+w.color+'">'+kbTxt+'</span>'+
+              '</div>'+
+              '<p class="font-label text-[10px] text-gray-400 leading-snug">'+w.desc+'</p>'+
+            '</div>'+
+            '<span class="material-symbols-outlined text-gray-700 text-sm flex-shrink-0 ml-2">chevron_right</span>'+
+          '</div>'+
+          '<div class="flex gap-3 mt-2">'+
+            '<span class="font-label text-[9px] text-gray-600">'+w.totalMin+' min</span>'+
+            '<span class="font-label text-[9px] text-gray-600">'+w.exercises.length+' esercizi</span>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    });
+
+    // Settimana tipo
+    h+='<div class="p-4 mt-4" style="background:rgba(255,255,255,0.02);border:1px solid rgba(90,65,54,0.25)">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-3">SETTIMANA TIPO</p>';
+    [['Lunedi','WF Complex — 2-3 round','#0284c7'],
+     ['Mercoledi','Balance & Core — 15 min','#22d3ee'],
+     ['Venerdi','WF Base o WF Dynamic','#38bdf8'],
+     ['Giorno in acqua','Solo wing foil, niente pesi','#7dd3fc']].forEach(function(r){
+      h+='<div class="flex justify-between items-center py-2" style="border-bottom:1px solid rgba(255,255,255,0.05)">'+
+        '<p class="font-label text-[10px] text-gray-500">'+r[0]+'</p>'+
+        '<span class="font-label text-[10px] text-right" style="color:'+r[2]+'">'+r[1]+'</span>'+
+      '</div>';
+    });
+    h+='</div>';
+
+    // Progressione
+    h+='<div class="p-4 mt-3" style="background:rgba(56,189,248,0.04);border-left:2px solid #38bdf8">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-2" style="color:#38bdf8">PROGRESSIONE 6 SETTIMANE</p>';
+    [['Sett. 1-2','2-3 round · carichi conservativi · massima attenzione alla tecnica'],
+     ['Sett. 3-4','3-4 round · aumenta la continuita, riduci le pause'],
+     ['Sett. 5-6','3-4 round · lavora su fluidita e controllo, non serve alzare il peso']].forEach(function(r){
+      h+='<div class="mb-2"><p class="font-headline text-sm" style="color:#38bdf8">'+r[0]+'</p>'+
+        '<p class="font-label text-[10px] text-gray-400 leading-relaxed">'+r[1]+'</p></div>';
+    });
+    h+='<p class="font-label text-[10px] text-gray-500 mt-3 leading-relaxed">Non aumentare peso, volume e densita nello stesso momento.</p>';
+    h+='</div>';
+
+    return h;
+  }
+
   function tabFlow(){
     var h='<div class="p-4 mb-3" style="background:rgba(80,218,209,0.04);border-left:2px solid #50dad1">'+
       '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:#50dad1">COSA SONO I FLOW</p>'+
@@ -5532,7 +6272,7 @@ function renderTrain(){
     '<main class="px-5 pt-5 pb-24">'+
       '<h1 class="font-headline text-5xl tracking-tight leading-none mb-4">TRAIN</h1>'+
       tabBar+
-      (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():tabKdp())+
+      (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():tabKdp())+
     '</main>'+
     navHTML("train")+
   '</div>';
@@ -8670,8 +9410,20 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v90";
+var APP_VERSION = "v92";
 var APP_CHANGELOG = [
+  {v:"v92", data:"21/08/2026", items:[
+    "Nuova sezione Bodyweight in TRAIN — 12 circuiti da Bodyweight Jacked",
+    "Beginner, Fase 1, Fase 2 e Fase 3 (anelli), raggruppati per fase",
+    "Runner a round con recupero definito: 25\" tra esercizi, 120s tra i round",
+    "Log ripetizioni/secondi per esercizio con stepper e memoria dell'ultimo valore",
+    "Registra il massimo tra i round, non l'ultimo — per il progressive overload",
+    "+ Round o Fine a scelta libera, come nel Complex",
+    "Fix: chip header mostrava \"1 KB\" anche per workout a corpo libero",
+  ]},
+  {v:"v91", data:"20/08/2026", items:[
+    "Fix: tab Wing Foil in TRAIN non si apriva (funzione fuori scope)",
+  ]},
   {v:"v90", data:"20/08/2026", items:[
     "Carico per singolo esercizio a fine allenamento",
     "Chip rapide 10 / 16 kg, corpo libero e campo libero",
@@ -8804,6 +9556,7 @@ function render(){
   else if(state.tab==="done")        app.innerHTML=renderDone();
   else if(state.tab==="log")         app.innerHTML=renderLog();
   else if(state.tab==="bp-workout")  app.innerHTML=renderBellplexWorkout();
+  else if(state.tab==="bw-workout")  app.innerHTML=renderBwWorkout();
   else if(state.tab==="train")       app.innerHTML=renderTrain();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
   else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
@@ -8834,7 +9587,7 @@ function render(){
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
 // ── WAKE LOCK ─────────────────────────────────────────────────────────────────
 let wakeLock=null;
-const WORKOUT_TABS=new Set(['workout','bp-workout','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
+const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
 async function requestWakeLock(){
   try{
     if('wakeLock' in navigator){
@@ -9550,7 +10303,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v90';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v92';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
