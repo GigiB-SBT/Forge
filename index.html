@@ -5213,13 +5213,18 @@ function bwEntryDate(h){
   }catch(e){ return new Date(0); }
 }
 
-function bwSessionsForGroup(groupId){
+function bwSessionsForPhase(program, phaseId){
   return (state.history||[]).filter(function(h){
     var rid=(h.day||"").replace("extra_","");
     var w=getExtraById(rid);
-    if(!w)return false;
-    if(groupId==="ltl") return w.program==="Limitless";
-    return w.program==="Bodyweight Jacked" && w.phase===groupId;
+    return w && w.program===program && w.phase===phaseId;
+  }).length;
+}
+function bwSessionsForProgram(program){
+  return (state.history||[]).filter(function(h){
+    var rid=(h.day||"").replace("extra_","");
+    var w=getExtraById(rid);
+    return w && w.program===program;
   }).length;
 }
 
@@ -6459,12 +6464,20 @@ function renderTrain(){
 
   // ── TAB FLOW ───────────────────────────────────────────────────
   // ── TAB BODYWEIGHT ────────────────────────────────────────────
-  var BW_GROUPS=[
-    {id:"beg", label:"🌱 Beginner",      color:"#94a3b8"},
-    {id:"p1",  label:"Fase 1",           color:"#43A047"},
-    {id:"p2",  label:"Fase 2 · Anelli",  color:"#0891b2"},
-    {id:"p3",  label:"Fase 3 · Anelli",  color:"#ffb693"},
-    {id:"ltl", label:"🔥 Limitless · Manubri/KB", color:"#f97316"},
+  var BW_PROGRAMS=[
+    {id:"prog_bwj", program:"Bodyweight Jacked", label:"🏋️ Bodyweight Jacked", color:"#43A047",
+     phases:[
+       {id:"beg", label:"🌱 Beginner",      color:"#94a3b8"},
+       {id:"p1",  label:"Fase 1",           color:"#43A047"},
+       {id:"p2",  label:"Fase 2 · Anelli",  color:"#0891b2"},
+       {id:"p3",  label:"Fase 3 · Anelli",  color:"#ffb693"},
+     ]},
+    {id:"prog_ltl", program:"Limitless", label:"🔥 Limitless · Manubri/KB", color:"#f97316",
+     phases:[
+       {id:"p1", label:"Fase 1", color:"#f97316"},
+       {id:"p2", label:"Fase 2", color:"#f97316"},
+       {id:"p3", label:"Fase 3", color:"#f97316"},
+     ]},
   ];
   function bwProgressCardHTML(program, color){
     var p=bwProgramProgress(program);
@@ -6489,31 +6502,49 @@ function renderTrain(){
       '</div>'+
     '</div>';
 
-    h+=BW_GROUPS.map(function(g){
-      var wks=bwAll.filter(function(w){return w.bwGroup===g.id;});
-      var sessCount=bwSessionsForGroup(g.id);
-      var accKey="bw_"+g.id;
-      var isOpen=state.plan.openAcc===accKey;
+    h+=BW_PROGRAMS.map(function(prog){
+      var progOpen=state.plan.openAccProg===prog.id;
+      var progCount=bwSessionsForProgram(prog.program);
+
+      var inner='';
+      if(progOpen){
+        inner='<div class="pl-3 pt-1 pb-1 space-y-1">'+prog.phases.map(function(ph){
+          var wks=bwAll.filter(function(w){return w.program===prog.program && w.phase===ph.id;});
+          var accKey="bw_"+prog.id+"_"+ph.id;
+          var isOpen=state.plan.openAcc===accKey;
+          var sessCount=bwSessionsForPhase(prog.program, ph.id);
+          return '<div>'+
+            '<button onclick="toggleAcc(\''+accKey+'\')"'+
+              ' class="w-full flex justify-between items-center p-3 bg-surface-container ghost-border border-l-2 active:scale-[0.99]"'+
+              ' style="border-left-color:'+ph.color+'">'+
+              '<span class="font-headline text-base">'+ph.label+(sessCount?' <span class="font-label text-[10px] text-gray-500">('+sessCount+')</span>':'')+'</span>'+
+              '<span class="material-symbols-outlined text-gray-500 text-sm" style="transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s">expand_more</span>'+
+            '</button>'+
+            (isOpen?'<div class="space-y-px">'+
+              wks.map(function(w){
+                return '<div onclick="openExtraDetail(\''+w.id+'\')"'+
+                ' class="flex items-center gap-3 p-4 bg-surface-container-low cursor-pointer active:bg-surface-container">'+
+                '<span class="text-xl flex-shrink-0">'+w.emoji+'</span>'+
+                '<div class="flex-1 min-w-0">'+
+                  '<p class="font-headline text-base leading-none">'+w.label+'</p>'+
+                  '<p class="font-label text-[10px] text-gray-500 mt-1">'+w.totalMin+' min · '+w.roundsMin+'-'+w.roundsMax+' round · '+w.exercises.length+' esercizi</p>'+
+                '</div>'+
+                '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
+                '</div>';
+              }).join('')+
+            '</div>':'');
+        }).join('')+'</div>';
+      }
+
       return '<div class="mb-2">'+
-        '<button onclick="toggleAcc(\''+accKey+'\')"'+
+        '<button onclick="toggleAccProg(\''+prog.id+'\')"'+
           ' class="w-full flex justify-between items-center p-4 bg-surface-container ghost-border border-l-2 active:scale-[0.99]"'+
-          ' style="border-left-color:'+g.color+'">'+
-          '<span class="font-headline text-lg">'+g.label+(sessCount?' <span class="font-label text-[10px] text-gray-500">('+sessCount+')</span>':'')+'</span>'+
-          '<span class="material-symbols-outlined text-gray-500 text-sm" style="transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s">expand_more</span>'+
+          ' style="border-left-color:'+prog.color+'">'+
+          '<span class="font-headline text-xl">'+prog.label+(progCount?' <span class="font-label text-[10px] text-gray-500">('+progCount+')</span>':'')+'</span>'+
+          '<span class="material-symbols-outlined text-gray-500 text-sm" style="transform:'+(progOpen?'rotate(180deg)':'none')+';transition:transform .2s">expand_more</span>'+
         '</button>'+
-        (isOpen?'<div class="space-y-px">'+
-          wks.map(function(w){
-            return '<div onclick="openExtraDetail(\''+w.id+'\')"'+
-            ' class="flex items-center gap-3 p-4 bg-surface-container-low cursor-pointer active:bg-surface-container">'+
-            '<span class="text-xl flex-shrink-0">'+w.emoji+'</span>'+
-            '<div class="flex-1 min-w-0">'+
-              '<p class="font-headline text-base leading-none">'+w.label+'</p>'+
-              '<p class="font-label text-[10px] text-gray-500 mt-1">'+w.totalMin+' min · '+w.roundsMin+'-'+w.roundsMax+' round · '+w.exercises.length+' esercizi</p>'+
-            '</div>'+
-            '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
-            '</div>';
-          }).join('')+
-        '</div>':'');
+        inner+
+      '</div>';
     }).join('');
 
     return h;
@@ -8104,6 +8135,7 @@ function renderDpuWorkout(){
 
 function toggleDayAcc(k){state.plan.openAcc=state.plan.openAcc===("day-"+k)?null:("day-"+k);render();}
 function toggleAcc(id){state.plan.openAcc=state.plan.openAcc===id?null:id;render();}
+function toggleAccProg(id){state.plan.openAccProg=state.plan.openAccProg===id?null:id;render();}
 
 // ══════════════════════════════════════════════════════════════════
 // FORGE PROFILE — impostazioni utente
@@ -9772,8 +9804,14 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v94";
+var APP_VERSION = "v95";
 var APP_CHANGELOG = [
+  {v:"v95", data:"22/08/2026", items:[
+    "Bodyweight: struttura a due livelli — Programma poi Fase",
+    "\"Bodyweight Jacked\" e \"Limitless\" ora sono indici che si aprono",
+    "dentro ciascuno, le fasi restano accordion indipendenti come prima",
+    "Contatore sessioni sia sul programma che su ogni singola fase",
+  ]},
   {v:"v94", data:"22/08/2026", items:[
     "Bodyweight: nota \"2 KB\" sugli esercizi che nell'originale usano due pesi",
     "(Gorilla Row, Farmers Walk, DB Bent Over Row) — logghi comunque 1 solo peso",
@@ -10680,7 +10718,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v94';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v95';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
