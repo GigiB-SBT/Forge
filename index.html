@@ -1647,16 +1647,17 @@ function renderLog(){
         const isEditing=state.editingEntry===editKey;
         const isBP=!isExt&&h.day&&h.day.startsWith("extra_BP");
         const isWF=!isExt&&h.day&&h.day.startsWith("extra_WF");
-        const isBWJ=!isExt&&h.day&&h.day.indexOf("extra_BWJ-")===0;
+        const isBWJ=!isExt&&h.day&&(h.day.indexOf("extra_BWJ-")===0||h.day.indexOf("extra_LTL-")===0);
+        const isLTL=!isExt&&h.day&&h.day.indexOf("extra_LTL-")===0;
         const isKDP=isExt&&h._kdp;
         const isFinisher=isExt&&h._finisher;
         const isAxeEntry=isExt&&h._axe;
         const isFlowEntry=isExt&&h._flow;
         const col=isExt
           ?(isFlowEntry?"#50dad1":isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#64748b"))
-          :(isWF?"#38bdf8":isBP?"#ffb4ab":isBWJ?"#43A047":(KPhex[h.day]||"#ffb693"));
+          :(isWF?"#38bdf8":isBP?"#ffb4ab":isLTL?"#f97316":isBWJ?"#43A047":(KPhex[h.day]||"#ffb693"));
         const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
-        const bpW=(rawId.startsWith("BP")||rawId.indexOf("BWJ-")===0)?getExtraById(rawId):null;
+        const bpW=(rawId.startsWith("BP")||rawId.indexOf("BWJ-")===0||rawId.indexOf("LTL-")===0)?getExtraById(rawId):null;
         const label=isExt
           ?(isFlowEntry?((getFlowById((h.type||'').replace('KB Flow_',''))||{}).nome||h.type):isAxeEntry?"AXE Protocol":isKDP?"KDP-26":isFinisher?"Finisher Snatch":h.type)
           :(bpW?(bpW.label+" — "+bpW.title):rawId?rawId:`Giorno ${h.day}`);
@@ -4075,22 +4076,22 @@ const EXTRA_WORKOUTS=[
   },
   // ══ BODYWEIGHT — Jack Coulson "Bodyweight Jacked" ═══════════════════════════
   {
-    id:"BWJ-BEG-1",kb:"0",desc:"Bodyweight Jacked — Beginner · Corpo libero",
+    id:"BWJ-BEG-1",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Beginner · Corpo libero",
     label:"Beginner · W1",emoji:"🌱",color:"#94a3b8",
     title:"Circuito introduttivo",
     meta:"Bodyweight · ~20 min · 3 round · Corpo libero",
     totalMin:20,
-    bwGroup:"beg",
+    bwGroup:"beg",phase:"beg",
     roundsMin:3,roundsMax:3,roundsDefault:3,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-3"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"Bodyweight Squat",detail:"10-15 rip",t:"reps",c:"#94a3b8"},
-      {n:"2",name:"Push-up",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
-      {n:"3",name:"Body Row",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
-      {n:"4",name:"Straight Arm Hold",detail:"max tempo",t:"reps",c:"#94a3b8"},
-      {n:"5",name:"Straight Arm Plank",detail:"20-40\"",t:"reps",c:"#94a3b8"},
+      {n:"1",name:"Bodyweight Squat",detail:"10-15 rip",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=bodyweight+squat+technique+tutorial"},
+      {n:"2",name:"Push-up",detail:"8-10 rip",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=push+up+perfect+form+tutorial"},
+      {n:"3",name:"Body Row",detail:"8-10 rip",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=bodyweight+row+technique+inverted+row"},
+      {n:"4",name:"Straight Arm Hold",detail:"max tempo",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=straight+arm+support+hold+rings+dip"},
+      {n:"5",name:"Straight Arm Plank",detail:"20-40\"",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=Straight+Arm+Plank+exercise+tutorial+technique"},
     ],
     tips:[
       "Salta in cima alla posizione alta di un dip su anelli e tieni piu a lungo possibile.",
@@ -4099,22 +4100,22 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-BEG-2",kb:"0",desc:"Bodyweight Jacked — Beginner · Corpo libero",
+    id:"BWJ-BEG-2",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Beginner · Corpo libero",
     label:"Beginner · W2",emoji:"🌱",color:"#94a3b8",
     title:"Circuito introduttivo",
     meta:"Bodyweight · ~20 min · 3 round · Corpo libero",
     totalMin:20,
-    bwGroup:"beg",
+    bwGroup:"beg",phase:"beg",
     roundsMin:3,roundsMax:3,roundsDefault:3,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-3"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"Chin-up Knee Raise",detail:"3-5 rip",t:"reps",c:"#94a3b8"},
-      {n:"2",name:"Push-up",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
-      {n:"3",name:"Face Pull",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
-      {n:"4",name:"Reverse Lunge",detail:"8-10 rip/gamba",t:"reps",c:"#94a3b8"},
-      {n:"5",name:"Side Plank",detail:"20-40\" per lato",t:"reps",c:"#94a3b8"},
+      {n:"1",name:"Chin-up Knee Raise",detail:"3-5 rip",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=chin+up+knee+raise+combination+exercise"},
+      {n:"2",name:"Push-up",detail:"8-10 rip",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=push+up+perfect+form+tutorial"},
+      {n:"3",name:"Face Pull",detail:"8-10 rip",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=face+pull+exercise+technique+band+rings"},
+      {n:"4",name:"Reverse Lunge",detail:"8-10 rip/gamba",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=reverse+lunge+rack+position+kettlebell"},
+      {n:"5",name:"Side Plank",detail:"20-40\" per lato",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=Side+Plank+exercise+tutorial+technique"},
     ],
     tips:[
       "Se il Chin-up Knee Raise non e ancora possibile, sostituisci con Body Row.",
@@ -4123,22 +4124,22 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-BEG-3",kb:"0",desc:"Bodyweight Jacked — Beginner · Corpo libero",
+    id:"BWJ-BEG-3",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Beginner · Corpo libero",
     label:"Beginner · W3",emoji:"🌱",color:"#94a3b8",
     title:"Circuito introduttivo",
     meta:"Bodyweight · ~20 min · 3 round · Corpo libero",
     totalMin:20,
-    bwGroup:"beg",
+    bwGroup:"beg",phase:"beg",
     roundsMin:3,roundsMax:3,roundsDefault:3,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-3"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"Bodyweight Squat",detail:"10-15 rip",t:"reps",c:"#94a3b8"},
-      {n:"2",name:"Push-up",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
-      {n:"3",name:"Body Row",detail:"8-10 rip",t:"reps",c:"#94a3b8"},
-      {n:"4",name:"Straight Arm Hold",detail:"max tempo",t:"reps",c:"#94a3b8"},
-      {n:"5",name:"Hanging Knee Raise",detail:"5-10 rip",t:"reps",c:"#94a3b8"},
+      {n:"1",name:"Bodyweight Squat",detail:"10-15 rip",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=bodyweight+squat+technique+tutorial"},
+      {n:"2",name:"Push-up",detail:"8-10 rip",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=push+up+perfect+form+tutorial"},
+      {n:"3",name:"Body Row",detail:"8-10 rip",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=bodyweight+row+technique+inverted+row"},
+      {n:"4",name:"Straight Arm Hold",detail:"max tempo",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=straight+arm+support+hold+rings+dip"},
+      {n:"5",name:"Hanging Knee Raise",detail:"5-10 rip",t:"reps",c:"#94a3b8",yt:"https://www.youtube.com/results?search_query=hanging+knee+raise+technique+abs"},
     ],
     tips:[
       "Stessa struttura di W1 con le Hanging Knee Raise al posto del plank.",
@@ -4147,22 +4148,22 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-P1-1",kb:"0",desc:"Bodyweight Jacked — Fase 1 · Corpo libero",
+    id:"BWJ-P1-1",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Fase 1 · Corpo libero",
     label:"Fase 1 · W1",emoji:"🤸",color:"#43A047",
     title:"Full Body Circuit",
     meta:"Bodyweight · ~26 min · 4 round · Corpo libero",
     totalMin:26,
-    bwGroup:"p1",
+    bwGroup:"p1",phase:"p1",
     roundsMin:3,roundsMax:5,roundsDefault:4,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-5"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"TMB Pull-up",detail:"3-8 rip",t:"reps",c:"#43A047"},
-      {n:"2",name:"Push-up",detail:"max rip",t:"reps",c:"#43A047"},
-      {n:"3",name:"Squat 1.5",detail:"15 rip",t:"reps",c:"#43A047"},
-      {n:"4",name:"Jump Squat",detail:"5-8 rip",t:"reps",c:"#43A047"},
-      {n:"5",name:"Hanging Knee Raise",detail:"8-10 rip",t:"reps",c:"#43A047"},
+      {n:"1",name:"TMB Pull-up",detail:"3-8 rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=TMB+pull+up+technique+bodyweight"},
+      {n:"2",name:"Push-up",detail:"max rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=push+up+perfect+form+tutorial"},
+      {n:"3",name:"Squat 1.5",detail:"15 rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=1.5+rep+squat+bodyweight+technique"},
+      {n:"4",name:"Jump Squat",detail:"5-8 rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=jump+squat+technique+explosive"},
+      {n:"5",name:"Hanging Knee Raise",detail:"8-10 rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=hanging+knee+raise+technique+abs"},
     ],
     tips:[
       "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
@@ -4170,22 +4171,22 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-P1-2",kb:"0",desc:"Bodyweight Jacked — Fase 1 · Corpo libero",
+    id:"BWJ-P1-2",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Fase 1 · Corpo libero",
     label:"Fase 1 · W2",emoji:"🤸",color:"#43A047",
     title:"Full Body Circuit",
     meta:"Bodyweight · ~26 min · 4 round · Corpo libero",
     totalMin:26,
-    bwGroup:"p1",
+    bwGroup:"p1",phase:"p1",
     roundsMin:3,roundsMax:5,roundsDefault:4,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-5"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"Body Row",detail:"8-12 rip",t:"reps",c:"#43A047"},
-      {n:"2",name:"Close Grip Push-up",detail:"10-20 rip",t:"reps",c:"#43A047"},
-      {n:"3",name:"Reverse Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#43A047"},
-      {n:"4",name:"Split Jump",detail:"5-8 rip/gamba",t:"reps",c:"#43A047"},
-      {n:"5",name:"Plank Walkout",detail:"5-10 rip",t:"reps",c:"#43A047"},
+      {n:"1",name:"Body Row",detail:"8-12 rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=bodyweight+row+technique+inverted+row"},
+      {n:"2",name:"Close Grip Push-up",detail:"10-20 rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=close+grip+push+up+technique+triceps"},
+      {n:"3",name:"Reverse Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=reverse+lunge+rack+position+kettlebell"},
+      {n:"4",name:"Split Jump",detail:"5-8 rip/gamba",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=split+jump+lunge+jump+technique+explosive"},
+      {n:"5",name:"Plank Walkout",detail:"5-10 rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=plank+walkout+exercise+technique"},
     ],
     tips:[
       "Se 12 rip sono troppo facili, aggiungi una pausa di 1-2\" a fine rep.",
@@ -4194,22 +4195,22 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-P1-3",kb:"0",desc:"Bodyweight Jacked — Fase 1 · Corpo libero",
+    id:"BWJ-P1-3",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Fase 1 · Corpo libero",
     label:"Fase 1 · W3",emoji:"🤸",color:"#43A047",
     title:"Full Body Circuit",
     meta:"Bodyweight · ~26 min · 4 round · Corpo libero",
     totalMin:26,
-    bwGroup:"p1",
+    bwGroup:"p1",phase:"p1",
     roundsMin:3,roundsMax:5,roundsDefault:4,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-5"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"Chin-up",detail:"3-10 rip",t:"reps",c:"#43A047"},
-      {n:"2",name:"1.5 Push-up",detail:"8-15 rip",t:"reps",c:"#43A047"},
-      {n:"3",name:"Bulgarian Split Squat",detail:"10-15 rip/gamba",t:"reps",c:"#43A047"},
-      {n:"4",name:"Side Plank",detail:"30-60\" per lato",t:"reps",c:"#43A047"},
-      {n:"5",name:"Leg Raise",detail:"8-10 rip",t:"reps",c:"#43A047"},
+      {n:"1",name:"Chin-up",detail:"3-10 rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=chin+up+technique+supinated+grip"},
+      {n:"2",name:"1.5 Push-up",detail:"8-15 rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=1.5+rep+push+up+technique"},
+      {n:"3",name:"Bulgarian Split Squat",detail:"10-15 rip/gamba",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=bulgarian+split+squat+technique+form"},
+      {n:"4",name:"Side Plank",detail:"30-60\" per lato",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=Side+Plank+exercise+tutorial+technique"},
+      {n:"5",name:"Leg Raise",detail:"8-10 rip",t:"reps",c:"#43A047",yt:"https://www.youtube.com/results?search_query=hanging+leg+raise+straight+leg+technique"},
     ],
     tips:[
       "Pausa di 1\" in fondo a ogni rep dello Squat Bulgaro.",
@@ -4218,23 +4219,23 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-P2-1",kb:"0",desc:"Bodyweight Jacked — Fase 2 · Anelli · Anelli",
+    id:"BWJ-P2-1",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Fase 2 · Anelli · Anelli",
     label:"Fase 2 · W1",emoji:"🔩",color:"#0891b2",
     title:"Circuit anelli",
     meta:"Bodyweight · ~30 min · 4 round · Anelli",
     totalMin:30,
-    bwGroup:"p2",
+    bwGroup:"p2",phase:"p2",
     roundsMin:3,roundsMax:5,roundsDefault:4,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"Ring Pull-up",detail:"6-12 rip",t:"reps",c:"#0891b2"},
-      {n:"2",name:"Ring Dip",detail:"5-10 rip",t:"reps",c:"#0891b2"},
-      {n:"3",name:"Bulgarian Split Squat",detail:"10-15 rip/gamba",t:"reps",c:"#0891b2"},
-      {n:"4",name:"Body Row",detail:"8-12 rip (rest-pause)",t:"reps",c:"#0891b2"},
-      {n:"5",name:"Push-up",detail:"10-20 rip (rest-pause)",t:"reps",c:"#0891b2"},
-      {n:"6",name:"Hanging Knee Raise",detail:"5-10 rip",t:"reps",c:"#0891b2"},
+      {n:"1",name:"Ring Pull-up",detail:"6-12 rip",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=gymnastic+ring+pull+up+technique+tutorial"},
+      {n:"2",name:"Ring Dip",detail:"5-10 rip",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=gymnastic+ring+dip+technique+tutorial"},
+      {n:"3",name:"Bulgarian Split Squat",detail:"10-15 rip/gamba",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=bulgarian+split+squat+technique+form"},
+      {n:"4",name:"Body Row",detail:"8-12 rip (rest-pause)",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=bodyweight+row+technique+inverted+row"},
+      {n:"5",name:"Push-up",detail:"10-20 rip (rest-pause)",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=push+up+perfect+form+tutorial"},
+      {n:"6",name:"Hanging Knee Raise",detail:"5-10 rip",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=hanging+knee+raise+technique+abs"},
     ],
     tips:[
       "Se Ring Dip non ancora possibile: salta in cima e scendi piu lento possibile — 1 rep.",
@@ -4243,23 +4244,23 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-P2-2",kb:"0",desc:"Bodyweight Jacked — Fase 2 · Anelli · Anelli",
+    id:"BWJ-P2-2",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Fase 2 · Anelli · Anelli",
     label:"Fase 2 · W2",emoji:"🔩",color:"#0891b2",
     title:"Circuit anelli",
     meta:"Bodyweight · ~30 min · 4 round · Anelli",
     totalMin:30,
-    bwGroup:"p2",
+    bwGroup:"p2",phase:"p2",
     roundsMin:3,roundsMax:5,roundsDefault:4,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"Chin-up Knee Raise",detail:"5-8 rip",t:"reps",c:"#0891b2"},
-      {n:"2",name:"Judo Push-up",detail:"8-12 rip",t:"reps",c:"#0891b2"},
-      {n:"3",name:"Sliding Leg Curl",detail:"10-15 rip",t:"reps",c:"#0891b2"},
-      {n:"4",name:"Leg Raise",detail:"10-15 rip",t:"reps",c:"#0891b2"},
-      {n:"5",name:"Face Pull",detail:"10-15 rip (rest-pause)",t:"reps",c:"#0891b2"},
-      {n:"6",name:"Walking Lunge",detail:"10-12 rip/gamba",t:"reps",c:"#0891b2"},
+      {n:"1",name:"Chin-up Knee Raise",detail:"5-8 rip",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=chin+up+knee+raise+combination+exercise"},
+      {n:"2",name:"Judo Push-up",detail:"8-12 rip",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=judo+push+up+technique+dive+bomber"},
+      {n:"3",name:"Sliding Leg Curl",detail:"10-15 rip",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=sliding+leg+curl+hamstring+exercise+floor"},
+      {n:"4",name:"Leg Raise",detail:"10-15 rip",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=hanging+leg+raise+straight+leg+technique"},
+      {n:"5",name:"Face Pull",detail:"10-15 rip (rest-pause)",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=face+pull+exercise+technique+band+rings"},
+      {n:"6",name:"Walking Lunge",detail:"10-12 rip/gamba",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=walking+lunge+technique+form"},
     ],
     tips:[
       "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
@@ -4267,23 +4268,23 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-P2-3",kb:"0",desc:"Bodyweight Jacked — Fase 2 · Anelli · Anelli",
+    id:"BWJ-P2-3",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Fase 2 · Anelli · Anelli",
     label:"Fase 2 · W3",emoji:"🔩",color:"#0891b2",
     title:"Circuit anelli",
     meta:"Bodyweight · ~30 min · 4 round · Anelli",
     totalMin:30,
-    bwGroup:"p2",
+    bwGroup:"p2",phase:"p2",
     roundsMin:3,roundsMax:5,roundsDefault:4,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"Body Row",detail:"8-12 rip (iso countdown)",t:"reps",c:"#0891b2"},
-      {n:"2",name:"Ring 1.5 Push-up",detail:"8-12 rip",t:"reps",c:"#0891b2"},
-      {n:"3",name:"Skater Squat",detail:"3-6 rip/gamba",t:"reps",c:"#0891b2"},
-      {n:"4",name:"Reverse Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#0891b2"},
-      {n:"5",name:"L-Sit Hold",detail:"max tempo",t:"reps",c:"#0891b2"},
-      {n:"6",name:"Plank Walkout",detail:"8-12 rip",t:"reps",c:"#0891b2"},
+      {n:"1",name:"Body Row",detail:"8-12 rip (iso countdown)",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=bodyweight+row+technique+inverted+row"},
+      {n:"2",name:"Ring 1.5 Push-up",detail:"8-12 rip",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=ring+push+up+1.5+rep+technique"},
+      {n:"3",name:"Skater Squat",detail:"3-6 rip/gamba",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=skater+squat+single+leg+technique+beginner"},
+      {n:"4",name:"Reverse Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=reverse+lunge+rack+position+kettlebell"},
+      {n:"5",name:"L-Sit Hold",detail:"max tempo",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=l+sit+hold+technique+progression+tutorial"},
+      {n:"6",name:"Plank Walkout",detail:"8-12 rip",t:"reps",c:"#0891b2",yt:"https://www.youtube.com/results?search_query=plank+walkout+exercise+technique"},
     ],
     tips:[
       "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
@@ -4291,23 +4292,23 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-P3-1",kb:"0",desc:"Bodyweight Jacked — Fase 3 · Anelli · Anelli",
+    id:"BWJ-P3-1",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Fase 3 · Anelli · Anelli",
     label:"Fase 3 · W1",emoji:"🏆",color:"#ffb693",
     title:"Circuit avanzato",
     meta:"Bodyweight · ~30 min · 4 round · Anelli",
     totalMin:30,
-    bwGroup:"p3",
+    bwGroup:"p3",phase:"p3",
     roundsMin:3,roundsMax:5,roundsDefault:4,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"Ring Pull-up",detail:"5-10 rip (iso countdown)",t:"reps",c:"#ffb693"},
-      {n:"2",name:"Ring Dip",detail:"5-10 rip",t:"reps",c:"#ffb693"},
-      {n:"3",name:"Skater Squat",detail:"5-10 rip (rest-pause)",t:"reps",c:"#ffb693"},
-      {n:"4",name:"1.5 Body Row",detail:"8-12 rip",t:"reps",c:"#ffb693"},
-      {n:"5",name:"L-Sit Hold",detail:"max tempo",t:"reps",c:"#ffb693"},
-      {n:"6",name:"Side Plank",detail:"60-90\" per lato",t:"reps",c:"#ffb693"},
+      {n:"1",name:"Ring Pull-up",detail:"5-10 rip (iso countdown)",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=gymnastic+ring+pull+up+technique+tutorial"},
+      {n:"2",name:"Ring Dip",detail:"5-10 rip",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=gymnastic+ring+dip+technique+tutorial"},
+      {n:"3",name:"Skater Squat",detail:"5-10 rip (rest-pause)",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=skater+squat+single+leg+technique+beginner"},
+      {n:"4",name:"1.5 Body Row",detail:"8-12 rip",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=bodyweight+row+1.5+rep+technique"},
+      {n:"5",name:"L-Sit Hold",detail:"max tempo",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=l+sit+hold+technique+progression+tutorial"},
+      {n:"6",name:"Side Plank",detail:"60-90\" per lato",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=Side+Plank+exercise+tutorial+technique"},
     ],
     tips:[
       "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
@@ -4315,23 +4316,23 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-P3-2",kb:"0",desc:"Bodyweight Jacked — Fase 3 · Anelli · Anelli",
+    id:"BWJ-P3-2",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Fase 3 · Anelli · Anelli",
     label:"Fase 3 · W2",emoji:"🏆",color:"#ffb693",
     title:"Circuit avanzato",
     meta:"Bodyweight · ~30 min · 4 round · Anelli",
     totalMin:30,
-    bwGroup:"p3",
+    bwGroup:"p3",phase:"p3",
     roundsMin:3,roundsMax:5,roundsDefault:4,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"TMB Chin-up",detail:"5-10 rip",t:"reps",c:"#ffb693"},
-      {n:"2",name:"Close Grip Push-up",detail:"8-12 rip (pausa 2\")",t:"reps",c:"#ffb693"},
-      {n:"3",name:"Sliding Leg Curl",detail:"10-20 rip",t:"reps",c:"#ffb693"},
-      {n:"4",name:"Reverse Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#ffb693"},
-      {n:"5",name:"Face Pull",detail:"10-15 rip",t:"reps",c:"#ffb693"},
-      {n:"6",name:"Leg Raise",detail:"10-15 rip",t:"reps",c:"#ffb693"},
+      {n:"1",name:"TMB Chin-up",detail:"5-10 rip",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=TMB+chin+up+technique+bodyweight+advanced"},
+      {n:"2",name:"Close Grip Push-up",detail:"8-12 rip (pausa 2\")",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=close+grip+push+up+technique+triceps"},
+      {n:"3",name:"Sliding Leg Curl",detail:"10-20 rip",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=sliding+leg+curl+hamstring+exercise+floor"},
+      {n:"4",name:"Reverse Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=reverse+lunge+rack+position+kettlebell"},
+      {n:"5",name:"Face Pull",detail:"10-15 rip",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=face+pull+exercise+technique+band+rings"},
+      {n:"6",name:"Leg Raise",detail:"10-15 rip",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=hanging+leg+raise+straight+leg+technique"},
     ],
     tips:[
       "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
@@ -4339,27 +4340,256 @@ const EXTRA_WORKOUTS=[
     ],
   },
   {
-    id:"BWJ-P3-3",kb:"0",desc:"Bodyweight Jacked — Fase 3 · Anelli · Anelli",
+    id:"BWJ-P3-3",kb:"0",program:"Bodyweight Jacked",desc:"Bodyweight Jacked — Fase 3 · Anelli · Anelli",
     label:"Fase 3 · W3",emoji:"🏆",color:"#ffb693",
     title:"Circuit avanzato",
     meta:"Bodyweight · ~30 min · 4 round · Anelli",
     totalMin:30,
-    bwGroup:"p3",
+    bwGroup:"p3",phase:"p3",
     roundsMin:3,roundsMax:5,roundsDefault:4,
     restBetweenEx:25,restBetweenRounds:120,
     how:"Circuito bodyweight in stile Jack Coulson: un giro di tutti gli esercizi = 1 round. Recupero breve tra un esercizio e l'altro, recupero piu lungo tra i round. Lavora entro i tuoi limiti, tecnica sempre pulita, progredisci ogni sessione — 1 rep in piu, 1 round in piu, o stessa performance con meno recupero.",
     structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
     exercises:[
-      {n:"1",name:"Ring Pull-up",detail:"5-10 rip (pausa top 1\")",t:"reps",c:"#ffb693"},
-      {n:"2",name:"Ring Dip",detail:"5-10 rip (pausa basso)",t:"reps",c:"#ffb693"},
-      {n:"3",name:"Skater Squat",detail:"5-10 rip/gamba",t:"reps",c:"#ffb693"},
-      {n:"4",name:"Ring Fallout",detail:"5-10 rip",t:"reps",c:"#ffb693"},
-      {n:"5",name:"Body Row",detail:"max rip",t:"reps",c:"#ffb693"},
-      {n:"6",name:"L-Sit Hold",detail:"max tempo",t:"reps",c:"#ffb693"},
+      {n:"1",name:"Ring Pull-up",detail:"5-10 rip (pausa top 1\")",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=gymnastic+ring+pull+up+technique+tutorial"},
+      {n:"2",name:"Ring Dip",detail:"5-10 rip (pausa basso)",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=gymnastic+ring+dip+technique+tutorial"},
+      {n:"3",name:"Skater Squat",detail:"5-10 rip/gamba",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=skater+squat+single+leg+technique+beginner"},
+      {n:"4",name:"Ring Fallout",detail:"5-10 rip",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=ring+fallout+ab+wheel+gymnastic+rings+tutorial"},
+      {n:"5",name:"Body Row",detail:"max rip",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=bodyweight+row+technique+inverted+row"},
+      {n:"6",name:"L-Sit Hold",detail:"max tempo",t:"reps",c:"#ffb693",yt:"https://www.youtube.com/results?search_query=l+sit+hold+technique+progression+tutorial"},
     ],
     tips:[
       "Round 3-5: piu tempo/energia → punta al massimo. Giornata piena → fermati al minimo.",
       "Recupero 25s tra esercizi · 120s tra i round."
+    ],
+  },
+  // ══ LIMITLESS — Jack Coulson (manubri/KB) ═══════════════════════════════════
+  {
+    id:"LTL-P1-1",kb:"1",program:"Limitless",desc:"Limitless — Jack Coulson · Manubri/KB",
+    label:"Limitless · Fase 1 · W1",emoji:"🔥",color:"#f97316",
+    title:"Full Body Circuit",
+    meta:"Manubri/KB · ~26 min · 4 round · misto peso/corpo libero",
+    totalMin:26,
+    bwGroup:"ltl",phase:"p1",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito Limitless: manubri/KB per gli esercizi di forza, corpo libero per core e salti. Un giro di tutti gli esercizi = 1 round. Scegli il peso al primo round per ogni esercizio con manubrio/KB — resta invariato nei round successivi salvo modifica manuale.",
+    structure:[["Round","3-5"],["Esercizi","5"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"DB/KB Thruster",detail:"8-12 rip",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Thruster+exercise+tutorial+technique"},
+      {n:"2",name:"DB/KB Row",detail:"8-12 rip (pausa 1\" in alto)",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Row+exercise+tutorial+technique"},
+      {n:"3",name:"DB/KB Reverse Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Reverse+Lunge+exercise+tutorial+technique"},
+      {n:"4",name:"Push-up",detail:"10-20 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=push+up+perfect+form+tutorial"},
+      {n:"5",name:"Hollow Dish Hold",detail:"30-60\"",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Hollow+Dish+Hold+exercise+tutorial+technique"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia -> punta al massimo. Giornata piena -> fermati al minimo.",
+      "Recupero 25s tra esercizi, 120s tra i round. Esercizi con manubrio/KB: scegli il peso al primo round, resta fisso nei successivi."
+    ],
+  },
+  {
+    id:"LTL-P1-2",kb:"1",program:"Limitless",desc:"Limitless — Jack Coulson · Manubri/KB",
+    label:"Limitless · Fase 1 · W2",emoji:"🔥",color:"#f97316",
+    title:"Full Body Circuit",
+    meta:"Manubri/KB · ~30 min · 4 round · misto peso/corpo libero",
+    totalMin:30,
+    bwGroup:"ltl",phase:"p1",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito Limitless: manubri/KB per gli esercizi di forza, corpo libero per core e salti. Un giro di tutti gli esercizi = 1 round. Scegli il peso al primo round per ogni esercizio con manubrio/KB — resta invariato nei round successivi salvo modifica manuale.",
+    structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"DB/KB Goblet Squat",detail:"15-20 rip",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Goblet+Squat+exercise+tutorial+technique"},
+      {n:"2",name:"DB/KB Single Arm Row",detail:"15-20 rip/braccio",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Single+Arm+Row+exercise+tutorial+technique"},
+      {n:"3",name:"Close Grip Push-up",detail:"10-20 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=close+grip+push+up+technique+triceps"},
+      {n:"4",name:"DB/KB Walking Lunge",detail:"10-20 rip/gamba",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Walking+Lunge+exercise+tutorial+technique"},
+      {n:"5",name:"Lying Leg Raise",detail:"10-20 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Lying+Leg+Raise+exercise+tutorial+technique"},
+      {n:"6",name:"Plank Walkout",detail:"5-10 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=plank+walkout+exercise+technique"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia -> punta al massimo. Giornata piena -> fermati al minimo.",
+      "Recupero 25s tra esercizi, 120s tra i round. Esercizi con manubrio/KB: scegli il peso al primo round, resta fisso nei successivi."
+    ],
+  },
+  {
+    id:"LTL-P1-3",kb:"1",program:"Limitless",desc:"Limitless — Jack Coulson · Manubri/KB",
+    label:"Limitless · Fase 1 · W3",emoji:"🔥",color:"#f97316",
+    title:"Full Body Circuit",
+    meta:"Manubri/KB · ~30 min · 4 round · misto peso/corpo libero",
+    totalMin:30,
+    bwGroup:"ltl",phase:"p1",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito Limitless: manubri/KB per gli esercizi di forza, corpo libero per core e salti. Un giro di tutti gli esercizi = 1 round. Scegli il peso al primo round per ogni esercizio con manubrio/KB — resta invariato nei round successivi salvo modifica manuale.",
+    structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Jump Squat",detail:"5-10 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=jump+squat+technique+explosive"},
+      {n:"2",name:"DB/KB Single Arm Press",detail:"8-12 rip/braccio",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Single+Arm+Press+exercise+tutorial+technique"},
+      {n:"3",name:"Bulgarian Split Squat",detail:"10-15 rip/gamba (pausa 1\" in basso)",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=bulgarian+split+squat+technique+form"},
+      {n:"4",name:"Gorilla Row",detail:"8-12 rip/braccio",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Gorilla+Row+exercise+tutorial+technique",kb2:true},
+      {n:"5",name:"Side Plank",detail:"30-60\" per lato",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Side+Plank+exercise+tutorial+technique"},
+      {n:"6",name:"Flutter Kicks",detail:"20-40 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Flutter+Kicks+exercise+tutorial+technique"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia -> punta al massimo. Giornata piena -> fermati al minimo.",
+      "Recupero 25s tra esercizi, 120s tra i round. Esercizi con manubrio/KB: scegli il peso al primo round, resta fisso nei successivi."
+    ],
+  },
+  {
+    id:"LTL-P2-1",kb:"1",program:"Limitless",desc:"Limitless — Jack Coulson · Manubri/KB",
+    label:"Limitless · Fase 2 · W1",emoji:"🔥",color:"#f97316",
+    title:"Full Body Circuit",
+    meta:"Manubri/KB · ~34 min · 4 round · misto peso/corpo libero",
+    totalMin:34,
+    bwGroup:"ltl",phase:"p2",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito Limitless: manubri/KB per gli esercizi di forza, corpo libero per core e salti. Un giro di tutti gli esercizi = 1 round. Scegli il peso al primo round per ogni esercizio con manubrio/KB — resta invariato nei round successivi salvo modifica manuale.",
+    structure:[["Round","3-5"],["Esercizi","7"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"DB/KB Front Squat",detail:"8-12 rip",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Front+Squat+exercise+tutorial+technique"},
+      {n:"2",name:"DB/KB Rack Hold",detail:"30\" (stesso peso)",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Rack+Hold+exercise+tutorial+technique"},
+      {n:"3",name:"DB/KB Row",detail:"8-12 rip (pausa 1\" in alto)",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Row+exercise+tutorial+technique"},
+      {n:"4",name:"DB/KB Follow Through Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Follow+Through+Lunge+exercise+tutorial+technique"},
+      {n:"5",name:"Judo Push-up",detail:"10-20 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=judo+push+up+technique+dive+bomber"},
+      {n:"6",name:"Hollow Dish Hold",detail:"30-60\"",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Hollow+Dish+Hold+exercise+tutorial+technique"},
+      {n:"7",name:"Shoulder Tap Plank",detail:"10-20 rip/lato",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Shoulder+Tap+Plank+exercise+tutorial+technique"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia -> punta al massimo. Giornata piena -> fermati al minimo.",
+      "Recupero 25s tra esercizi, 120s tra i round. Esercizi con manubrio/KB: scegli il peso al primo round, resta fisso nei successivi."
+    ],
+  },
+  {
+    id:"LTL-P2-2",kb:"1",program:"Limitless",desc:"Limitless — Jack Coulson · Manubri/KB",
+    label:"Limitless · Fase 2 · W2",emoji:"🔥",color:"#f97316",
+    title:"Full Body Circuit",
+    meta:"Manubri/KB · ~30 min · 4 round · misto peso/corpo libero",
+    totalMin:30,
+    bwGroup:"ltl",phase:"p2",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito Limitless: manubri/KB per gli esercizi di forza, corpo libero per core e salti. Un giro di tutti gli esercizi = 1 round. Scegli il peso al primo round per ogni esercizio con manubrio/KB — resta invariato nei round successivi salvo modifica manuale.",
+    structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"DB/KB Romanian Deadlift",detail:"10-15 rip",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Romanian+Deadlift+exercise+tutorial+technique"},
+      {n:"2",name:"DB/KB Single Arm Row",detail:"15-20 rip/braccio",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Single+Arm+Row+exercise+tutorial+technique"},
+      {n:"3",name:"Decline Push-up",detail:"10-20 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Decline+Push-up+exercise+tutorial+technique"},
+      {n:"4",name:"DB/KB Walking Lunge",detail:"10-20 rip/gamba",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Walking+Lunge+exercise+tutorial+technique"},
+      {n:"5",name:"Lying Leg Raise",detail:"10-20 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Lying+Leg+Raise+exercise+tutorial+technique"},
+      {n:"6",name:"Farmers Walk",detail:"60\"",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Farmers+Walk+exercise+tutorial+technique",kb2:true},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia -> punta al massimo. Giornata piena -> fermati al minimo.",
+      "Recupero 25s tra esercizi, 120s tra i round. Esercizi con manubrio/KB: scegli il peso al primo round, resta fisso nei successivi."
+    ],
+  },
+  {
+    id:"LTL-P2-3",kb:"1",program:"Limitless",desc:"Limitless — Jack Coulson · Manubri/KB",
+    label:"Limitless · Fase 2 · W3",emoji:"🔥",color:"#f97316",
+    title:"Full Body Circuit",
+    meta:"Manubri/KB · ~30 min · 4 round · misto peso/corpo libero",
+    totalMin:30,
+    bwGroup:"ltl",phase:"p2",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito Limitless: manubri/KB per gli esercizi di forza, corpo libero per core e salti. Un giro di tutti gli esercizi = 1 round. Scegli il peso al primo round per ogni esercizio con manubrio/KB — resta invariato nei round successivi salvo modifica manuale.",
+    structure:[["Round","3-5"],["Esercizi","6"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Jump Split Squat",detail:"5-10 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Jump+Split+Squat+exercise+tutorial+technique"},
+      {n:"2",name:"DB/KB Single Arm Press",detail:"5-8 rip/braccio",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Single+Arm+Press+exercise+tutorial+technique"},
+      {n:"3",name:"Single Leg Romanian Deadlift",detail:"8-12 rip/gamba",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Single+Leg+Romanian+Deadlift+exercise+tutorial+technique"},
+      {n:"4",name:"Chin-up (o Bent Over Row)",detail:"8-12 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=chin+up+technique+supinated+grip"},
+      {n:"5",name:"Side Plank",detail:"30-60\" per lato",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Side+Plank+exercise+tutorial+technique"},
+      {n:"6",name:"Bicycle Crunch",detail:"20-40 rip/lato",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Bicycle+Crunch+exercise+tutorial+technique"},
+    ],
+    tips:[
+      "Round 3-5: piu tempo/energia -> punta al massimo. Giornata piena -> fermati al minimo.",
+      "Recupero 25s tra esercizi, 120s tra i round. Esercizi con manubrio/KB: scegli il peso al primo round, resta fisso nei successivi."
+    ],
+  },
+  {
+    id:"LTL-P3-1",kb:"1",program:"Limitless",desc:"Limitless — Jack Coulson · Manubri/KB",
+    label:"Limitless · Fase 3 · W1",emoji:"🔥",color:"#f97316",
+    title:"Full Body Circuit avanzato",
+    meta:"Manubri/KB · ~41 min · 4 round · misto peso/corpo libero",
+    totalMin:41,
+    bwGroup:"ltl",phase:"p3",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito Limitless: manubri/KB per gli esercizi di forza, corpo libero per core e salti. Un giro di tutti gli esercizi = 1 round. Scegli il peso al primo round per ogni esercizio con manubrio/KB — resta invariato nei round successivi salvo modifica manuale.",
+    structure:[["Round","3-5"],["Esercizi","9"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"DB/KB Front Squat",detail:"8-12 rip",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Front+Squat+exercise+tutorial+technique"},
+      {n:"2",name:"DB/KB Rack Hold",detail:"30\"",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Rack+Hold+exercise+tutorial+technique"},
+      {n:"3",name:"Close Grip Push-up",detail:"10-20 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=close+grip+push+up+technique+triceps"},
+      {n:"4",name:"Chin-up (o DB/KB Row)",detail:"8-12 rip (pausa 1\" in alto)",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=chin+up+technique+supinated+grip"},
+      {n:"5",name:"DB/KB Follow Through Lunge",detail:"10-15 rip/gamba",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Follow+Through+Lunge+exercise+tutorial+technique"},
+      {n:"6",name:"Judo Push-up",detail:"10-20 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=judo+push+up+technique+dive+bomber"},
+      {n:"7",name:"Lying Leg Raise",detail:"15-25 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Lying+Leg+Raise+exercise+tutorial+technique"},
+      {n:"8",name:"Hollow Dish Hold",detail:"30-60\"",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Hollow+Dish+Hold+exercise+tutorial+technique"},
+      {n:"9",name:"1 Arm + 1 Leg Plank",detail:"30\" per lato",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=1+Arm+%2B+1+Leg+Plank+exercise+tutorial+technique"},
+    ],
+    tips:[
+      "Fonte originale in 3 mini-circuiti da 3 esercizi (3-5 round ciascuno) — qui unificati in un unico circuito continuo.",
+      "Round 3-5: piu tempo/energia -> punta al massimo. Giornata piena -> fermati al minimo.",
+      "Recupero 25s tra esercizi, 120s tra i round. Esercizi con manubrio/KB: scegli il peso al primo round, resta fisso nei successivi."
+    ],
+  },
+  {
+    id:"LTL-P3-2",kb:"1",program:"Limitless",desc:"Limitless — Jack Coulson · Manubri/KB",
+    label:"Limitless · Fase 3 · W2",emoji:"🔥",color:"#f97316",
+    title:"Full Body Circuit avanzato",
+    meta:"Manubri/KB · ~41 min · 4 round · misto peso/corpo libero",
+    totalMin:41,
+    bwGroup:"ltl",phase:"p3",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito Limitless: manubri/KB per gli esercizi di forza, corpo libero per core e salti. Un giro di tutti gli esercizi = 1 round. Scegli il peso al primo round per ogni esercizio con manubrio/KB — resta invariato nei round successivi salvo modifica manuale.",
+    structure:[["Round","3-5"],["Esercizi","9"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"DB/KB Romanian Deadlift",detail:"10-15 rip",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Romanian+Deadlift+exercise+tutorial+technique"},
+      {n:"2",name:"DB/KB Single Leg Glute Bridge",detail:"15-20 rip/gamba",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Single+Leg+Glute+Bridge+exercise+tutorial+technique"},
+      {n:"3",name:"1.5 Rep Push-up",detail:"10-20 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=1.5+Rep+Push-up+exercise+tutorial+technique"},
+      {n:"4",name:"DB/KB Single Arm Row",detail:"10-15 rip/braccio",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Single+Arm+Row+exercise+tutorial+technique"},
+      {n:"5",name:"DB Bent Over Row",detail:"10-15 rip",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Dumbbell+Bent+Over+Row+exercise+tutorial+technique",kb2:true},
+      {n:"6",name:"Pike Push-up",detail:"8-12 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=pike+push+up+technique+shoulders"},
+      {n:"7",name:"Lying Leg Raise",detail:"10-20 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Lying+Leg+Raise+exercise+tutorial+technique"},
+      {n:"8",name:"RKC Plank",detail:"20-30\"",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=RKC+Plank+exercise+tutorial+technique"},
+      {n:"9",name:"Farmers Walk",detail:"60\"",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Farmers+Walk+exercise+tutorial+technique",kb2:true},
+    ],
+    tips:[
+      "Fonte originale in 3 mini-circuiti da 3 esercizi (3-5 round ciascuno) — qui unificati in un unico circuito continuo.",
+      "Round 3-5: piu tempo/energia -> punta al massimo. Giornata piena -> fermati al minimo.",
+      "Recupero 25s tra esercizi, 120s tra i round. Esercizi con manubrio/KB: scegli il peso al primo round, resta fisso nei successivi."
+    ],
+  },
+  {
+    id:"LTL-P3-3",kb:"1",program:"Limitless",desc:"Limitless — Jack Coulson · Manubri/KB",
+    label:"Limitless · Fase 3 · W3",emoji:"🔥",color:"#f97316",
+    title:"Full Body Circuit avanzato",
+    meta:"Manubri/KB · ~41 min · 4 round · misto peso/corpo libero",
+    totalMin:41,
+    bwGroup:"ltl",phase:"p3",
+    roundsMin:3,roundsMax:5,roundsDefault:4,
+    restBetweenEx:25,restBetweenRounds:120,
+    how:"Circuito Limitless: manubri/KB per gli esercizi di forza, corpo libero per core e salti. Un giro di tutti gli esercizi = 1 round. Scegli il peso al primo round per ogni esercizio con manubrio/KB — resta invariato nei round successivi salvo modifica manuale.",
+    structure:[["Round","3-5"],["Esercizi","9"],["Rest tra mosse","25\""],["Rest tra round","120s"]],
+    exercises:[
+      {n:"1",name:"Jump Split Squat",detail:"5-10 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Jump+Split+Squat+exercise+tutorial+technique"},
+      {n:"2",name:"Goblet Squat",detail:"15-20 rip",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=goblet+squat+kettlebell+tutorial"},
+      {n:"3",name:"DB/KB Thruster",detail:"8-12 rip",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Thruster+exercise+tutorial+technique"},
+      {n:"4",name:"DB/KB Single Arm Press",detail:"8-12 rip/lato",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Kettlebell+Single+Arm+Press+exercise+tutorial+technique"},
+      {n:"5",name:"Chin-up (o Bent Over Row)",detail:"8-12 rip",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=chin+up+technique+supinated+grip"},
+      {n:"6",name:"Single Arm Row",detail:"8-12 rip/lato",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Single+Arm+Row+exercise+tutorial+technique"},
+      {n:"7",name:"Side Plank",detail:"30-60\" per lato",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Side+Plank+exercise+tutorial+technique"},
+      {n:"8",name:"Bicycle Crunch",detail:"20-40 rip/lato",t:"reps",c:"#f97316",wt:false,yt:"https://www.youtube.com/results?search_query=Bicycle+Crunch+exercise+tutorial+technique"},
+      {n:"9",name:"Single Arm Farmers Walk",detail:"30\" per lato",t:"reps",c:"#f97316",wt:true,yt:"https://www.youtube.com/results?search_query=Single+Arm+Farmers+Walk+exercise+tutorial+technique"},
+    ],
+    tips:[
+      "Fonte originale in 3 mini-circuiti da 3 esercizi (3-5 round ciascuno) — qui unificati in un unico circuito continuo.",
+      "Round 3-5: piu tempo/energia -> punta al massimo. Giornata piena -> fermati al minimo.",
+      "Recupero 25s tra esercizi, 120s tra i round. Esercizi con manubrio/KB: scegli il peso al primo round, resta fisso nei successivi."
     ],
   }
 ];
@@ -4478,7 +4708,7 @@ function renderExtraDetail(){
   const w=getExtraById(state.extraDetailId);
   if(!w){state.tab="train";return renderTrain();}
   const isBP=w.id.startsWith("BP");
-  const isBW=w.id.indexOf("BWJ-")===0;
+  const isBW=w.id.indexOf("BWJ-")===0||w.id.indexOf("LTL-")===0;
   const accentHex=isBP?"#ffb4ab":(w.color||"#ffb693");
 
   return `<div class="screen bg-background overflow-y-auto">
@@ -4530,9 +4760,10 @@ function renderExtraDetail(){
           ${w.exercises.map((e,i)=>`<div class="bg-surface-container ghost-border p-4 flex items-center gap-4">
             <span class="font-headline text-2xl w-7 flex-shrink-0" style="color:${e.c||accentHex}">${e.n}</span>
             <div class="flex-1">
-              <p class="font-headline text-xl tracking-wide">${e.name}</p>
+              <p class="font-headline text-xl tracking-wide">${e.name}${e.kb2?` <span class="dm-sans text-[9px] align-middle" style="color:#e9c176">· 2 KB</span>`:''}</p>
               <p class="dm-sans text-xs text-slate-400 mt-0.5">${e.detail}</p>
             </div>
+            ${e.yt?`<a href="${e.yt}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="p-1.5 flex-shrink-0" style="color:${accentHex}"><span class="material-symbols-outlined text-xl">smart_display</span></a>`:''}
             <span class="font-headline text-base text-slate-500 flex-shrink-0">${e.t}</span>
           </div>`).join("")}
         </div>
@@ -4579,8 +4810,8 @@ function startExtraWorkoutImmediate(id){
   const w=getExtraById(id);
   if(!w)return;
 
-  // Bodyweight Jacked: flusso dedicato a round con rest timer e log ripetizioni
-  if(id.indexOf("BWJ-")===0){
+  // Bodyweight Jacked / Limitless: flusso dedicato a round con rest timer e log ripetizioni
+  if(id.indexOf("BWJ-")===0 || id.indexOf("LTL-")===0){
     state={...state,
       tab:"bw-workout",
       extraWorkoutId:id,
@@ -4591,6 +4822,7 @@ function startExtraWorkoutImmediate(id){
         phase:"exercise",
         remaining:0,
         reps:{},
+        weights:{},
       },
       startTime:Date.now(),
       logForm:{feeling:null,hrAvg:"",hrMax:"",weight:"10",talkTest:null,notes:""}
@@ -4970,6 +5202,55 @@ function parseBwQuantity(str, memory){
   return {unit:unit, min:null, max:null, def:(memory!=null?memory:fallback), freeform:true};
 }
 
+// ── AVANZAMENTO PROGRAMMA ──────────────────────────────────────────────────
+var BW_PHASE_LABELS={beg:"Beginner",p1:"Fase 1",p2:"Fase 2",p3:"Fase 3"};
+var BW_SESS_PER_WEEK=3;
+
+function bwEntryDate(h){
+  try{
+    var p=h.date.split('/').map(Number);
+    return new Date(p[2],p[1]-1,p[0]);
+  }catch(e){ return new Date(0); }
+}
+
+function bwSessionsForGroup(groupId){
+  return (state.history||[]).filter(function(h){
+    var rid=(h.day||"").replace("extra_","");
+    var w=getExtraById(rid);
+    if(!w)return false;
+    if(groupId==="ltl") return w.program==="Limitless";
+    return w.program==="Bodyweight Jacked" && w.phase===groupId;
+  }).length;
+}
+
+function bwProgramProgress(program){
+  var entries=(state.history||[]).filter(function(h){
+    var rid=(h.day||"").replace("extra_","");
+    var w=getExtraById(rid);
+    return w && w.program===program;
+  });
+  if(!entries.length) return null;
+
+  var withDate=entries.map(function(h){
+    var rid=h.day.replace("extra_","");
+    return {h:h, w:getExtraById(rid), dt:bwEntryDate(h)};
+  });
+  withDate.sort(function(a,b){ return b.dt-a.dt; });
+  var currentPhase=withDate[0].w.phase;
+
+  var phaseEntries=withDate.filter(function(x){ return x.w.phase===currentPhase; });
+  var weekEst=Math.min(4, Math.ceil(phaseEntries.length/BW_SESS_PER_WEEK));
+
+  return {
+    phaseId:currentPhase,
+    phaseLabel:BW_PHASE_LABELS[currentPhase]||currentPhase,
+    sessionsInPhase:phaseEntries.length,
+    weekEst:weekEst,
+    totalSessions:entries.length,
+    complete:phaseEntries.length>=BW_SESS_PER_WEEK*4,
+  };
+}
+
 function loadBwRepsMemory(){
   try{return JSON.parse(localStorage.getItem("kb-bw-reps")||"{}");}catch(e){return {};}
 }
@@ -4996,12 +5277,33 @@ function bwEnterExercise(){
   state.bw.curUnit=q.unit;
   state.bw.curFreeform=q.freeform;
   state.bw.curMin=q.min;
+
+  if(ex.wt){
+    var wMem=loadExWeightMemory();
+    state.bw.curWeight = state.bw.weights[ex.name]!=null ? String(state.bw.weights[ex.name])
+                        : (wMem[ex.name]!=null ? String(wMem[ex.name]) : "10");
+  } else {
+    state.bw.curWeight = null;
+  }
 }
 
 function bwQtyDelta(delta){
   if(!state.bw)return;
   var step = state.bw.curUnit==="sec" ? 5 : 1;
   state.bw.curVal = Math.max(0, (state.bw.curVal||0) + delta*step);
+  render();
+}
+
+function bwSetWeight(val){
+  if(!state.bw)return;
+  state.bw.curWeight=String(val);
+  render();
+}
+function bwSetWeightCustom(val){
+  if(!state.bw)return;
+  var v=String(val||"").replace(",",".").trim();
+  if(!v||isNaN(Number(v))||Number(v)<=0){render();return;}
+  state.bw.curWeight=v;
   render();
 }
 
@@ -5055,6 +5357,9 @@ function bwExerciseDone(){
   var val=state.bw.curVal;
   var prev=state.bw.reps[ex.name];
   state.bw.reps[ex.name] = (prev==null) ? val : Math.max(prev, val);
+  if(ex.wt && state.bw.curWeight!=null){
+    state.bw.weights[ex.name]=Number(state.bw.curWeight);
+  }
 
   var isLastEx = state.bw.exIdx >= w.exercises.length-1;
   if(!isLastEx){
@@ -5104,10 +5409,21 @@ function collectBwReps(){
   return out;
 }
 
+function collectBwWeights(){
+  if(!state.bw||!state.bw.weights)return {};
+  var out={};
+  Object.keys(state.bw.weights).forEach(function(k){
+    var v=state.bw.weights[k];
+    if(v!=null && !isNaN(v) && v>0) out[k]=v;
+  });
+  return out;
+}
+
 function bwSaveDone(){
   var id=state.extraWorkoutId;
   var w=getExtraById(id);
   var reps=collectBwReps();
+  var weights=collectBwWeights();
   var mins = state.startTime ? Math.round((Date.now()-state.startTime)/60000) : (w?w.totalMin:20);
   var entry={
     day:"extra_"+id,
@@ -5117,12 +5433,16 @@ function bwSaveDone(){
     hrAvg:state.logForm.hrAvg?Number(state.logForm.hrAvg):null,
     notes:(state.logForm.notes||"")||((state.bw.round||1)+" round completati"),
     reps:reps,
+    weight:Object.keys(weights).length?dominantWeight(weights,"10"):undefined,
+    weights:Object.keys(weights).length?weights:undefined,
     rounds:state.bw.round||1,
+    program:w?w.program:undefined,
     talkTest:null,
   };
   state.history.push(entry);
   saveHistory();
   commitBwRepsMemory(reps);
+  if(Object.keys(weights).length) commitExWeightMemory(weights);
   releaseWakeLock();
   var bwLabel=(w?(w.label+' — '+w.title):'Bodyweight');
   var bwText=(w&&w.title||'')+' '+(w&&w.how||'');
@@ -5197,9 +5517,10 @@ function renderBwWorkout(){
             ${repsKeys.map((k,i)=>{
               var ex=w.exercises.find(function(e){return e.name===k;});
               var unit=ex?parseBwQuantity(ex.detail,null).unit:"rip";
+              var wgt=(bw.weights&&bw.weights[k]!=null)?(' · '+bw.weights[k]+'kg'):'';
               return `<div class="flex items-center justify-between px-3 py-2"${i?' style="border-top:1px solid rgba(90,65,54,0.18)"':''}>
                 <span class="font-label text-[11px] text-gray-300">${k}</span>
-                <span class="font-headline text-lg" style="color:${accentHex}">${bw.reps[k]}${unit==="sec"?'"':' rip'}</span>
+                <span class="font-headline text-lg" style="color:${accentHex}">${bw.reps[k]}${unit==="sec"?'"':' rip'}<span class="text-sm" style="color:#e9c176">${wgt}</span></span>
               </div>`;
             }).join("")}
           </div>
@@ -5276,6 +5597,23 @@ function renderBwWorkout(){
   // ── EXERCISE (default) ──
   var ex = w.exercises[bw.exIdx];
   var unitLabel = bw.curUnit==="sec" ? '"' : ' rip';
+  var weightRow = !ex.wt ? '' : `
+      <div class="w-full mb-8">
+        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 text-center mb-2">PESO</p>
+        <div class="flex items-center justify-center gap-2">
+          ${EX_WEIGHT_OPTS.map(o=>`<button data-w="${o}" onclick="bwSetWeight(this.dataset.w)"
+            class="font-label text-sm font-bold active:scale-95 transition-transform" style="width:56px;height:40px;
+            border:1px solid ${bw.curWeight===o?accentHex:'rgba(90,65,54,0.35)'};
+            color:${bw.curWeight===o?accentHex:'#64748b'};
+            background:${bw.curWeight===o?accentHex+'1f':'transparent'}">${o}</button>`).join('')}
+          <input type="number" inputmode="decimal" step="0.5" placeholder="kg"
+            value="${EX_WEIGHT_OPTS.indexOf(bw.curWeight)<0?bw.curWeight:''}"
+            onchange="bwSetWeightCustom(this.value)"
+            class="font-label text-sm text-center" style="width:56px;height:40px;background:#0C1017;
+            border:1px solid ${EX_WEIGHT_OPTS.indexOf(bw.curWeight)<0?accentHex:'rgba(90,65,54,0.35)'};
+            color:${EX_WEIGHT_OPTS.indexOf(bw.curWeight)<0?accentHex:'#94a3b8'}"/>
+        </div>
+      </div>`;
   return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
     <div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-4" style="border-bottom:1px solid rgba(255,255,255,0.05)">
       <button onclick="exitBw()" class="p-1"><span class="material-symbols-outlined text-gray-600">close</span></button>
@@ -5286,11 +5624,17 @@ function renderBwWorkout(){
       <div style="width:32px"></div>
     </div>
 
-    <div class="flex-1 flex flex-col items-center justify-center px-6">
-      <p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:${accentHex}">${ex.detail}</p>
-      <h2 class="font-headline text-4xl text-center mb-10 leading-tight">${ex.name}</h2>
+    <div class="flex-1 flex flex-col items-center justify-center px-6 overflow-y-auto py-4">
+      <p class="font-label text-[9px] uppercase tracking-widest mb-2" style="color:${accentHex}">${ex.detail}${ex.kb2?' · 2 KB (adatta a 1 se necessario)':''}</p>
+      <h2 class="font-headline text-4xl text-center mb-1 leading-tight">${ex.name}</h2>
+      ${ex.yt?`<a href="${ex.yt}" target="_blank" rel="noopener" class="flex items-center gap-1 mb-6 py-1 px-3" style="color:${accentHex}">
+        <span class="material-symbols-outlined text-base">smart_display</span>
+        <span class="font-label text-[10px] uppercase tracking-widest">come si fa</span>
+      </a>`:'<div class="mb-6"></div>'}
 
-      <div class="flex items-center gap-6 mb-10">
+      ${weightRow}
+
+      <div class="flex items-center gap-6 mb-4">
         <button onclick="bwQtyDelta(-1)" class="w-14 h-14 flex items-center justify-center active:scale-90 transition-transform"
           style="border:1px solid rgba(90,65,54,0.4);color:#64748b">
           <span class="material-symbols-outlined text-2xl">remove</span>
@@ -5306,11 +5650,11 @@ function renderBwWorkout(){
       </div>
     </div>
 
-    <div class="flex-shrink-0 px-5 pb-8">
+    <div class="flex-shrink-0 px-5 pb-8 pt-2">
       <button onclick="bwExerciseDone()"
         class="w-full py-5 font-headline text-xl tracking-widest flex justify-between items-center px-6 active:scale-95 transition-transform"
         style="background:linear-gradient(135deg,${accentHex},${accentHex}99);color:#000">
-        FATTO — ${bw.curVal}${unitLabel}
+        FATTO — ${bw.curVal}${unitLabel}${ex.wt?(' · '+bw.curWeight+'kg'):''}
         <span class="material-symbols-outlined">check</span>
       </button>
     </div>
@@ -6120,23 +6464,41 @@ function renderTrain(){
     {id:"p1",  label:"Fase 1",           color:"#43A047"},
     {id:"p2",  label:"Fase 2 · Anelli",  color:"#0891b2"},
     {id:"p3",  label:"Fase 3 · Anelli",  color:"#ffb693"},
+    {id:"ltl", label:"🔥 Limitless · Manubri/KB", color:"#f97316"},
   ];
+  function bwProgressCardHTML(program, color){
+    var p=bwProgramProgress(program);
+    if(!p) return '<p class="font-label text-[10px] text-gray-600">'+program+': non ancora iniziato</p>';
+    var status = p.complete
+      ? 'Fase completata — pronto per la prossima'
+      : (p.phaseLabel+' · settimana '+p.weekEst+' di 4 ('+p.sessionsInPhase+' sessioni)');
+    return '<div class="flex items-center justify-between">'+
+      '<span class="font-label text-[10px] text-gray-400">'+program+'</span>'+
+      '<span class="font-label text-[10px]" style="color:'+color+'">'+status+'</span>'+
+    '</div>';
+  }
+
   function tabBodyweight(){
-    var bwAll=EXTRA_WORKOUTS.filter(function(w){return w.id.indexOf("BWJ-")===0;});
+    var bwAll=EXTRA_WORKOUTS.filter(function(w){return w.id.indexOf("BWJ-")===0||w.id.indexOf("LTL-")===0;});
     var h='<div class="p-4 mb-3" style="background:rgba(67,160,71,0.05);border-left:2px solid #43A047">'+
-      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:#43A047">BODYWEIGHT JACKED</p>'+
-      '<p class="font-label text-[11px] text-gray-400 leading-relaxed">Circuiti a corpo libero — Jack Coulson. Round completo di tutti gli esercizi, recupero breve tra un esercizio e l\'altro, recupero piu lungo tra i round. Tu decidi quanti round fare in base a tempo ed energia.</p>'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:#43A047">BODYWEIGHT JACKED + LIMITLESS</p>'+
+      '<p class="font-label text-[11px] text-gray-400 leading-relaxed mb-3">Circuiti a round — Jack Coulson. Un giro di tutti gli esercizi = 1 round, recupero breve tra un esercizio e l\'altro, piu lungo tra i round. Tu decidi quanti round fare in base a tempo ed energia. Beginner/Fase 1-3 sono a corpo libero, Limitless usa manubri/KB.</p>'+
+      '<div class="space-y-1.5 pt-2" style="border-top:1px solid rgba(67,160,71,0.15)">'+
+        bwProgressCardHTML('Bodyweight Jacked','#43A047')+
+        bwProgressCardHTML('Limitless','#f97316')+
+      '</div>'+
     '</div>';
 
     h+=BW_GROUPS.map(function(g){
       var wks=bwAll.filter(function(w){return w.bwGroup===g.id;});
+      var sessCount=bwSessionsForGroup(g.id);
       var accKey="bw_"+g.id;
       var isOpen=state.plan.openAcc===accKey;
       return '<div class="mb-2">'+
         '<button onclick="toggleAcc(\''+accKey+'\')"'+
           ' class="w-full flex justify-between items-center p-4 bg-surface-container ghost-border border-l-2 active:scale-[0.99]"'+
           ' style="border-left-color:'+g.color+'">'+
-          '<span class="font-headline text-lg">'+g.label+'</span>'+
+          '<span class="font-headline text-lg">'+g.label+(sessCount?' <span class="font-label text-[10px] text-gray-500">('+sessCount+')</span>':'')+'</span>'+
           '<span class="material-symbols-outlined text-gray-500 text-sm" style="transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s">expand_more</span>'+
         '</button>'+
         (isOpen?'<div class="space-y-px">'+
@@ -9410,8 +9772,23 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v92";
+var APP_VERSION = "v94";
 var APP_CHANGELOG = [
+  {v:"v94", data:"22/08/2026", items:[
+    "Bodyweight: nota \"2 KB\" sugli esercizi che nell'originale usano due pesi",
+    "(Gorilla Row, Farmers Walk, DB Bent Over Row) — logghi comunque 1 solo peso",
+    "Link video tecnica per ogni esercizio, nel dettaglio e nel runner live",
+    "Avanzamento programma: fase e settimana stimata (1-4) per Bodyweight Jacked e Limitless",
+    "Contatore sessioni per fase visibile su ogni gruppo dell'accordion",
+  ]},
+  {v:"v93", data:"22/08/2026", items:[
+    "Aggiunto Limitless (Jack Coulson) alla sezione Bodyweight — 9 circuiti manubri/KB",
+    "Gruppo separato in fondo: Fase 1-3, 3 workout ciascuna",
+    "Selettore peso per esercizio nel runner a round (10/16 kg + campo libero)",
+    "Il peso scelto al primo round resta di default nei round successivi",
+    "Memoria peso condivisa con il resto dell'app (stessa di Extra/Complex)",
+    "Fix: entry Limitless nel LOG mostrava l'ID grezzo invece dell'etichetta",
+  ]},
   {v:"v92", data:"21/08/2026", items:[
     "Nuova sezione Bodyweight in TRAIN — 12 circuiti da Bodyweight Jacked",
     "Beginner, Fase 1, Fase 2 e Fase 3 (anelli), raggruppati per fase",
@@ -10303,7 +10680,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v92';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v94';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
