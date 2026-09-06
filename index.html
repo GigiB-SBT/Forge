@@ -4651,23 +4651,51 @@ const LM_WORKOUTS=[
 ];
 function getLmById(id){ return LM_WORKOUTS.find(function(w){return w.id===id;}); }
 
+function lmDisplayLabel(w){
+  var mem=loadLmDurationMemory();
+  var d=mem[w.id];
+  return d?(w.label+' · '+d+' min'):w.label;
+}
+
+function lmRequestFullscreen(){
+  var el=document.querySelector('[data-lm-iframe]');
+  if(!el)return;
+  if(el.requestFullscreen) el.requestFullscreen();
+  else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  else if(el.webkitEnterFullscreen) el.webkitEnterFullscreen(); // iOS Safari video fallback
+}
+
 function openLmDetail(id){
   state.lmDetailId=id;
   state.tab="lm-detail";
   render();
 }
 
+function loadLmDurationMemory(){
+  try{return JSON.parse(localStorage.getItem("kb-lm-duration")||"{}");}catch(e){return {};}
+}
+function saveLmDurationMemory(m){
+  try{localStorage.setItem("kb-lm-duration",JSON.stringify(m));}catch(e){}
+}
+
 function startLmWorkout(id){
   unlockAudio();
   requestWakeLock();
   state.lm={id:id, phase:"playing", startTime:Date.now(),
-    logForm:{feeling:null,hrAvg:"",notes:""}};
+    logForm:{feeling:null,hrAvg:"",notes:"",duration:""}};
   state.tab="lm-workout";
   render();
 }
 
 function lmFinishToFeedback(){
   if(!state.lm)return;
+  var mem=loadLmDurationMemory();
+  if(mem[state.lm.id]!=null){
+    state.lm.logForm.duration=String(mem[state.lm.id]);
+  } else {
+    var estMin=state.lm.startTime?Math.max(1,Math.round((Date.now()-state.lm.startTime)/60000)):"";
+    state.lm.logForm.duration=String(estMin);
+  }
   state.lm.phase="feedback";
   releaseWakeLock();
   render();
@@ -4681,7 +4709,8 @@ function lmSetField(field,val){
 
 function lmSaveDone(){
   if(!state.lm)return;
-  var mins=state.lm.startTime?Math.max(1,Math.round((Date.now()-state.lm.startTime)/60000)):null;
+  var durVal=Number(state.lm.logForm.duration);
+  var mins=(durVal>0)?durVal:(state.lm.startTime?Math.max(1,Math.round((Date.now()-state.lm.startTime)/60000)):null);
   var entry={
     day:"extra_"+state.lm.id,
     date:(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})(),
@@ -4691,6 +4720,11 @@ function lmSaveDone(){
     notes:state.lm.logForm.notes||"",
     program:"LeoMoves",
   };
+  if(mins>0){
+    var mem=loadLmDurationMemory();
+    mem[state.lm.id]=mins;
+    saveLmDurationMemory(mem);
+  }
   state.history.push(entry);
   saveHistory();
   state.lm=null;
@@ -4716,14 +4750,17 @@ function renderLmDetail(){
       '<button onclick="switchTab(\'train\')" class="p-2 mt-1"><span class="material-symbols-outlined" style="color:'+w.color+'">arrow_back</span></button>'+
       '<div class="flex-1">'+
         '<p class="font-label text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">LEOMOVES</p>'+
-        '<h1 class="font-headline text-4xl leading-none">'+w.label+'</h1>'+
+        '<h1 class="font-headline text-4xl leading-none">'+lmDisplayLabel(w)+'</h1>'+
         (lastDone?'<p class="font-label text-xs text-gray-500 mt-2">Ultima volta: '+lastDone.date+'</p>':'')+
       '</div>'+
     '</header>'+
     '<main class="px-5 pb-10 space-y-5">'+
       '<div style="position:relative;padding-top:56.25%;background:#000">'+
-        '<iframe src="https://drive.google.com/file/d/'+w.driveId+'/preview" allow="autoplay" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>'+
+        '<iframe data-lm-iframe src="https://drive.google.com/file/d/'+w.driveId+'/preview" allow="autoplay; fullscreen" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>'+
       '</div>'+
+      '<button onclick="lmRequestFullscreen()" class="w-full py-2.5 font-label text-[11px] uppercase tracking-widest text-gray-500 flex items-center justify-center gap-1.5" style="border:1px solid rgba(90,65,54,0.3);border-top:none">'+
+        '<span class="material-symbols-outlined text-base">fullscreen</span> Schermo intero'+
+      '</button>'+
       '<button onclick="startLmWorkout(\''+w.id+'\')"'+
         ' class="w-full py-5 font-headline text-xl tracking-widest flex justify-between items-center px-6 active:scale-95 transition-transform"'+
         ' style="background:linear-gradient(135deg,'+w.color+','+w.color+'99);color:#000">'+
@@ -4745,9 +4782,15 @@ function renderLmWorkout(){
     return `<div class="screen bg-background overflow-y-auto" style="padding-bottom:32px;">
       <header class="px-5 pt-10 pb-6">
         <p class="font-label text-[9px] uppercase tracking-[0.25em]" style="color:${accentHex}">SESSIONE COMPLETATA</p>
-        <h1 class="font-headline text-4xl mt-1">${w.label}</h1>
+        <h1 class="font-headline text-4xl mt-1">${lmDisplayLabel(w)}</h1>
       </header>
       <main class="px-5 space-y-5">
+        <div>
+          <label class="font-label text-[9px] uppercase tracking-widest text-gray-500 block mb-1">DURATA VIDEO (min)</label>
+          <input class="log-input w-full" type="number" placeholder="12" inputmode="numeric" step="0.5"
+            value="${f.duration||''}" oninput="lmSetField('duration',this.value)"/>
+          <p class="font-label text-[9px] text-gray-600 mt-1">La ricordo per la prossima volta con questo video.</p>
+        </div>
         <div>
           <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">SENSAZIONE</p>
           <div class="grid grid-cols-4 gap-2">
@@ -4780,13 +4823,16 @@ function renderLmWorkout(){
   return `<div class="screen bg-background overflow-y-auto">
     <div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
       <button onclick="lmExit()" class="p-1"><span class="material-symbols-outlined text-gray-600">close</span></button>
-      <p class="font-label text-[10px] uppercase tracking-widest text-gray-500">${w.label}</p>
+      <p class="font-label text-[10px] uppercase tracking-widest text-gray-500">${lmDisplayLabel(w)}</p>
       <div style="width:32px"></div>
     </div>
     <div class="px-5">
       <div style="position:relative;padding-top:56.25%;background:#000">
-        <iframe src="https://drive.google.com/file/d/${w.driveId}/preview" allow="autoplay" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>
+        <iframe data-lm-iframe src="https://drive.google.com/file/d/${w.driveId}/preview" allow="autoplay; fullscreen" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>
       </div>
+      <button onclick="lmRequestFullscreen()" class="w-full py-2.5 font-label text-[11px] uppercase tracking-widest text-gray-500 flex items-center justify-center gap-1.5" style="border:1px solid rgba(90,65,54,0.3);border-top:none">
+        <span class="material-symbols-outlined text-base">fullscreen</span> Schermo intero
+      </button>
     </div>
     <div class="px-5 pt-6 pb-8">
       <button onclick="lmFinishToFeedback()"
@@ -7230,7 +7276,7 @@ function renderTrain(){
         ' style="border-left-color:'+w.color+'">'+
         '<span class="text-2xl flex-shrink-0">🎥</span>'+
         '<div class="flex-1 min-w-0">'+
-          '<p class="font-headline text-lg leading-none">'+w.label+'</p>'+
+          '<p class="font-headline text-lg leading-none">'+lmDisplayLabel(w)+'</p>'+
           '<p class="font-label text-[10px] text-gray-500 mt-1">'+(lastDone?'Ultima: '+lastDone.date:'Non ancora fatto')+'</p>'+
         '</div>'+
         '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
@@ -10521,8 +10567,17 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v96";
+var APP_VERSION = "v98";
 var APP_CHANGELOG = [
+  {v:"v98", data:"06/09/2026", items:[
+    "LeoMoves: la durata nota compare nel nome (es. \"LeoMoves 1 · 14 min\")",
+    "in lista, nel dettaglio, nella barra video e nel titolo del feedback",
+  ]},
+  {v:"v97", data:"06/09/2026", items:[
+    "LeoMoves: pulsante schermo intero sul video (con permesso fullscreen sull'iframe)",
+    "LeoMoves: durata allenamento ora modificabile = durata reale del video",
+    "La durata inserita viene ricordata per le volte successive con lo stesso video",
+  ]},
   {v:"v96", data:"06/09/2026", items:[
     "Nuovo modulo RESPIRO in MORNING: routine mattutina 4 fasi (~15 min)",
     "Nasale -> leggera -> recupero -> consapevole, con pausa/termina in ogni fase",
@@ -11468,7 +11523,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v96';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v98';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
