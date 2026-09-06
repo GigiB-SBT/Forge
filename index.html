@@ -748,6 +748,9 @@ let state={
   })(),
   editingEntry:localStorage.getItem("kb-editing-entry")!==null ? Number(localStorage.getItem("kb-editing-entry")) : null,
   healthHistory:JSON.parse(localStorage.getItem("kb-health-history")||"[]"),
+  breathHistory:JSON.parse(localStorage.getItem("kb-breath-history")||"[]"),
+  boltHistory:JSON.parse(localStorage.getItem("kb-bolt-history")||"[]"),
+  breathStartDate:localStorage.getItem("kb-breath-start-date")||null,
   healthProfile:JSON.parse(localStorage.getItem("kb-health-profile")||JSON.stringify({height:175,age:40})),
   healthForm:{weight:"",hrv:"",sleep:"",sleepQ:null},
   plan:{
@@ -885,6 +888,11 @@ function saveManualLog(){
 
 function saveExternalHistory(){localStorage.setItem("kb-external-history",JSON.stringify(state.externalHistory));}
 function saveHealthHistory(){localStorage.setItem("kb-health-history",JSON.stringify(state.healthHistory));}
+function saveBreathHistory(){localStorage.setItem("kb-breath-history",JSON.stringify(state.breathHistory));}
+function saveBoltHistory(){localStorage.setItem("kb-bolt-history",JSON.stringify(state.boltHistory));}
+function saveBreathStartDate(){
+  if(state.breathStartDate) localStorage.setItem("kb-breath-start-date",state.breathStartDate);
+}
 function saveHealthProfile(){localStorage.setItem("kb-health-profile",JSON.stringify(state.healthProfile));}
 function saveExternalHistory(){localStorage.setItem("kb-external-history",JSON.stringify(state.externalHistory));}
 function saveAxeHistory(){localStorage.setItem("kb-axe-history",JSON.stringify(state.axeHistory));}
@@ -1649,18 +1657,20 @@ function renderLog(){
         const isWF=!isExt&&h.day&&h.day.startsWith("extra_WF");
         const isBWJ=!isExt&&h.day&&(h.day.indexOf("extra_BWJ-")===0||h.day.indexOf("extra_LTL-")===0);
         const isLTL=!isExt&&h.day&&h.day.indexOf("extra_LTL-")===0;
+        const isLM=!isExt&&h.day&&h.day.indexOf("extra_LM")===0;
         const isKDP=isExt&&h._kdp;
         const isFinisher=isExt&&h._finisher;
         const isAxeEntry=isExt&&h._axe;
         const isFlowEntry=isExt&&h._flow;
         const col=isExt
           ?(isFlowEntry?"#50dad1":isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#64748b"))
-          :(isWF?"#38bdf8":isBP?"#ffb4ab":isLTL?"#f97316":isBWJ?"#43A047":(KPhex[h.day]||"#ffb693"));
+          :(isWF?"#38bdf8":isBP?"#ffb4ab":isLTL?"#f97316":isBWJ?"#43A047":isLM?"#22c55e":(KPhex[h.day]||"#ffb693"));
         const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
         const bpW=(rawId.startsWith("BP")||rawId.indexOf("BWJ-")===0||rawId.indexOf("LTL-")===0)?getExtraById(rawId):null;
+        const lmW=isLM?getLmById(rawId):null;
         const label=isExt
           ?(isFlowEntry?((getFlowById((h.type||'').replace('KB Flow_',''))||{}).nome||h.type):isAxeEntry?"AXE Protocol":isKDP?"KDP-26":isFinisher?"Finisher Snatch":h.type)
-          :(bpW?(bpW.label+" — "+bpW.title):rawId?rawId:`Giorno ${h.day}`);
+          :(bpW?(bpW.label+" — "+bpW.title):lmW?lmW.label:rawId?rawId:`Giorno ${h.day}`);
         const [dayN,...rest]=h.date?h.date.split("/"):["—"];
         const mo=rest.length?["","GEN","FEB","MAR","APR","MAG","GIU","LUG","AGO","SET","OTT","NOV","DIC"][Number(rest[0])]||"":"";
         const editBlock=isEditing?`<div class="mt-3 pt-3 border-t border-white/5 space-y-3">
@@ -1855,6 +1865,44 @@ function renderLog(){
           <span class="font-headline text-xl text-gray-600 ml-1">/ 5</span>
         </div>
       </div>
+      <!-- Respiro: BOLT + Consistency -->
+      ${(function(){
+        var bh=state.breathHistory||[], boh=state.boltHistory||[];
+        if(!bh.length && !boh.length) return '';
+        var stats=breathDashboardStats(bh,boh);
+        var boltVals=boh.slice(-7).map(function(e){return e.bolt_seconds;});
+        function boltSpark(){
+          if(boltVals.length<2) return `<p class="font-label text-[9px] text-gray-600 mt-1">Dati insufficienti</p>`;
+          var mn=Math.min(...boltVals)-1, mx=Math.max(...boltVals)+1;
+          var W=100,H=28;
+          var pts=boltVals.map((v,i)=>`${i/(boltVals.length-1)*W},${H-((v-mn)/(mx-mn))*H}`).join(" ");
+          return `<svg viewBox="0 0 ${W} ${H}" class="w-full mt-2" style="height:28px">
+            <polyline points="${pts}" fill="none" stroke="${BREATH_COLOR}" stroke-width="2" stroke-linecap="round"/>
+          </svg>`;
+        }
+        return `<div class="bg-surface-container ghost-border p-5" style="border-left:2px solid ${BREATH_COLOR}">
+          <p class="font-label text-[9px] uppercase tracking-[0.2em] mb-3" style="color:${BREATH_COLOR}">RESPIRO</p>
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">BOLT</p>
+              <span class="font-headline text-4xl" style="color:${BREATH_COLOR}">${stats.lastBolt!=null?stats.lastBolt:"—"}</span>
+              <span class="font-headline text-lg text-gray-600 ml-1">sec</span>
+              ${boltSpark()}
+            </div>
+            <div>
+              <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Consistency (7gg)</p>
+              <span class="font-headline text-4xl" style="color:${BREATH_COLOR}">${stats.consistency7}</span>
+              <span class="font-headline text-lg text-gray-600 ml-1">%</span>
+              <p class="font-label text-[9px] text-gray-600 mt-2">${stats.streak} giorni di fila · ${stats.sessions} sessioni tot.</p>
+            </div>
+          </div>
+          <div class="flex justify-between font-label text-[10px] text-gray-500 pt-2" style="border-top:1px solid rgba(90,65,54,0.2)">
+            <span>${stats.totalMin} min totali</span>
+            <span>${stats.nasalPct}% nasale</span>
+            <button onclick="boltOpenScreen()" style="color:${BREATH_COLOR}">+ BOLT TEST</button>
+          </div>
+        </div>`;
+      })()}
       <!-- Form log salute -->
       <div class="bg-surface-container ghost-border p-6 border-l-2 border-l-primary">
         <h3 class="font-headline text-3xl mb-5">LOG OGGI</h3>
@@ -4594,6 +4642,163 @@ const EXTRA_WORKOUTS=[
   }
 ];
 
+// ══ LEOMOVES — video allenamenti a corpo libero su Google Drive ═══════════════
+const LM_WORKOUTS=[
+  {id:"LM1", label:"LeoMoves 1", driveId:"1h8GzeoKfP6zWlcaXjO_Wbwjg52XhozuM", color:"#22c55e"},
+  {id:"LM2", label:"LeoMoves 2", driveId:"1T7JwbrXXqvxsYciF471AsrHujCRRz3gR", color:"#22c55e"},
+  {id:"LM3", label:"LeoMoves 3", driveId:"1GYsERtldZ5lqkJnIte4G8oaVqTIF_NpO", color:"#22c55e"},
+  {id:"LM4", label:"LeoMoves 4", driveId:"1iVlyxKVaHlbo4mCQrgeMFaw9KwrAPdTu", color:"#22c55e"},
+];
+function getLmById(id){ return LM_WORKOUTS.find(function(w){return w.id===id;}); }
+
+function openLmDetail(id){
+  state.lmDetailId=id;
+  state.tab="lm-detail";
+  render();
+}
+
+function startLmWorkout(id){
+  unlockAudio();
+  requestWakeLock();
+  state.lm={id:id, phase:"playing", startTime:Date.now(),
+    logForm:{feeling:null,hrAvg:"",notes:""}};
+  state.tab="lm-workout";
+  render();
+}
+
+function lmFinishToFeedback(){
+  if(!state.lm)return;
+  state.lm.phase="feedback";
+  releaseWakeLock();
+  render();
+}
+
+function lmSetField(field,val){
+  if(!state.lm)return;
+  state.lm.logForm[field]=val;
+  render();
+}
+
+function lmSaveDone(){
+  if(!state.lm)return;
+  var mins=state.lm.startTime?Math.max(1,Math.round((Date.now()-state.lm.startTime)/60000)):null;
+  var entry={
+    day:"extra_"+state.lm.id,
+    date:(function(){var n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();})(),
+    duration:mins,
+    feeling:state.lm.logForm.feeling,
+    hrAvg:state.lm.logForm.hrAvg?Number(state.lm.logForm.hrAvg):null,
+    notes:state.lm.logForm.notes||"",
+    program:"LeoMoves",
+  };
+  state.history.push(entry);
+  saveHistory();
+  state.lm=null;
+  state.tab="train";
+  state.trainSubTab="lm";
+  render();
+}
+
+function lmExit(){
+  releaseWakeLock();
+  state.lm=null;
+  state.tab="train";
+  state.trainSubTab="lm";
+  render();
+}
+
+function renderLmDetail(){
+  var w=getLmById(state.lmDetailId);
+  if(!w) return renderHome();
+  var lastDone=(state.history||[]).filter(function(hh){return hh.day==="extra_"+w.id;}).slice(-1)[0];
+  return '<div class="screen bg-background overflow-y-auto">'+
+    '<header class="px-5 pt-10 pb-6 flex items-start gap-4">'+
+      '<button onclick="switchTab(\'train\')" class="p-2 mt-1"><span class="material-symbols-outlined" style="color:'+w.color+'">arrow_back</span></button>'+
+      '<div class="flex-1">'+
+        '<p class="font-label text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">LEOMOVES</p>'+
+        '<h1 class="font-headline text-4xl leading-none">'+w.label+'</h1>'+
+        (lastDone?'<p class="font-label text-xs text-gray-500 mt-2">Ultima volta: '+lastDone.date+'</p>':'')+
+      '</div>'+
+    '</header>'+
+    '<main class="px-5 pb-10 space-y-5">'+
+      '<div style="position:relative;padding-top:56.25%;background:#000">'+
+        '<iframe src="https://drive.google.com/file/d/'+w.driveId+'/preview" allow="autoplay" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>'+
+      '</div>'+
+      '<button onclick="startLmWorkout(\''+w.id+'\')"'+
+        ' class="w-full py-5 font-headline text-xl tracking-widest flex justify-between items-center px-6 active:scale-95 transition-transform"'+
+        ' style="background:linear-gradient(135deg,'+w.color+','+w.color+'99);color:#000">'+
+        '▶ SEGUI E REGISTRA'+
+        '<span class="material-symbols-outlined">play_arrow</span>'+
+      '</button>'+
+    '</main>'+
+  '</div>';
+}
+
+function renderLmWorkout(){
+  var lm=state.lm;
+  var w=lm?getLmById(lm.id):null;
+  if(!lm||!w) return renderHome();
+  var accentHex=w.color;
+
+  if(lm.phase==="feedback"){
+    var f=lm.logForm;
+    return `<div class="screen bg-background overflow-y-auto" style="padding-bottom:32px;">
+      <header class="px-5 pt-10 pb-6">
+        <p class="font-label text-[9px] uppercase tracking-[0.25em]" style="color:${accentHex}">SESSIONE COMPLETATA</p>
+        <h1 class="font-headline text-4xl mt-1">${w.label}</h1>
+      </header>
+      <main class="px-5 space-y-5">
+        <div>
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">SENSAZIONE</p>
+          <div class="grid grid-cols-4 gap-2">
+            ${["😫","😐","💪","🔥"].map(fl=>`<button data-f="${fl}" onclick="lmSetField('feeling',this.dataset.f)"
+              class="py-3 text-2xl transition-all"
+              style="background:${f.feeling===fl?accentHex+'26':'transparent'};border:1px solid ${f.feeling===fl?accentHex:'rgba(90,65,54,0.3)'}">${fl}</button>`).join("")}
+          </div>
+        </div>
+        <div>
+          <label class="font-label text-[9px] uppercase tracking-widest text-gray-500 block mb-1">HR MEDIA (bpm)</label>
+          <input class="log-input w-full" type="number" placeholder="130" inputmode="numeric"
+            value="${f.hrAvg||''}" oninput="lmSetField('hrAvg',this.value)"/>
+        </div>
+        <div>
+          <label class="font-label text-[9px] uppercase tracking-widest text-gray-500 block mb-1">NOTE</label>
+          <textarea class="log-input w-full resize-none" rows="2" placeholder="Come è andata..."
+            oninput="lmSetField('notes',this.value)">${f.notes||''}</textarea>
+        </div>
+        <button onclick="lmSaveDone()"
+          class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-6 active:scale-95 transition-transform"
+          style="background:linear-gradient(135deg,${accentHex},${accentHex}99);color:#000">
+          SALVA
+          <span class="material-symbols-outlined">check</span>
+        </button>
+        <button onclick="lmExit()" class="w-full py-3 font-label text-xs uppercase tracking-widest text-gray-600">Esci senza salvare</button>
+      </main>
+    </div>`;
+  }
+
+  return `<div class="screen bg-background overflow-y-auto">
+    <div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
+      <button onclick="lmExit()" class="p-1"><span class="material-symbols-outlined text-gray-600">close</span></button>
+      <p class="font-label text-[10px] uppercase tracking-widest text-gray-500">${w.label}</p>
+      <div style="width:32px"></div>
+    </div>
+    <div class="px-5">
+      <div style="position:relative;padding-top:56.25%;background:#000">
+        <iframe src="https://drive.google.com/file/d/${w.driveId}/preview" allow="autoplay" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>
+      </div>
+    </div>
+    <div class="px-5 pt-6 pb-8">
+      <button onclick="lmFinishToFeedback()"
+        class="w-full py-5 font-headline text-xl tracking-widest flex justify-between items-center px-6 active:scale-95 transition-transform"
+        style="background:linear-gradient(135deg,${accentHex},${accentHex}99);color:#000">
+        FINE — REGISTRA
+        <span class="material-symbols-outlined">check</span>
+      </button>
+    </div>
+  </div>`;
+}
+
 function getExtraById(id){return EXTRA_WORKOUTS.find(w=>w.id===id);}
 
 function toggleExtraCard(id){
@@ -5667,6 +5872,467 @@ function renderBwWorkout(){
 }
 
 
+// ══════════════════════════════════════════════════════════════════
+// MODULO RESPIRO — routine mattutina 4 fasi + BOLT test + diario
+// Fonti: McKeown (Oxygen), Nestor (L'arte di respirare), Zicari
+// ══════════════════════════════════════════════════════════════════
+
+// ── BREATH ROUTINE — logica core (testabile in isolamento) ────────────────
+
+var BREATH_PHASES = [
+  {id:"p1", dur:120, title:"Respirazione nasale naturale",
+   copy:"Respira normalmente dal naso. Non modificare il respiro più del necessario."},
+  {id:"p2", dur:300, title:"Respirazione leggera",
+   copy:"Respira dal naso. Riduci delicatamente il volume del respiro. Cerca un respiro più leggero e silenzioso."},
+  {id:"p3", dur:180, title:"Recupero del respiro",
+   copy:"La pausa deve rimanere confortevole. Se compare disagio, riprendi subito a respirare normalmente."},
+  {id:"p4", dur:300, title:"Respirazione consapevole",
+   copy:"Porta l'attenzione al respiro. Non cercare di modificarlo. Osserva semplicemente inspirazione ed espirazione."},
+];
+var BREATH_TOTAL_SEC = BREATH_PHASES.reduce(function(s,p){return s+p.dur;},0); // 900 = 15 min
+
+function breathMakeInitialState(){
+  return {
+    phaseIdx: 0,
+    phase: "running", // running | paused | feedback | done
+    remaining: BREATH_PHASES[0].dur,
+    p2Feeling: null, // scala leggera fame d'aria, opzionale
+    elapsedTotal: 0,
+  };
+}
+
+// Chiamato ogni tick (1s) quando non in pausa
+function breathTick(st){
+  if(st.phase!=="running") return st;
+  st.remaining--;
+  st.elapsedTotal++;
+  if(st.remaining<=0){
+    if(st.phaseIdx < BREATH_PHASES.length-1){
+      st.phaseIdx++;
+      st.remaining = BREATH_PHASES[st.phaseIdx].dur;
+    } else {
+      st.phase = "feedback";
+      st.remaining = 0;
+    }
+  }
+  return st;
+}
+
+function breathPause(st){ if(st.phase==="running") st.phase="paused"; return st; }
+function breathResume(st){ if(st.phase==="paused") st.phase="running"; return st; }
+
+function breathEndEarly(st){
+  // termina sessione anticipatamente -> passa comunque al feedback
+  st.phase="feedback";
+  return st;
+}
+
+function breathSetP2Feeling(st, val){
+  st.p2Feeling = val;
+  return st;
+}
+
+function breathP2Warning(val){
+  return (val==="Intenso"||val==="Troppo intenso");
+}
+
+// Costruisce l'entry diario da salvare
+function breathBuildDiaryEntry(st, feedback, dateStr){
+  return {
+    date: dateStr,
+    duration_minutes: Math.round(st.elapsedTotal/60),
+    nasal_breathing: feedback.nasal_breathing,
+    comfort: feedback.comfort,
+    activation: feedback.activation,
+    bolt_seconds: null,
+    notes: feedback.notes||"",
+  };
+}
+
+// ── BOLT TEST ───────────────────────────────────────────────────────────
+function boltMakeInitialState(){
+  return {running:false, elapsed:0};
+}
+function boltStart(st){ st.running=true; st.elapsed=0; return st; }
+function boltTick(st){ if(st.running) st.elapsed++; return st; }
+function boltStop(st){ st.running=false; return st; }
+function boltBuildEntry(st, notes, dateStr){
+  return {date:dateStr, bolt_seconds:st.elapsed, notes:notes||"", session_id:String(Date.now())};
+}
+
+// ── DASHBOARD / CONSISTENCY ─────────────────────────────────────────────
+// ── Helper date ISO (YYYY-MM-DD) robusti rispetto al fuso orario ──────────
+// new Date("YYYY-MM-DD") interpreta la stringa come UTC mezzanotte, mentre
+// new Date() locale usa il fuso del dispositivo: mischiarli causa errori di
+// +/-1 giorno vicino alla mezzanotte. Qui si lavora sempre con Date locali
+// costruite esplicitamente da anno/mese/giorno.
+function isoToday(){
+  var n = new Date();
+  return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0");
+}
+function isoToLocalDate(iso){
+  var p = iso.split("-").map(Number);
+  return new Date(p[0], p[1]-1, p[2]);
+}
+function isoAddDays(iso, delta){
+  var d = isoToLocalDate(iso);
+  d.setDate(d.getDate()+delta);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function breathConsistencyScore(breathHistory, days){
+  days = days||7;
+  var today = isoToday();
+  var uniqueDates = new Set();
+  breathHistory.forEach(function(e){
+    var diffDays = Math.round((isoToLocalDate(today)-isoToLocalDate(e.date))/86400000);
+    if(diffDays>=0 && diffDays<days) uniqueDates.add(e.date);
+  });
+  return Math.round(uniqueDates.size/days*100);
+}
+
+function breathStreak(breathHistory){
+  if(!breathHistory.length) return 0;
+  var dateSet = new Set(breathHistory.map(function(e){return e.date;}));
+  var today = isoToday();
+  var cursor = today;
+  var streak = 0;
+
+  // Se oggi manca ancora, si parte da ieri: non pratica ancora oggi non deve
+  // azzerare uno streak già maturato nei giorni precedenti.
+  if(!dateSet.has(cursor)) cursor = isoAddDays(cursor,-1);
+
+  while(dateSet.has(cursor)){
+    streak++;
+    cursor = isoAddDays(cursor,-1);
+  }
+  return streak;
+}
+
+function breathDashboardStats(breathHistory, boltHistory){
+  var sessions = breathHistory.length;
+  var totalMin = breathHistory.reduce(function(s,e){return s+(e.duration_minutes||0);},0);
+  var streak = breathStreak(breathHistory);
+  var lastBolt = boltHistory.length?boltHistory[boltHistory.length-1].bolt_seconds:null;
+  var nasalPct = sessions ? Math.round(breathHistory.filter(function(e){return e.nasal_breathing==="all_session";}).length/sessions*100) : 0;
+  var comfortMap = {"Molto facile":1,"Facile":2,"Moderata":3,"Difficile":4,"Troppo intensa":5};
+  var comfortVals = breathHistory.map(function(e){return comfortMap[e.comfort];}).filter(function(v){return v!=null;});
+  var comfortAvg = comfortVals.length ? (comfortVals.reduce(function(a,b){return a+b;},0)/comfortVals.length) : null;
+  return {
+    sessions: sessions, totalMin: totalMin, streak: streak,
+    lastBolt: lastBolt, nasalPct: nasalPct, comfortAvg: comfortAvg,
+    consistency7: breathConsistencyScore(breathHistory,7),
+  };
+}
+
+// ── PROGRESSIONE 30 GIORNI ───────────────────────────────────────────────
+function breathProgramDay(startDateStr){
+  if(!startDateStr) return 1;
+  var diff = Math.round((isoToLocalDate(isoToday())-isoToLocalDate(startDateStr))/86400000);
+  return Math.max(1, diff+1);
+}
+function breathAvailableModes(day){
+  if(day<15) return ["base"];
+  if(day<22) return ["base","cammino"];
+  return ["base","base_cammino","consapevolezza"];
+}
+
+
+// ── ORCHESTRAZIONE UI — timer reali, avvio/salvataggio ─────────────────────
+let breathInterval=null;
+function clearBreathInterval(){ if(breathInterval){clearInterval(breathInterval);breathInterval=null;} }
+
+function breathStartRoutine(){
+  unlockAudio();
+  requestWakeLock();
+  if(!state.breathStartDate){ state.breathStartDate=isoToday(); saveBreathStartDate(); }
+  state.breath=breathMakeInitialState();
+  state.breath.feedback={nasal_breathing:null,comfort:null,activation:null,notes:""};
+  state.tab="breath-session";
+  render();
+  clearBreathInterval();
+  breathInterval=setInterval(function(){
+    if(!state.breath){clearBreathInterval();return;}
+    if(state.breath.phase!=="running"){return;}
+    var prevPhaseIdx=state.breath.phaseIdx;
+    breathTick(state.breath);
+    if(state.breath.phase==="feedback"){
+      clearBreathInterval();
+      releaseWakeLock();
+      if(navigator.vibrate)navigator.vibrate([120,60,120,60,200]);
+      render();
+      return;
+    }
+    if(state.breath.phaseIdx!==prevPhaseIdx){
+      if(navigator.vibrate)navigator.vibrate(100);
+      render();
+      return;
+    }
+    var el=document.querySelector('[data-breath-timer]');
+    if(el){
+      var m=Math.floor(state.breath.remaining/60), s=state.breath.remaining%60;
+      el.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    } else { render(); }
+  },1000);
+}
+
+function breathTogglePause(){
+  if(!state.breath)return;
+  if(state.breath.phase==="running") breathPause(state.breath);
+  else if(state.breath.phase==="paused") breathResume(state.breath);
+  render();
+}
+
+function breathEndNow(){
+  if(!state.breath)return;
+  clearBreathInterval();
+  releaseWakeLock();
+  breathEndEarly(state.breath);
+  render();
+}
+
+function breathSetP2FeelingUI(val){
+  if(!state.breath)return;
+  breathSetP2Feeling(state.breath, val);
+  render();
+}
+
+function breathSetFeedbackField(field,val){
+  if(!state.breath)return;
+  state.breath.feedback[field]=val;
+  render();
+}
+
+function breathSubmitFeedback(){
+  if(!state.breath)return;
+  var entry=breathBuildDiaryEntry(state.breath, state.breath.feedback, isoToday());
+  state.breathHistory.push(entry);
+  saveBreathHistory();
+  clearBreathInterval();
+  releaseWakeLock();
+  state.breath=null;
+  state.tab="morning";
+  render();
+}
+
+function breathExitWithoutSaving(){
+  clearBreathInterval();
+  releaseWakeLock();
+  state.breath=null;
+  state.tab="morning";
+  render();
+}
+
+// ── BOLT TEST ───────────────────────────────────────────────────────────
+let boltInterval=null;
+function clearBoltInterval(){ if(boltInterval){clearInterval(boltInterval);boltInterval=null;} }
+
+function boltOpenScreen(){
+  state.bolt=boltMakeInitialState();
+  state.bolt.notes="";
+  state.tab="bolt-test";
+  render();
+}
+
+function boltStartUI(){
+  if(!state.bolt)return;
+  unlockAudio();
+  boltStart(state.bolt);
+  render();
+  clearBoltInterval();
+  boltInterval=setInterval(function(){
+    if(!state.bolt||!state.bolt.running){clearBoltInterval();return;}
+    boltTick(state.bolt);
+    var el=document.querySelector('[data-bolt-timer]');
+    if(el) el.textContent=state.bolt.elapsed+'"';
+    else render();
+  },1000);
+}
+
+function boltStopUI(){
+  if(!state.bolt)return;
+  clearBoltInterval();
+  boltStop(state.bolt);
+  if(navigator.vibrate)navigator.vibrate(150);
+  render();
+}
+
+function boltSetNotes(val){ if(state.bolt) state.bolt.notes=val; }
+
+function boltSaveUI(){
+  if(!state.bolt)return;
+  var entry=boltBuildEntry(state.bolt, state.bolt.notes, isoToday());
+  state.boltHistory.push(entry);
+  saveBoltHistory();
+  state.bolt=null;
+  state.tab="morning";
+  render();
+}
+
+function boltExitWithoutSaving(){
+  clearBoltInterval();
+  state.bolt=null;
+  state.tab="morning";
+  render();
+}
+
+// ── RENDER BREATH SESSION ───────────────────────────────────────────────────
+var BREATH_COLOR="#7dd3fc";
+var P2_SCALE=["Troppo facile","Facile","Leggera fame d'aria","Intenso","Troppo intenso"];
+var NASAL_OPTS=[["all_session","Tutta la sessione"],["most","Quasi tutta"],["some","A tratti"],["hard","Difficile"]];
+var COMFORT_OPTS=["Molto facile","Facile","Moderata","Difficile","Troppo intensa"];
+var ACTIVATION_OPTS=["Molto calmo","Calmo","Neutro","Attivato","Troppo attivato"];
+
+function renderBreathSession(){
+  var b=state.breath;
+  if(!b) return renderMorning();
+
+  if(b.phase==="feedback"){
+    var f=b.feedback;
+    var canSave = f.nasal_breathing && f.comfort && f.activation;
+    return `<div class="screen bg-background overflow-y-auto" style="padding-bottom:32px;">
+      <header class="px-5 pt-10 pb-6">
+        <p class="font-label text-[9px] uppercase tracking-[0.25em]" style="color:${BREATH_COLOR}">SESSIONE COMPLETATA</p>
+        <h1 class="font-headline text-4xl mt-1">Com'è andata?</h1>
+        <p class="font-label text-xs text-gray-500 mt-2">Non devi respirare di più. Devi respirare meglio.</p>
+      </header>
+      <main class="px-5 space-y-5">
+        <div>
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">COME TI SENTI?</p>
+          <div class="space-y-1.5">
+            ${ACTIVATION_OPTS.map(o=>`<button data-o="${o}" onclick="breathSetFeedbackField('activation',this.dataset.o)"
+              class="w-full text-left py-2.5 px-3 font-label text-sm active:scale-[0.99] transition-transform"
+              style="background:${f.activation===o?BREATH_COLOR+'22':'transparent'};border:1px solid ${f.activation===o?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${f.activation===o?BREATH_COLOR:'#94a3b8'}">${o}</button>`).join('')}
+          </div>
+        </div>
+        <div>
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">QUANTO È STATA CONFORTEVOLE?</p>
+          <div class="space-y-1.5">
+            ${COMFORT_OPTS.map(o=>`<button data-o="${o}" onclick="breathSetFeedbackField('comfort',this.dataset.o)"
+              class="w-full text-left py-2.5 px-3 font-label text-sm active:scale-[0.99] transition-transform"
+              style="background:${f.comfort===o?BREATH_COLOR+'22':'transparent'};border:1px solid ${f.comfort===o?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${f.comfort===o?BREATH_COLOR:'#94a3b8'}">${o}</button>`).join('')}
+          </div>
+        </div>
+        <div>
+          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">RESPIRAZIONE NASALE</p>
+          <div class="space-y-1.5">
+            ${NASAL_OPTS.map(function(o){var key=o[0],label=o[1];return `<button data-o="${key}" onclick="breathSetFeedbackField('nasal_breathing',this.dataset.o)"
+              class="w-full text-left py-2.5 px-3 font-label text-sm active:scale-[0.99] transition-transform"
+              style="background:${f.nasal_breathing===key?BREATH_COLOR+'22':'transparent'};border:1px solid ${f.nasal_breathing===key?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${f.nasal_breathing===key?BREATH_COLOR:'#94a3b8'}">${label}</button>`;}).join('')}
+          </div>
+        </div>
+        <div>
+          <label class="font-label text-[9px] uppercase tracking-widest text-gray-500 block mb-1">NOTE (opzionale)</label>
+          <textarea class="log-input w-full resize-none" rows="2" placeholder="Come ti senti..."
+            oninput="breathSetFeedbackField('notes',this.value)">${f.notes||''}</textarea>
+        </div>
+        <button onclick="breathSubmitFeedback()" ${canSave?'':'disabled'}
+          class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-6 active:scale-95 transition-transform"
+          style="background:${canSave?('linear-gradient(135deg,'+BREATH_COLOR+','+BREATH_COLOR+'99)'):'rgba(90,65,54,0.2)'};color:${canSave?'#000':'#64748b'}">
+          SALVA
+          <span class="material-symbols-outlined">check</span>
+        </button>
+        <button onclick="breathExitWithoutSaving()" class="w-full py-3 font-label text-xs uppercase tracking-widest text-gray-600">Esci senza salvare</button>
+      </main>
+    </div>`;
+  }
+
+  // ── FASI 1-4 (running / paused) ──
+  var phase=BREATH_PHASES[b.phaseIdx];
+  var totalDur=phase.dur;
+  var pct=((totalDur-b.remaining)/totalDur)*100;
+  var mm=Math.floor(b.remaining/60), ss=b.remaining%60;
+  var showP2Scale = phase.id==="p2";
+  var showWarning = showP2Scale && breathP2Warning(b.p2Feeling);
+
+  return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
+      <button onclick="breathEndNow()" class="p-1"><span class="material-symbols-outlined text-gray-600">close</span></button>
+      <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">FASE ${b.phaseIdx+1} DI ${BREATH_PHASES.length}</p>
+      <div style="width:32px"></div>
+    </div>
+
+    <div class="flex-1 flex flex-col items-center justify-center px-6 overflow-y-auto py-4">
+      <p class="font-label text-[10px] uppercase tracking-widest mb-2" style="color:${BREATH_COLOR}">${phase.title}</p>
+
+      <div class="relative flex items-center justify-center mb-6" style="width:200px;height:200px">
+        <svg viewBox="0 0 100 100" style="width:200px;height:200px;transform:rotate(-90deg)">
+          <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="4"/>
+          <circle cx="50" cy="50" r="46" fill="none" stroke="${BREATH_COLOR}" stroke-width="4" stroke-linecap="round"
+            stroke-dasharray="${2*Math.PI*46}" stroke-dashoffset="${2*Math.PI*46*(1-pct/100)}"
+            style="transition:stroke-dashoffset 1s linear"/>
+        </svg>
+        <span data-breath-timer class="font-headline absolute" style="font-size:48px;color:${BREATH_COLOR}">${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}</span>
+      </div>
+
+      <p class="font-label text-sm text-gray-400 text-center leading-relaxed max-w-xs mb-6">${phase.copy}</p>
+
+      ${showP2Scale?`<div class="w-full mb-2">
+        <p class="font-label text-[9px] uppercase tracking-widest text-gray-600 text-center mb-2">COME TI SENTI ADESSO?</p>
+        <div class="flex flex-wrap justify-center gap-1.5">
+          ${P2_SCALE.map(o=>`<button data-o="${o}" onclick="breathSetP2FeelingUI(this.dataset.o)"
+            class="font-label text-[10px] px-2.5 py-1.5 active:scale-95 transition-transform"
+            style="background:${b.p2Feeling===o?BREATH_COLOR+'22':'transparent'};border:1px solid ${b.p2Feeling===o?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${b.p2Feeling===o?BREATH_COLOR:'#64748b'}">${o}</button>`).join('')}
+        </div>
+        ${showWarning?`<p class="font-label text-xs text-center mt-3" style="color:#ffb4ab">Riduci lo sforzo e torna a una respirazione naturale.</p>`:''}
+      </div>`:''}
+    </div>
+
+    <div class="flex-shrink-0 px-5 pb-8 flex gap-2">
+      <button onclick="breathTogglePause()"
+        class="flex-1 py-4 font-headline text-lg tracking-widest active:scale-95 transition-transform"
+        style="border:1px solid ${BREATH_COLOR}77;color:${BREATH_COLOR}">${b.phase==="paused"?"RIPRENDI":"PAUSA"}</button>
+      <button onclick="breathEndNow()"
+        class="flex-1 py-4 font-headline text-lg tracking-widest active:scale-95 transition-transform text-gray-600"
+        style="border:1px solid rgba(90,65,54,0.3)">TERMINA</button>
+    </div>
+  </div>`;
+}
+
+// ── RENDER BOLT TEST ─────────────────────────────────────────────────────
+function renderBoltTest(){
+  var b=state.bolt;
+  if(!b) return renderMorning();
+
+  if(!b.running && b.elapsed>0){
+    // schermata risultato + note + salva
+    return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;">
+      <p class="font-label text-[9px] uppercase tracking-[0.25em] text-gray-500 mb-2">BOLT — RISULTATO</p>
+      <span class="font-headline leading-none mb-2" style="font-size:88px;color:${BREATH_COLOR}">${b.elapsed}"</span>
+      <p class="font-label text-xs text-gray-500 text-center mb-8 max-w-xs">Misura la risposta del tuo corpo, non la tua capacità massima di trattenere il respiro.</p>
+      <div class="w-full mb-4">
+        <label class="font-label text-[9px] uppercase tracking-widest text-gray-500 block mb-1">NOTE (opzionale)</label>
+        <input class="log-input w-full" type="text" placeholder="Come ti sei sentito..." onchange="boltSetNotes(this.value)"/>
+      </div>
+      <button onclick="boltSaveUI()"
+        class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-6 mb-2 active:scale-95 transition-transform"
+        style="background:linear-gradient(135deg,${BREATH_COLOR},${BREATH_COLOR}99);color:#000">
+        SALVA
+        <span class="material-symbols-outlined">check</span>
+      </button>
+      <button onclick="boltExitWithoutSaving()" class="w-full py-3 font-label text-xs uppercase tracking-widest text-gray-600">Annulla</button>
+    </div>`;
+  }
+
+  return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;">
+    <button onclick="boltExitWithoutSaving()" class="absolute top-8 left-5 p-1"><span class="material-symbols-outlined text-gray-600">close</span></button>
+    <p class="font-label text-[9px] uppercase tracking-[0.25em] text-gray-500 mb-2">BOLT — BREATH HOLD TEST</p>
+    ${!b.running?`
+      <div class="max-w-xs text-center mb-10">
+        <p class="font-label text-sm text-gray-400 leading-relaxed">1. Siediti e rilassati.<br/>2. Respira normalmente dal naso.<br/>3. Dopo una normale espirazione, interrompi la respirazione.<br/>4. Tocca STOP alla prima chiara necessità di respirare.<br/>5. Riprendi subito a respirare normalmente.</p>
+      </div>
+      <button onclick="boltStartUI()"
+        class="py-5 px-10 font-headline text-2xl tracking-widest active:scale-95 transition-transform"
+        style="background:linear-gradient(135deg,${BREATH_COLOR},${BREATH_COLOR}99);color:#000">INIZIA</button>
+    `:`
+      <span data-bolt-timer class="font-headline leading-none mb-10" style="font-size:88px;color:${BREATH_COLOR}">${b.elapsed}"</span>
+      <button onclick="boltStopUI()"
+        class="py-5 px-10 font-headline text-2xl tracking-widest active:scale-95 transition-transform"
+        style="background:linear-gradient(135deg,#ffb4ab,#e88b80);color:#000">STOP</button>
+    `}
+  </div>`;
+}
+
 // ── RENDER HEALTH ─────────────────────────────────────────────────────────────
 function renderHealth(){
   const h=state.healthHistory;
@@ -6228,6 +6894,7 @@ function renderTrain(){
     {id:"kdp",      label:"KDP-26",    color:"#7A9A3A"},
     {id:"wf",       label:"🏄 Wing Foil", color:"#38bdf8"},
     {id:"bw",       label:"🤸 Bodyweight", color:"#43A047"},
+    {id:"lm",       label:"🎥 LeoMoves", color:"#22c55e"},
   ];
   function tBtn(t){
     var on=sub===t.id;
@@ -6550,6 +7217,28 @@ function renderTrain(){
     return h;
   }
 
+  // ── TAB LEOMOVES (video allenamenti su Google Drive) ──────────────
+  function tabLeoMoves(){
+    var h='<div class="p-4 mb-3" style="background:rgba(34,197,94,0.05);border-left:2px solid #22c55e">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:#22c55e">LEOMOVES</p>'+
+      '<p class="font-label text-[11px] text-gray-400 leading-relaxed">Allenamenti video — segui il video per intero, poi registra la sessione.</p>'+
+    '</div>';
+    h+=LM_WORKOUTS.map(function(w){
+      var lastDone=(state.history||[]).filter(function(hh){return hh.day==="extra_"+w.id;}).slice(-1)[0];
+      return '<div onclick="openLmDetail(\''+w.id+'\')"'+
+        ' class="flex items-center gap-3 p-4 mb-2 bg-surface-container ghost-border border-l-2 cursor-pointer active:bg-surface-container-high"'+
+        ' style="border-left-color:'+w.color+'">'+
+        '<span class="text-2xl flex-shrink-0">🎥</span>'+
+        '<div class="flex-1 min-w-0">'+
+          '<p class="font-headline text-lg leading-none">'+w.label+'</p>'+
+          '<p class="font-label text-[10px] text-gray-500 mt-1">'+(lastDone?'Ultima: '+lastDone.date:'Non ancora fatto')+'</p>'+
+        '</div>'+
+        '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
+      '</div>';
+    }).join('');
+    return h;
+  }
+
   // ── TAB WING FOIL ──────────────────────────────────────────────
   function tabWingFoil(){
     var WF_IDS=["WFW","WF1","WF2","WF3","WFB"];
@@ -6665,7 +7354,7 @@ function renderTrain(){
     '<main class="px-5 pt-5 pb-24">'+
       '<h1 class="font-headline text-5xl tracking-tight leading-none mb-4">TRAIN</h1>'+
       tabBar+
-      (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():tabKdp())+
+      (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():sub==="lm"?tabLeoMoves():tabKdp())+
     '</main>'+
     navHTML("train")+
   '</div>';
@@ -7179,6 +7868,34 @@ function renderMorning(){
         '<button onclick="mrStart(30)" class="flex-1 py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#c9a856,#9a7830);color:#000">EXPRESS 30"</button>'+
       '</div>'+
     '</div>'+
+    // Respiro — routine mattutina 4 fasi
+    (function(){
+      var lastBreath=(state.breathHistory||[]).slice(-1)[0];
+      var progDay=breathProgramDay(state.breathStartDate);
+      var streak=breathStreak(state.breathHistory||[]);
+      return '<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:'+BREATH_COLOR+'">'+
+        '<div class="flex items-center gap-2 mb-1">'+
+          '<span class="material-symbols-outlined text-lg" style="color:'+BREATH_COLOR+';font-variation-settings:\'FILL\' 1">spa</span>'+
+          '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:'+BREATH_COLOR+'">RESPIRO</p>'+
+        '</div>'+
+        '<h2 class="font-headline text-3xl mb-1">Pratica Mattutina</h2>'+
+        '<p class="font-label text-xs text-gray-500 mb-1">15 minuti · Naso · Lentezza · Leggerezza · Consapevolezza</p>'+
+        (state.breathStartDate?'<p class="font-label text-[9px] text-gray-600 mb-1">Giorno '+progDay+' del percorso'+(streak?' · '+streak+' di fila':'')+'</p>':'')+
+        (function(){
+          var modes=breathAvailableModes(progDay);
+          if(modes.length<=1) return '';
+          var extra=[];
+          if(modes.indexOf('cammino')>=0) extra.push('Cammino 5min sbloccato');
+          if(modes.indexOf('consapevolezza')>=0) extra.push('3 modalità disponibili');
+          return extra.length?'<p class="font-label text-[9px] mb-1" style="color:'+BREATH_COLOR+'">'+extra.join(' · ')+'</p>':'';
+        })()+
+        (lastBreath?'<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: '+lastBreath.date+'</p>':'<div class="mb-3"></div>')+
+        '<div class="flex gap-2">'+
+          '<button onclick="breathStartRoutine()" class="flex-1 py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,'+BREATH_COLOR+','+BREATH_COLOR+'99);color:#000">INIZIA</button>'+
+          '<button onclick="boltOpenScreen()" class="py-3.5 px-4 font-headline text-base tracking-widest active:scale-95" style="border:1px solid '+BREATH_COLOR+'77;color:'+BREATH_COLOR+'">BOLT</button>'+
+        '</div>'+
+      '</div>';
+    })()+
     // Wim Hof
     '<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#50dad1">'+
       '<div class="flex items-center gap-2 mb-1">'+
@@ -9804,8 +10521,18 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v95";
+var APP_VERSION = "v96";
 var APP_CHANGELOG = [
+  {v:"v96", data:"06/09/2026", items:[
+    "Nuovo modulo RESPIRO in MORNING: routine mattutina 4 fasi (~15 min)",
+    "Nasale -> leggera -> recupero -> consapevole, con pausa/termina in ogni fase",
+    "Test BOLT standalone con storico e sparkline in LOG -> Salute",
+    "Diario post-sessione (sensazione, comfort, respirazione nasale)",
+    "Giorno del percorso, streak e Consistency Score (7 giorni)",
+    "Sblocco visibile di Cammino (giorno 15+) e Consapevolezza (giorno 22+)",
+    "Nuovo tab LEOMOVES in TRAIN: 4 allenamenti video (LM1-LM4) da Google Drive",
+    "Player incorporato, log sessione con sensazione/HR/note a fine video",
+  ]},
   {v:"v95", data:"22/08/2026", items:[
     "Bodyweight: struttura a due livelli — Programma poi Fase",
     "\"Bodyweight Jacked\" e \"Limitless\" ora sono indici che si aprono",
@@ -9972,6 +10699,10 @@ function render(){
   else if(state.tab==="log")         app.innerHTML=renderLog();
   else if(state.tab==="bp-workout")  app.innerHTML=renderBellplexWorkout();
   else if(state.tab==="bw-workout")  app.innerHTML=renderBwWorkout();
+  else if(state.tab==="breath-session")  app.innerHTML=renderBreathSession();
+  else if(state.tab==="bolt-test")  app.innerHTML=renderBoltTest();
+  else if(state.tab==="lm-detail")  app.innerHTML=renderLmDetail();
+  else if(state.tab==="lm-workout")  app.innerHTML=renderLmWorkout();
   else if(state.tab==="train")       app.innerHTML=renderTrain();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
   else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
@@ -10002,7 +10733,7 @@ function render(){
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
 // ── WAKE LOCK ─────────────────────────────────────────────────────────────────
 let wakeLock=null;
-const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
+const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
 async function requestWakeLock(){
   try{
     if('wakeLock' in navigator){
@@ -10582,6 +11313,9 @@ function exportJSON(){
     externalHistory:state.externalHistory,
     healthHistory:state.healthHistory,
     healthProfile:state.healthProfile,
+    breathHistory:state.breathHistory,
+    boltHistory:state.boltHistory,
+    breathStartDate:state.breathStartDate,
     axeHistory:state.axeHistory,
     axeProgress:state.axeProgress,
     activeProgram:state.activeProgram,
@@ -10653,11 +11387,24 @@ function importJSON(){
             const newH=data.healthHistory.filter(h=>!existingH.has(h.date));
             state.healthHistory=[...(state.healthHistory||[]),...newH];
           }
+          if(data.breathHistory){
+            const existingB=new Set((state.breathHistory||[]).map(h=>h.date));
+            const newB=data.breathHistory.filter(h=>!existingB.has(h.date));
+            state.breathHistory=[...(state.breathHistory||[]),...newB];
+          }
+          if(data.boltHistory){
+            const existingBo=new Set((state.boltHistory||[]).map(h=>h.session_id));
+            const newBo=data.boltHistory.filter(h=>!existingBo.has(h.session_id));
+            state.boltHistory=[...(state.boltHistory||[]),...newBo];
+          }
         } else {
           state.history=data.history;
           if(data.externalHistory)state.externalHistory=data.externalHistory;
           if(data.healthHistory)state.healthHistory=data.healthHistory;
           if(data.healthProfile)state.healthProfile=data.healthProfile;
+          if(data.breathHistory)state.breathHistory=data.breathHistory;
+          if(data.boltHistory)state.boltHistory=data.boltHistory;
+          if(data.breathStartDate)state.breathStartDate=data.breathStartDate;
           if(data.axeHistory)state.axeHistory=data.axeHistory;
           if(data.axeProgress)state.axeProgress=data.axeProgress;
           if(data.activeProgram)state.activeProgram=data.activeProgram;
@@ -10674,6 +11421,9 @@ function importJSON(){
         saveHistory();
         saveExternalHistory();
         saveHealthHistory();
+        saveBreathHistory();
+        saveBoltHistory();
+        saveBreathStartDate();
         localStorage.setItem("kb-axe-history",JSON.stringify(state.axeHistory));
         localStorage.setItem("kb-axe-progress",JSON.stringify(state.axeProgress));
         if(state.activeProgram)localStorage.setItem("kb-active-program",JSON.stringify(state.activeProgram));
@@ -10718,7 +11468,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v95';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v96';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
