@@ -4657,12 +4657,35 @@ function lmDisplayLabel(w){
   return d?(w.label+' · '+d+' min'):w.label;
 }
 
+function lmLockLandscape(){
+  try{
+    if(screen.orientation && screen.orientation.lock){
+      screen.orientation.lock('landscape').catch(function(){});
+    }
+  }catch(e){}
+}
+function lmUnlockOrientation(){
+  try{
+    if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+  }catch(e){}
+}
+// Al ritorno da schermo intero, sblocca l'orientamento (torna libero/portrait)
+document.addEventListener('fullscreenchange', function(){
+  if(!document.fullscreenElement) lmUnlockOrientation();
+});
+document.addEventListener('webkitfullscreenchange', function(){
+  if(!document.webkitFullscreenElement) lmUnlockOrientation();
+});
+
 function lmRequestFullscreen(){
   var el=document.querySelector('[data-lm-iframe]');
   if(!el)return;
-  if(el.requestFullscreen) el.requestFullscreen();
-  else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-  else if(el.webkitEnterFullscreen) el.webkitEnterFullscreen(); // iOS Safari video fallback
+  var req = el.requestFullscreen ? el.requestFullscreen()
+          : el.webkitRequestFullscreen ? el.webkitRequestFullscreen()
+          : el.webkitEnterFullscreen ? el.webkitEnterFullscreen() // iOS Safari video fallback
+          : null;
+  if(req && req.then) req.then(lmLockLandscape).catch(function(){lmLockLandscape();});
+  else setTimeout(lmLockLandscape, 300);
 }
 
 function openLmDetail(id){
@@ -10567,8 +10590,12 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v98";
+var APP_VERSION = "v99";
 var APP_CHANGELOG = [
+  {v:"v99", data:"06/09/2026", items:[
+    "LeoMoves: schermo intero ora forza anche rotazione landscape",
+    "Sblocco automatico dell'orientamento all'uscita da schermo intero",
+  ]},
   {v:"v98", data:"06/09/2026", items:[
     "LeoMoves: la durata nota compare nel nome (es. \"LeoMoves 1 · 14 min\")",
     "in lista, nel dettaglio, nella barra video e nel titolo del feedback",
@@ -11523,7 +11550,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v98';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v99';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
