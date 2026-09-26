@@ -1385,7 +1385,7 @@ function renderWorkout(){
       </h2>
 
       <!-- Timer ring o reps box -->
-      <div class="relative z-10 mb-4">${timerEl}</div>
+      <div class="relative z-10 mb-4" style="${step.items?'transform:scale(0.62);margin:-52px 0 -44px':''}">${timerEl}</div>
 
       <!-- Info extra compatta (max 1 riga) -->
       ${isAmrap?`<div class="w-full px-4 py-3 border-l-2 border-l-secondary bg-surface-container relative z-10" style="max-width:320px">
@@ -1397,6 +1397,9 @@ function renderWorkout(){
         <p class="font-label text-xs text-on-surface-variant leading-snug">${ex.cue}</p>
       </div>`:''}
       ${ladderHTML}
+      ${step.items?`<div class="w-full relative z-10 mt-1 px-4 py-3 bg-surface-container border-l-2 overflow-y-auto" style="border-color:${accentHex};max-width:340px;max-height:34vh">
+        ${step.items.map(t=>`<p class="font-headline text-xl leading-tight py-0.5" style="color:#e1e2e7">${t}</p>`).join('')}
+      </div>`:''}
     </div>
 
     <!-- FOOTER FISSO — prossimo + controlli -->
@@ -1658,15 +1661,16 @@ function renderLog(){
         const isBWJ=!isExt&&h.day&&(h.day.indexOf("extra_BWJ-")===0||h.day.indexOf("extra_LTL-")===0);
         const isLTL=!isExt&&h.day&&h.day.indexOf("extra_LTL-")===0;
         const isLM=!isExt&&h.day&&h.day.indexOf("extra_LM")===0;
+        const isK30=!isExt&&h.day&&h.day.indexOf("extra_K30-")===0;
         const isKDP=isExt&&h._kdp;
         const isFinisher=isExt&&h._finisher;
         const isAxeEntry=isExt&&h._axe;
         const isFlowEntry=isExt&&h._flow;
         const col=isExt
           ?(isFlowEntry?"#50dad1":isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#64748b"))
-          :(isWF?"#38bdf8":isBP?"#ffb4ab":isLTL?"#f97316":isBWJ?"#43A047":isLM?"#22c55e":(KPhex[h.day]||"#ffb693"));
+          :(isWF?"#38bdf8":isBP?"#ffb4ab":isLTL?"#f97316":isBWJ?"#43A047":isLM?"#22c55e":isK30?"#facc15":(KPhex[h.day]||"#ffb693"));
         const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
-        const bpW=(rawId.startsWith("BP")||rawId.indexOf("BWJ-")===0||rawId.indexOf("LTL-")===0)?getExtraById(rawId):null;
+        const bpW=(rawId.startsWith("BP")||rawId.indexOf("BWJ-")===0||rawId.indexOf("LTL-")===0||rawId.indexOf("K30-")===0)?getExtraById(rawId):null;
         const lmW=isLM?getLmById(rawId):null;
         const label=isExt
           ?(isFlowEntry?((getFlowById((h.type||'').replace('KB Flow_',''))||{}).nome||h.type):isAxeEntry?"AXE Protocol":isKDP?"KDP-26":isFinisher?"Finisher Snatch":h.type)
@@ -4642,6 +4646,361 @@ const EXTRA_WORKOUTS=[
   }
 ];
 
+// ══════════════════════════════════════════════════════════════════
+// 30 DAYS KB — One Kettlebell 30-Day Challenge (@trainwithflorence)
+// 22 sessioni + 8 riposi. Formati: int (complex a intervallo), emom,
+// wr (lavoro/recupero), acc (serie senza timer), chipper, tech.
+// ══════════════════════════════════════════════════════════════════
+var K30_COLOR="#facc15";
+var K30_PROGRAM="30 Days KB";
+var K30_WEEKS={1:"Fondamenta",2:"Forza",3:"Sicurezza",4:"Verso il prossimo step"};
+var K30_IG="https://www.instagram.com/reel/";
+
+// Esercizi a corpo libero: il blocco CARICHI li propone su "—"
+var K30_BW=["Air Squat","Push-up","Burpee","Butterfly Sit-up","Bicycle Crunch","Plank","Jump Squat",
+  "Pop Squat","90/90 Hip Switch","Child's Pose","World's Greatest Stretch","Single Leg Raise",
+  "Air Squat + Push-up","Push-up su KB"];
+
+// Riga esercizio compatta: [nome, dettaglio]
+var K30_RAW=[
+ {d:1,fmt:"int",title:"Full Body Complex",est:18,video:"https://youtu.be/WAqUX72gypo",
+  plan:[{k:"int",sec:135,r:8,name:"Complex",items:["5 One Arm Swing DX","5 Front Squat DX","5 Push Press DX","5 One Arm Swing SX","5 Front Squat SX","5 Push Press SX"]}],
+  ex:[["One Arm Swing","5 per lato"],["Front Squat","5 per lato, KB in rack"],["Push Press","5 per lato"]],
+  note:"Senza posare il KB: tutti i 30 movimenti di fila, poi recuperi il tempo che resta."},
+ {d:2,fmt:"emom",title:"Full Body EMOM",est:25,video:K30_IG+"DbwA-0ONYAx/",
+  plan:[{k:"emom",r:5,mins:[{n:"Goblet Squat",r:"15"},{n:"Clean + Press",r:"4 + 8",it:["4 Hang Clean","8 Goblet Press"]},{n:"Reverse Lunge",r:"12 in rack"},{n:"American Swing",r:"15"},{n:"Plank",r:"30\" o riposo"}]}],
+  ex:[["Goblet Squat","15"],["Hang Clean","4"],["Goblet Press","8"],["Reverse Lunge","12, KB in rack"],["American Swing","15"],["Plank","30\""]]},
+ {d:3,fmt:"tech",title:"Tecnica: Clean",est:12,video:null,
+  plan:[{k:"acc",r:6,rest:60,list:[["KB Clean","5 DX"],["KB Clean","5 SX"]]}],
+  ex:[["KB Clean","6 serie × 5 per lato"]],
+  cues:["Parti con il KB a terra, un passo avanti. Anca indietro, schiena lunga.","Hike tra le cosce, pollice verso dietro.","Risalita vicino al corpo, gomito stretto: tira il KB verso di te, non in fuori.","Ricezione in rack: KB appoggiato su avambraccio e spalla, polso neutro, nessun colpo sull'avambraccio."]},
+ {d:4,fmt:"int",title:"Full Body Complex",est:18,video:K30_IG+"DbyEKMvNu8h/",
+  plan:[{k:"int",sec:135,r:8,name:"Complex",items:["5 KB Row DX","5 KB Row SX","5 KB Swing","5 Deadlift","5 KB Swing","5 Thruster"]}],
+  ex:[["KB Row","5 per lato"],["KB Swing","2 × 5"],["Deadlift","5"],["Thruster","5"]]},
+ {d:5,fmt:"emom",title:"Full Body EMOM × 2",est:28,video:K30_IG+"Db1jki-Ne3v/",
+  plan:[{k:"emom",r:3,mins:[{n:"Press + March DX",r:"8 + 10",it:["8 KB Press","10 marce con KB overhead"]},{n:"Press + March SX",r:"8 + 10",it:["8 KB Press","10 marce con KB overhead"]},{n:"Sumo High Row",r:"15"},{n:"Air Squat",r:"15 o riposo"}]},
+        {k:"pause"},
+        {k:"emom",r:3,mins:[{n:"KB Swing",r:"15-25"},{n:"Squat to Halo",r:"10"},{n:"Curl to Pullover",r:"8-10"},{n:"Burpee",r:"10"},null]}],
+  ex:[["KB Press","8 per lato"],["Overhead March","10 per lato"],["Sumo High Row","15"],["Air Squat","15"],["KB Swing","15-25"],["Squat to Halo","10"],["Curl to Pullover","8-10"],["Burpee","10"]]},
+ {d:6,fmt:"chipper",title:"Core & Mobility",est:15,video:K30_IG+"Db3JI4bNYIR/",
+  chip:{r:1,items:[[25,"Butterfly Sit-up"],[10,"Plank Pull Through"],[25,"Butterfly Sit-up"],[10,"Around the World"],[25,"Butterfly Sit-up"],[10,"Kneeling Halo"],[25,"Butterfly Sit-up"],[10,"Rotational Halo"]]},
+  ex:[["Butterfly Sit-up","4 × 25"],["Plank Pull Through","10"],["Around the World","10"],["Kneeling Halo","10"],["Rotational Halo","10"]]},
+ {d:8,fmt:"emom",title:"Descending Ladder",est:24,video:K30_IG+"Db6jxAdNnX7/",
+  plan:[{k:"emom",r:8,mins:[{n:"Ladder DX",r:"5-4-3-2-1",it:["5 Thruster","4 Swing","3 Squat","2 Press","1 Thruster"]},{n:"Ladder SX",r:"5-4-3-2-1",it:["5 Thruster","4 Swing","3 Squat","2 Press","1 Thruster"]},null]}],
+  ex:[["Thruster","6 per lato"],["One Arm Swing","4 per lato"],["Front Squat","3 per lato"],["KB Press","2 per lato"]]},
+ {d:9,fmt:"emom",title:"Full Body EMOM",est:30,video:K30_IG+"Db_uSZhNj_c/",
+  plan:[{k:"emom",r:5,mins:[{n:"Squat Clean",r:"10 + max air squat"},{n:"Ballistic Row",r:"16"},{n:"KB Swing",r:"2 RU + 2 AM"},{n:"Jump Squat",r:"15"},{n:"Push-up su KB",r:"AMRAP"},null]}],
+  ex:[["Squat Clean","10"],["Air Squat","max nel minuto"],["Ballistic Row","16"],["KB Swing","2 russian + 2 american"],["Jump Squat","15"],["Push-up su KB","AMRAP"]]},
+ {d:11,fmt:"emom",title:"Full Body EMOM × 2",est:29,video:K30_IG+"DcEWLzSNyKZ/",
+  plan:[{k:"int",sec:60,r:12,name:"Mini Complex",items:["3 KB Row","3 KB Swing","3 Hang Clean","3 Goblet Squat","3 Goblet Press"]},
+        {k:"pause"},
+        {k:"emom",r:4,mins:[{n:"Squat + Side Lunge",r:"8"},{n:"KB Windmill",r:"6"},{n:"Straddle Press",r:"10"},{n:"Rotational Halo",r:"8"}]}],
+  ex:[["KB Row","3"],["KB Swing","3"],["Hang Clean","3"],["Goblet Squat","3 + 8"],["Goblet Press","3"],["Side Lunge","8"],["KB Windmill","6"],["Straddle Press","10"],["Rotational Halo","8"]]},
+ {d:12,fmt:"chipper",title:"Full Body Chipper",est:25,video:K30_IG+"DcKIcMTN11t/",
+  chip:{r:1,items:[[50,"Air Squat"],[40,"Front Squat"],[30,"Goblet Press"],[20,"Front Rack Lunge DX"],[10,"Burpee"],[20,"Front Rack Lunge SX"],[30,"Push-up"],[40,"American Swing"],[50,"Air Squat"]]},
+  ex:[["Air Squat","100"],["Front Squat","40"],["Goblet Press","30"],["Front Rack Lunge","20 per lato"],["Burpee","10"],["Push-up","30"],["American Swing","40"]]},
+ {d:13,fmt:"wr",title:"Core & Mobility",est:15,video:K30_IG+"DcMgaqNNS4S/",
+  plan:[{k:"wr",work:40,rest:20,r:3,list:["Woodchopper SX","KB Windmill","Front Rack Sit-up","Bicycle Crunch","Woodchopper DX"]}],
+  ex:[["Woodchopper","40\" per lato"],["KB Windmill","40\", cambia lato ogni round"],["Front Rack Sit-up","40\""],["Bicycle Crunch","40\""]]},
+ {d:15,fmt:"int",title:"Full Body Complex",est:20,video:K30_IG+"DcQsuyNtLo6/",
+  plan:[{k:"int",sec:150,r:8,name:"Complex",items:["10 Swing mano-mano","8 Goblet Squat","6 Goblet Press","4 Goblet Thruster","2 Hang Clean"]}],
+  ex:[["Hand-to-Hand Swing","10"],["Goblet Squat","8"],["Goblet Press","6"],["Goblet Thruster","4"],["Hang Clean","2"]]},
+ {d:16,fmt:"emom",title:"Full Body EMOM",est:25,video:K30_IG+"DcZXnSFtOGJ/",
+  plan:[{k:"emom",r:5,mins:[{n:"Goblet Squat",r:"12-15"},{n:"High Row + Press",r:"6 + max",it:["6 High Row in ginocchio","Press AMRAP"]},{n:"Bent Over Row",r:"6-8 per braccio"},{n:"Air Squat + Push-up",r:"15 + max"},null]}],
+  ex:[["Goblet Squat","12-15"],["Kneeling High Row","6"],["KB Press","AMRAP"],["Bent Over Row","6-8 per braccio"],["Air Squat + Push-up","15 + max"]]},
+ {d:18,fmt:"chipper",title:"Full Body Chipper",est:20,video:K30_IG+"Dcb2pTpNtM7/",
+  chip:{r:3,items:[[30,"Pop Squat"],[20,"American Swing"],[10,"Halo + Pullover"]],acc:[[12,"Lateral Lunge"],[12,"High Row (6 per lato)"]]},
+  ex:[["Pop Squat","3 × 30"],["American Swing","3 × 20"],["Halo + Pullover","3 × 10"],["Lateral Lunge","12"],["High Row","6 per lato"]]},
+ {d:19,fmt:"int",title:"Full Body Complex",est:24,video:K30_IG+"Dcf71krNfVb/",
+  plan:[{k:"int",sec:105,r:10,name:"Complex",items:["6 KB Row","6 Squat","6 Press","6 Swing"]},
+        {k:"acc",r:3,rest:60,list:[["Push-up su KB","12 (mano sotto il manico)"],["Squat to Halo","10"]],label:"Accessori"}],
+  ex:[["KB Row","6"],["Front Squat","6"],["KB Press","6"],["KB Swing","6"],["Push-up su KB","3 × 12"],["Squat to Halo","3 × 10"]]},
+ {d:20,fmt:"emom",title:"Core & Mobility",est:18,video:K30_IG+"DcihQq9t3fU/",
+  plan:[{k:"emom",r:3,mins:[{n:"Halo + Squat Curl",r:"qualità"},{n:"Frog Squat Hold",r:"tieni"},{n:"Single Leg Raise",r:"qualità"},{n:"90/90 Hip Switch",r:"lento"},{n:"Around the World",r:"in ginocchio"},{n:"Child's Pose",r:"respira"}]}],
+  ex:[["Halo + Squat Curl","nel minuto"],["Frog Squat Hold","nel minuto"],["Single Leg Raise","nel minuto"],["90/90 Hip Switch","nel minuto"],["Around the World","nel minuto"],["Child's Pose","nel minuto"]]},
+ {d:22,fmt:"int",title:"Full Body Complex",est:24,video:K30_IG+"DcpBc5gNpp9/",
+  plan:[{k:"int",sec:120,r:10,name:"Complex",items:["3 KB Row DX","3 Thruster DX","3 Squat DX","3 KB Row SX","3 Thruster SX","3 Squat SX","3 Clean & Press"]},
+        {k:"acc",r:2,rest:60,list:[["Push-up su KB","10 (mani sul KB)"],["Plank Pull Through","6 per lato"]],label:"Accessori (opz.)"}],
+  ex:[["KB Row","3 per lato"],["Thruster","3 per lato"],["Front Squat","3 per lato"],["Clean + Press","3"],["Push-up su KB","2 × 10"],["Plank Pull Through","2 × 6 per lato"]]},
+ {d:23,fmt:"emom",title:"Full Body EMOM",est:24,video:K30_IG+"Dc1bGf8NiYv/",
+  plan:[{k:"emom",r:4,mins:[{n:"Sumo High Row",r:"qualità"},{n:"Overhead Lunge",r:"alterna"},{n:"Curl to Press",r:"qualità"},{n:"Plank Pull Through",r:"qualità"},{n:"KB Swing",r:"qualità"},null]}],
+  ex:[["Sumo High Row","nel minuto"],["Overhead Lunge","nel minuto"],["Curl to Press","nel minuto"],["Plank Pull Through","nel minuto"],["KB Swing","nel minuto"]]},
+ {d:24,fmt:"tech",title:"Tecnica: Snatch",est:12,video:null,
+  plan:[{k:"acc",r:6,rest:60,list:[["KB Snatch","5 DX"],["KB Snatch","5 SX"]]}],
+  ex:[["KB Snatch","6 serie × 5 per lato"]],
+  cues:["Stesso hike del clean: KB tra le cosce, pollice verso dietro.","Tira il KB vicino al corpo e infila la mano nel manico mentre passa davanti al viso: il KB gira attorno al polso, non si ribalta.","Chiusura in alto: bicipite vicino all'orecchio, KB sopra spalla-gomito-polso, spalle basse."]},
+ {d:25,fmt:"emom",title:"Full Body Complex",est:24,video:K30_IG+"Dc-oCzHNwv5/",
+  plan:[{k:"emom",r:8,mins:[{n:"Complex 1 braccio",r:"alterna lato",it:["6 Swing","4 High Pull","4 Squat","2 Thruster"]},{n:"Air Squat + Push-up",r:"15 + 10-15"},null]}],
+  ex:[["One Arm Swing","6"],["KB High Pull","4"],["Front Squat","4"],["Thruster","2"],["Air Squat + Push-up","15 + 10-15"]]},
+ {d:26,fmt:"chipper",title:"Full Body Chipper",est:28,video:K30_IG+"DdNN-mLILTA/",
+  chip:{r:1,items:[[50,"Air Squat + Push-up"],[40,"Front Squat (20 per lato)"],[30,"Push Press (15 per braccio)"],[20,"Front Rack Lunge DX"],[10,"KB Snatch (5 per braccio)"],[20,"Front Rack Lunge SX"],[30,"Squat to Halo (15 per verso)"],[40,"KB Swing"],[50,"Air Squat + Push-up"]]},
+  ex:[["Air Squat + Push-up","2 × 50"],["Front Squat","40"],["Push Press","30"],["Front Rack Lunge","20 per lato"],["KB Snatch","10"],["Squat to Halo","30"],["KB Swing","40"]]},
+ {d:27,fmt:"emom",title:"Core & Mobility",est:25,video:K30_IG+"DdTFFSIB0Lx/",
+  plan:[{k:"emom",r:5,mins:[{n:"Around the World",r:"qualità"},{n:"Rotational Clean",r:"qualità"},{n:"Woodchopper",r:"qualità"},{n:"Plank",r:"tieni"},{n:"World's Greatest Stretch",r:"lento"}]}],
+  ex:[["Around the World","nel minuto"],["Rotational Clean","nel minuto"],["Woodchopper","nel minuto"],["Plank","nel minuto"],["World's Greatest Stretch","nel minuto"]]},
+ {d:29,fmt:"int",title:"Full Body Complex",est:25,video:K30_IG+"DdYh5OihKlA/",
+  plan:[{k:"int",sec:150,r:8,name:"Complex",items:["10 Deadlift","8 Squat Clean","6 Goblet Push Press","4 Reverse Lunge","4 Snatch (2 per braccio)"]},
+        {k:"acc",r:2,rest:75,list:[["Straddle Halo","6 (3 per verso)"],["Jump Squat","10"],["Uppercut","8 (4 per lato)"]],label:"Accessori (opz.)"}],
+  ex:[["Deadlift","10"],["Squat Clean","8"],["Goblet Push Press","6"],["Reverse Lunge","4"],["KB Snatch","4"],["Straddle Halo","2 × 6"],["Jump Squat","2 × 10"],["Uppercut","2 × 8"]]},
+ {d:30,fmt:"int",title:"Benchmark finale",est:23,video:K30_IG+"DdbdMLThcP8/",benchmark:true,
+  plan:[{k:"int",sec:135,r:10,name:"Complex",items:["5 One Arm Swing DX","5 Front Squat DX","5 KB Press DX","5 One Arm Swing SX","5 Front Squat SX","5 KB Press SX"]}],
+  ex:[["One Arm Swing","5 per lato"],["Front Squat","5 per lato, KB in rack"],["KB Press","5 per lato"]],
+  note:"Retest del Day 1 con 2 round in più. Confronta peso, sensazione e HR con il Day 1."},
+];
+
+// ── SCALATURA (beginner / standard / advanced) ──────────────────────────
+function k30GetScale(){ try{return localStorage.getItem("kb-k30-scale")||"std";}catch(e){return "std";} }
+function k30SetScaleRaw(v){ try{localStorage.setItem("kb-k30-scale",v);}catch(e){} }
+function k30R(r){ var s=k30GetScale(); if(s==="base") return Math.max(Math.min(2,r),Math.round(r*0.65)); if(s==="adv") return r+2; return r; }
+function k30N(n){ return k30GetScale()==="base" ? Math.max(1,Math.round(n*0.65)) : n; }
+
+// ── SEQUENZA per il runner a step ───────────────────────────────────────
+function k30BuildSeq(plan){
+  var seq=[];
+  plan.forEach(function(b){
+    if(b.k==="pause"){
+      seq.push({name:"Pausa tra blocchi",timerSec:60,type:"rest",repsOverride:"Cambio blocco"});
+      return;
+    }
+    if(b.k==="int"){
+      var R=k30R(b.r);
+      for(var i=1;i<=R;i++) seq.push({name:b.name,timerSec:b.sec,type:"work",round:i,totalRounds:R,repsOverride:"ROUND "+i+"/"+R,items:b.items});
+      return;
+    }
+    if(b.k==="emom"){
+      var R2=k30R(b.r);
+      for(var j=1;j<=R2;j++){
+        b.mins.forEach(function(m){
+          if(!m) seq.push({name:"Rest",timerSec:60,type:"rest",round:j,totalRounds:R2,repsOverride:"Minuto di riposo"});
+          else seq.push({name:m.n,timerSec:60,type:"work",round:j,totalRounds:R2,repsOverride:m.r,items:m.it||null});
+        });
+      }
+      return;
+    }
+    if(b.k==="wr"){
+      var R3=k30R(b.r);
+      for(var k=1;k<=R3;k++){
+        b.list.forEach(function(nm,idx){
+          seq.push({name:nm,timerSec:b.work,type:"work",round:k,totalRounds:R3,repsOverride:b.work+"\" lavoro"});
+          var last=(k===R3&&idx===b.list.length-1);
+          if(!last) seq.push({name:"Rest",timerSec:b.rest,type:"rest",round:k,totalRounds:R3,repsOverride:b.rest+"\""});
+        });
+      }
+      return;
+    }
+    if(b.k==="acc"){
+      for(var s=1;s<=b.r;s++){
+        b.list.forEach(function(it){
+          seq.push({name:it[0],timerSec:null,type:"work",round:s,totalRounds:b.r,repsOverride:it[1]});
+        });
+        if(s<b.r) seq.push({name:"Rest",timerSec:b.rest,type:"rest",round:s,totalRounds:b.r,repsOverride:(b.label||"Serie")+" "+s+"/"+b.r});
+      }
+    }
+  });
+  return seq;
+}
+
+// ── Lista chipper (scalata) ─────────────────────────────────────────────
+function k30ChipperList(chip){
+  var out=[], R=k30R(chip.r);
+  for(var r=1;r<=R;r++) chip.items.forEach(function(it){ out.push({label:R>1?("Round "+r):"",n:k30N(it[0]),name:it[1],done:false}); });
+  (chip.acc||[]).forEach(function(it){ out.push({label:"Accessori",n:k30N(it[0]),name:it[1],done:false}); });
+  return out;
+}
+
+// ── Normalizzazione in oggetti compatibili con EXTRA_WORKOUTS ───────────
+var K30_HOW={
+  int:"Complex a intervallo: allo scatto del timer esegui tutto il complex senza posare il KB, poi recuperi il tempo che resta. Il round successivo parte da solo.",
+  emom:"EMOM: ogni minuto un esercizio. Chiudi le rep e recupera fino al minuto successivo — tieni almeno 10\" di transizione.",
+  wr:"40\" di lavoro e 20\" di recupero per esercizio, a giro.",
+  chipper:"Chipper: completi la lista una voce alla volta, al tuo ritmo. Il cronometro misura il tempo totale — è il tuo benchmark.",
+  tech:"Sessione di tecnica: poche rep, lente e pulite. Obiettivo qualità del gesto, non fatica."
+};
+var K30_EMOJI={int:"🔔",emom:"⏱️",wr:"🧘",chipper:"🪓",tech:"🎯"};
+function k30Normalize(raw){
+  var id="K30-D"+String(raw.d).padStart(2,"0");
+  var week=Math.ceil(raw.d/7)>4?4:Math.ceil(raw.d/7);
+  var isCore=/Core/.test(raw.title);
+  var tips=[];
+  if(raw.note) tips.push(raw.note);
+  (raw.cues||[]).forEach(function(c){tips.push(c);});
+  tips.push("Scalatura: Beginner −35% round/rep · Standard come scritto · Advanced +2 round.");
+  var w={
+    id:id,k30Day:raw.d,week:week,fmt:raw.fmt,program:K30_PROGRAM,kb:"1",
+    label:"Day "+raw.d,title:raw.title,emoji:raw.benchmark?"🏁":(isCore?"🧘":K30_EMOJI[raw.fmt]),color:K30_COLOR,
+    meta:"30 Days KB · settimana "+week+" · ~"+raw.est+" min",
+    totalMin:raw.est,video:raw.video,benchmark:!!raw.benchmark,
+    how:K30_HOW[raw.fmt],
+    structure:[["Formato",{int:"Complex a intervallo",emom:"EMOM",wr:"40\"/20\"",chipper:"Chipper a tempo",tech:"Tecnica"}[raw.fmt]],["Durata","~"+raw.est+" min"]],
+    exercises:raw.ex.map(function(e,i){
+      return {n:String(i+1),name:e[0],detail:e[1],t:"",c:K30_COLOR,bw:K30_BW.indexOf(e[0])>=0,
+        yt:"https://www.youtube.com/results?search_query="+encodeURIComponent("kettlebell "+e[0]+" tutorial")};
+    }),
+    tips:tips,
+    plan:raw.plan||null,chip:raw.chip||null
+  };
+  w.buildSeq=function(){ return w.plan?k30BuildSeq(w.plan):[]; };
+  return w;
+}
+var K30_WORKOUTS=K30_RAW.map(k30Normalize);
+
+// Calendario 1..30: riposo nei giorni senza sessione
+var K30_CAL=(function(){
+  var cal=[];
+  for(var d=1;d<=30;d++){
+    var w=K30_WORKOUTS.find(function(x){return x.k30Day===d;});
+    cal.push({d:d,week:Math.min(4,Math.ceil(d/7)),id:w?w.id:null,rest:!w});
+  }
+  return cal;
+})();
+
+// ── Avanzamento ─────────────────────────────────────────────────────────
+function k30DoneSet(history){
+  var s={};
+  (history||[]).forEach(function(h){
+    if(h.day&&h.day.indexOf("extra_K30-")===0&&!h.partial) s[h.day.replace("extra_","")]=true;
+  });
+  return s;
+}
+function k30Progress(history){
+  var done=k30DoneSet(history);
+  var nDone=K30_WORKOUTS.filter(function(w){return done[w.id];}).length;
+  var next=K30_WORKOUTS.find(function(w){return !done[w.id];})||null;
+  return {done:done,nDone:nDone,total:K30_WORKOUTS.length,next:next,complete:!next};
+}
+
+
+// ── Registro le sessioni K30 nel catalogo comune (dettaglio, runner, LOG, carichi)
+K30_WORKOUTS.forEach(function(w){ EXTRA_WORKOUTS.push(w); });
+
+function k30SetScale(v){ k30SetScaleRaw(v); render(); }
+
+// ── RUNNER CHIPPER: cronometro in avanti + voci da spuntare ────────────
+let k30ChipInterval=null;
+function k30ClearChip(){ if(k30ChipInterval){clearInterval(k30ChipInterval);k30ChipInterval=null;} }
+function k30Fmt(sec){ var m=Math.floor(sec/60),s=sec%60; return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+
+function k30StartChipper(id){
+  var w=getExtraById(id); if(!w||!w.chip) return;
+  unlockAudio(); requestWakeLock();
+  state.k30c={id:id,items:k30ChipperList(w.chip),elapsed:0,running:true};
+  state.extraWorkoutId=id;
+  state.tab="k30-chipper";
+  render();
+  k30ClearChip();
+  k30ChipInterval=setInterval(function(){
+    if(!state.k30c||!state.k30c.running) return;
+    state.k30c.elapsed++;
+    var el=document.querySelector('[data-k30-clock]');
+    var eb=document.querySelector('[data-k30-fin]');
+    if(el){ el.textContent=k30Fmt(state.k30c.elapsed); if(eb) eb.textContent='FINE — '+k30Fmt(state.k30c.elapsed); }
+    else if(state.tab==="k30-chipper") render();
+  },1000);
+}
+function k30ChipToggle(i){
+  if(!state.k30c) return;
+  var it=state.k30c.items[i]; it.done=!it.done;
+  if(it.done&&navigator.vibrate) navigator.vibrate(40);
+  render();
+}
+function k30ChipPause(){ if(state.k30c){ state.k30c.running=!state.k30c.running; render(); } }
+function k30ChipFinish(){
+  var c=state.k30c; if(!c) return;
+  k30ClearChip(); releaseWakeLock();
+  var w=getExtraById(c.id);
+  var nDone=c.items.filter(function(x){return x.done;}).length;
+  state.dayKey="extra_"+c.id;
+  DAYS["extra_"+c.id]={label:w.label,subtitle:w.title,focus:w.meta,color:w.color,emoji:w.emoji,totalMin:w.totalMin,
+    seq:c.items.map(function(x){return {name:x.name,repsOverride:String(x.n),timerSec:null,type:"work"};})};
+  state.workoutMins=Math.max(1,Math.round(c.elapsed/60));
+  state.workoutSteps=nDone;
+  state.partial=nDone<c.items.length;
+  state.k30ChipperSec=c.elapsed;
+  state.logForm={feeling:null,hrAvg:"",hrMax:"",weight:"10",talkTest:null,
+    notes:"Chipper "+k30Fmt(c.elapsed)+(nDone<c.items.length?(" · "+nDone+"/"+c.items.length+" voci"):"")};
+  state.timerRunning=false;
+  state.k30c=null;
+  state.tab="done";
+  render();
+}
+function k30ChipExit(){
+  var c=state.k30c;
+  var any=c&&c.items.some(function(x){return x.done;});
+  function doExit(){ k30ClearChip(); releaseWakeLock(); var id=c?c.id:null; state.k30c=null; state.extraWorkoutId=null;
+    if(id){state.extraDetailId=id; state.tab="extra-detail";} else state.tab="train"; render(); }
+  if(any){ showExitDialog(k30ChipFinish, doExit); } else doExit();
+}
+
+function renderK30Chipper(){
+  var c=state.k30c; var w=c?getExtraById(c.id):null;
+  if(!c||!w) return renderHome();
+  var nDone=c.items.filter(function(x){return x.done;}).length;
+  var lastLabel=null;
+  var rows=c.items.map(function(it,i){
+    var head='';
+    if(it.label&&it.label!==lastLabel){ lastLabel=it.label; head='<p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mt-3 mb-1">'+it.label+'</p>'; }
+    return head+'<button onclick="k30ChipToggle('+i+')" class="w-full flex items-center gap-3 px-4 py-3 mb-1 text-left active:scale-[0.99] transition-transform" style="background:'+(it.done?K30_COLOR+'14':'#131a22')+';border-left:2px solid '+(it.done?K30_COLOR:'rgba(90,65,54,0.4)')+'">'+
+      '<span class="material-symbols-outlined" style="color:'+(it.done?K30_COLOR:'#475569')+';font-variation-settings:\'FILL\' '+(it.done?1:0)+'">'+(it.done?'check_circle':'radio_button_unchecked')+'</span>'+
+      '<span class="font-headline text-2xl w-12 text-right" style="color:'+(it.done?'#64748b':K30_COLOR)+'">'+it.n+'</span>'+
+      '<span class="font-label text-sm flex-1" style="color:'+(it.done?'#64748b':'#e1e2e7')+';text-decoration:'+(it.done?'line-through':'none')+'">'+it.name+'</span>'+
+    '</button>';
+  }).join('');
+  return '<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">'+
+    '<div class="flex-shrink-0 px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.05)">'+
+      '<div class="flex items-center justify-between">'+
+        '<button onclick="k30ChipExit()" class="p-1"><span class="material-symbols-outlined text-gray-600">close</span></button>'+
+        '<p class="font-label text-[10px] uppercase tracking-widest text-gray-500">'+w.label+' · '+w.title+'</p>'+
+        '<div style="width:32px"></div>'+
+      '</div>'+
+      '<div class="flex items-end justify-between mt-2">'+
+        '<span data-k30-clock class="font-headline leading-none" style="font-size:64px;color:'+(c.running?K30_COLOR:'#64748b')+'">'+k30Fmt(c.elapsed)+'</span>'+
+        '<span class="font-label text-xs text-gray-500 mb-2">'+nDone+' / '+c.items.length+'</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="flex-1 overflow-y-auto px-5 py-2">'+rows+'</div>'+
+    '<div class="flex-shrink-0 px-5 pb-8 pt-3 flex gap-2" style="background:#0C1017;box-shadow:0 -8px 24px rgba(0,0,0,0.6)">'+
+      '<button onclick="k30ChipPause()" class="py-4 px-5 font-headline text-lg tracking-widest active:scale-95" style="border:1px solid '+K30_COLOR+'77;color:'+K30_COLOR+'">'+(c.running?'PAUSA':'RIPRENDI')+'</button>'+
+      '<button onclick="k30ChipFinish()" class="flex-1 py-4 font-headline text-lg tracking-widest active:scale-95" style="background:linear-gradient(135deg,'+K30_COLOR+','+K30_COLOR+'99);color:#000" data-k30-fin>FINE — '+k30Fmt(c.elapsed)+'</button>'+
+    '</div>'+
+  '</div>';
+}
+
+// ── Box extra nel dettaglio: scalatura, video, confronto benchmark ─────
+function k30DetailExtras(w){
+  if(!w||w.program!==K30_PROGRAM) return '';
+  var sc=k30GetScale();
+  var h='';
+  if(w.video){
+    h+='<a href="'+w.video+'" target="_blank" rel="noopener" class="flex items-center justify-between p-4 mb-3 active:scale-[0.99]" style="background:'+K30_COLOR+'10;border-left:2px solid '+K30_COLOR+'">'+
+      '<span class="font-headline text-lg" style="color:'+K30_COLOR+'">▶ Video della giornata</span>'+
+      '<span class="font-label text-[10px] text-gray-500">'+(w.video.indexOf('instagram')>=0?'Instagram':'YouTube')+'</span></a>';
+  }
+  if(w.fmt!=="tech"){
+    var opts=[["base","Beginner"],["std","Standard"],["adv","Advanced"]];
+    var eff='';
+    if(w.plan){ var s=w.buildSeq(); var t=s.reduce(function(a,x){return a+(x.timerSec||0);},0); eff='~'+Math.round(t/60)+' min con timer'; }
+    else if(w.chip){ eff=k30ChipperList(w.chip).length+' voci'; }
+    h+='<div class="mb-4"><p class="dm-sans text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase mb-2">LIVELLO</p>'+
+      '<div class="flex gap-1.5">'+opts.map(function(o){
+        var on=sc===o[0];
+        return '<button onclick="k30SetScale(\''+o[0]+'\')" class="flex-1 py-2.5 font-label text-xs uppercase tracking-wider active:scale-95" style="border:1px solid '+(on?K30_COLOR:'rgba(90,65,54,0.35)')+';color:'+(on?K30_COLOR:'#64748b')+';background:'+(on?K30_COLOR+'1a':'transparent')+'">'+o[1]+'</button>';
+      }).join('')+'</div>'+
+      '<p class="font-label text-[10px] text-gray-500 mt-1.5">'+eff+' · Beginner −35% round/rep, Advanced +2 round. Vale per tutto il programma.</p></div>';
+  }
+  if(w.benchmark){
+    var d1=(state.history||[]).filter(function(x){return x.day==="extra_K30-D01"&&!x.partial;}).slice(-1)[0];
+    if(d1){
+      var wt=d1.weights?weightsSummary(d1.weights):(d1.weight?d1.weight+' kg':'—');
+      h+='<div class="p-4 mb-4" style="background:#131a22;border-left:2px solid '+K30_COLOR+'">'+
+        '<p class="font-label text-[9px] uppercase tracking-widest mb-1" style="color:'+K30_COLOR+'">DAY 1 — IL TUO PUNTO DI PARTENZA</p>'+
+        '<p class="font-label text-xs text-gray-400">'+d1.date+' · '+wt+' · HR '+(d1.hrAvg||'—')+' · '+(d1.feeling||'—')+'</p></div>';
+    }
+  }
+  return h;
+}
+
+
+
 // ══ LEOMOVES — video allenamenti a corpo libero su Google Drive ═══════════════
 const LM_WORKOUTS=[
   {id:"LM1", label:"LeoMoves 1", driveId:"1h8GzeoKfP6zWlcaXjO_Wbwjg52XhozuM", color:"#22c55e"},
@@ -5029,6 +5388,7 @@ function renderExtraDetail(){
 
       <!-- Exercise sequence -->
       <div>
+        ${k30DetailExtras(w)}
         <p class="dm-sans text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase mb-3">SEQUENZA</p>
         <div class="space-y-1">
           ${w.exercises.map((e,i)=>`<div class="bg-surface-container ghost-border p-4 flex items-center gap-4">
@@ -5083,6 +5443,9 @@ function startExtraWorkoutImmediate(id){
   requestWakeLock();
   const w=getExtraById(id);
   if(!w)return;
+
+  // 30 Days KB — chipper: runner dedicato a cronometro
+  if(w.fmt==="chipper" && w.program===K30_PROGRAM){ k30StartChipper(id); return; }
 
   // Bodyweight Jacked / Limitless: flusso dedicato a round con rest timer e log ripetizioni
   if(id.indexOf("BWJ-")===0 || id.indexOf("LTL-")===0){
@@ -6964,6 +7327,7 @@ function renderTrain(){
     {id:"wf",       label:"🏄 Wing Foil", color:"#38bdf8"},
     {id:"bw",       label:"🤸 Bodyweight", color:"#43A047"},
     {id:"lm",       label:"🎥 LeoMoves", color:"#22c55e"},
+    {id:"k30",      label:"🔔 30 Days KB", color:"#facc15"},
   ];
   function tBtn(t){
     var on=sub===t.id;
@@ -6975,7 +7339,8 @@ function renderTrain(){
   var tabBar=
     '<div class="flex gap-1.5 mb-1.5">'+TABS.slice(0,3).map(tBtn).join('')+'</div>'+
     '<div class="flex gap-1.5 mb-1.5">'+TABS.slice(3,6).map(tBtn).join('')+'</div>'+
-    '<div class="flex gap-1.5 mb-5">'+TABS.slice(6).map(tBtn).join('')+'</div>';
+    '<div class="flex gap-1.5 mb-1.5">'+TABS.slice(6,9).map(tBtn).join('')+'</div>'+
+    '<div class="flex gap-1.5 mb-5">'+TABS.slice(9).map(tBtn).join('')+'</div>';
 
   // ── TAB KB A·B·C ───────────────────────────────────────────────
   function tabBase(){
@@ -7286,6 +7651,60 @@ function renderTrain(){
     return h;
   }
 
+  // ── TAB 30 DAYS KB ────────────────────────────────────────────
+  function tabK30(){
+    var p=k30Progress(state.history);
+    var col=K30_COLOR;
+    var pct=Math.round(p.nDone/p.total*100);
+    var scLbl={base:"Beginner",std:"Standard",adv:"Advanced"}[k30GetScale()];
+    var openW=(state.plan.k30Week===undefined)?(p.next?p.next.week:4):state.plan.k30Week;
+    var lastDate={};
+    (state.history||[]).forEach(function(x){ if(x.day&&x.day.indexOf("extra_K30-")===0&&!x.partial) lastDate[x.day.replace("extra_","")]=x.date; });
+
+    var h='<div class="p-4 mb-3" style="background:rgba(250,204,21,0.05);border-left:2px solid '+col+'">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:'+col+'">ONE KETTLEBELL · 30 DAYS</p>'+
+      '<div class="flex items-baseline justify-between mb-2">'+
+        '<span class="font-headline text-3xl">'+p.nDone+' <span class="text-gray-600 text-xl">/ '+p.total+'</span></span>'+
+        '<span class="font-label text-[10px] text-gray-500">livello '+scLbl+'</span>'+
+      '</div>'+
+      '<div class="w-full h-1 mb-3" style="background:rgba(255,255,255,0.06)"><div style="height:100%;width:'+pct+'%;background:'+col+'"></div></div>'+
+      (p.next
+        ? '<button onclick="openExtraDetail(\''+p.next.id+'\')" class="w-full py-3.5 px-4 flex justify-between items-center font-headline text-lg tracking-wide active:scale-95" style="background:linear-gradient(135deg,'+col+','+col+'99);color:#000">'+
+            '<span>▶ '+p.next.label+' · '+p.next.title+'</span><span class="font-label text-[10px]">~'+p.next.totalMin+'\'</span></button>'
+        : '<p class="font-headline text-xl" style="color:'+col+'">🏁 Programma completato</p>')+
+    '</div>';
+
+    [1,2,3,4].forEach(function(wk){
+      var days=K30_CAL.filter(function(c){return c.week===wk;});
+      var nW=days.filter(function(c){return c.id;}).length;
+      var dW=days.filter(function(c){return c.id&&p.done[c.id];}).length;
+      var isOpen=openW===wk;
+      h+='<div class="mb-2">'+
+        '<button onclick="k30ToggleWeek('+wk+')" class="w-full flex justify-between items-center p-4 bg-surface-container ghost-border border-l-2 active:scale-[0.99]" style="border-left-color:'+(dW===nW?col:col+'55')+'">'+
+          '<span class="font-headline text-lg">Settimana '+wk+' <span class="font-label text-[10px] text-gray-500">· '+K30_WEEKS[wk]+' · '+dW+'/'+nW+'</span></span>'+
+          '<span class="material-symbols-outlined text-gray-500 text-sm" style="transform:'+(isOpen?'rotate(180deg)':'none')+';transition:transform .2s">expand_more</span>'+
+        '</button>';
+      if(isOpen){
+        h+='<div class="space-y-px">'+days.map(function(c){
+          if(c.rest) return '<div class="flex items-center gap-3 px-4 py-2.5 bg-surface-container-low">'+
+            '<span class="font-headline text-base w-8 text-gray-700">'+c.d+'</span><span class="font-label text-xs text-gray-600">💤 Riposo</span></div>';
+          var w=getExtraById(c.id), isDone=!!p.done[c.id], isNext=p.next&&p.next.id===c.id;
+          return '<div onclick="openExtraDetail(\''+c.id+'\')" class="flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-surface-container" style="background:'+(isNext?col+'12':'#10161d')+(isNext?';border-left:2px solid '+col:'')+'">'+
+            '<span class="font-headline text-base w-8" style="color:'+(isDone?'#64748b':col)+'">'+c.d+'</span>'+
+            '<span class="text-lg">'+w.emoji+'</span>'+
+            '<div class="flex-1 min-w-0"><p class="font-headline text-base leading-none'+(isDone?' text-gray-500':'')+'">'+w.title+'</p>'+
+              '<p class="font-label text-[10px] text-gray-600 mt-1">~'+w.totalMin+' min'+(isDone&&lastDate[c.id]?' · fatto '+lastDate[c.id]:'')+'</p></div>'+
+            (isDone?'<span class="material-symbols-outlined text-base" style="color:'+col+';font-variation-settings:\'FILL\' 1">check_circle</span>'
+                   :'<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>')+
+          '</div>';
+        }).join('')+'</div>';
+      }
+      h+='</div>';
+    });
+    h+='<p class="font-label text-[10px] text-gray-600 mt-3 leading-relaxed">Da usare come blocco di 4 settimane al posto di KB A·B·C, non in aggiunta. Con il 16 kg parti da Beginner e alza il livello quando i complex restano puliti.</p>';
+    return h;
+  }
+
   // ── TAB LEOMOVES (video allenamenti su Google Drive) ──────────────
   function tabLeoMoves(){
     var h='<div class="p-4 mb-3" style="background:rgba(34,197,94,0.05);border-left:2px solid #22c55e">'+
@@ -7423,7 +7842,7 @@ function renderTrain(){
     '<main class="px-5 pt-5 pb-24">'+
       '<h1 class="font-headline text-5xl tracking-tight leading-none mb-4">TRAIN</h1>'+
       tabBar+
-      (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():sub==="lm"?tabLeoMoves():tabKdp())+
+      (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():sub==="lm"?tabLeoMoves():sub==="k30"?tabK30():tabKdp())+
     '</main>'+
     navHTML("train")+
   '</div>';
@@ -8922,6 +9341,7 @@ function renderDpuWorkout(){
 function toggleDayAcc(k){state.plan.openAcc=state.plan.openAcc===("day-"+k)?null:("day-"+k);render();}
 function toggleAcc(id){state.plan.openAcc=state.plan.openAcc===id?null:id;render();}
 function toggleAccProg(id){state.plan.openAccProg=state.plan.openAccProg===id?null:id;render();}
+function k30ToggleWeek(n){var cur=state.plan.k30Week; if(cur===undefined){var p=k30Progress(state.history);cur=p.next?p.next.week:4;} state.plan.k30Week=(cur===n)?0:n; render();}
 
 // ══════════════════════════════════════════════════════════════════
 // FORGE PROFILE — impostazioni utente
@@ -10590,8 +11010,18 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v99";
+var APP_VERSION = "v100";
 var APP_CHANGELOG = [
+  {v:"v100", data:"26/09/2026", items:[
+    "Nuovo tab 30 DAYS KB in TRAIN: programma One Kettlebell, 24 sessioni + 6 riposi",
+    "Calendario a 4 settimane con prossima sessione, sessioni fatte e avanzamento",
+    "Complex a intervallo ed EMOM sul runner a timer, con la lista del complex a schermo",
+    "Nuovo runner Chipper: cronometro in avanti, voci da spuntare, tempo salvato come benchmark",
+    "Giornate di tecnica (Clean, Snatch) con serie guidate e cue",
+    "Livello Beginner / Standard / Advanced per tutto il programma",
+    "Link al video della giornata; Day 30 mostra il confronto con il Day 1",
+    "Carichi: rispettata l'indicazione corpo libero / KB del programma",
+  ]},
   {v:"v99", data:"06/09/2026", items:[
     "LeoMoves: schermo intero ora forza anche rotazione landscape",
     "Sblocco automatico dell'orientamento all'uscita da schermo intero",
@@ -10785,6 +11215,7 @@ function render(){
   else if(state.tab==="bolt-test")  app.innerHTML=renderBoltTest();
   else if(state.tab==="lm-detail")  app.innerHTML=renderLmDetail();
   else if(state.tab==="lm-workout")  app.innerHTML=renderLmWorkout();
+  else if(state.tab==="k30-chipper")  app.innerHTML=renderK30Chipper();
   else if(state.tab==="train")       app.innerHTML=renderTrain();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
   else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
@@ -10815,7 +11246,7 @@ function render(){
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
 // ── WAKE LOCK ─────────────────────────────────────────────────────────────────
 let wakeLock=null;
-const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
+const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','k30-chipper','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
 async function requestWakeLock(){
   try{
     if('wakeLock' in navigator){
@@ -10974,19 +11405,19 @@ function saveExWeightMemory(m){
 
 function getSessionExercises(){
   var out=[],seen={};
-  function add(name,detail){
+  function add(name,detail,bw){
     if(!name)return;
     if(/^rest$/i.test(name)||/^amrap/i.test(name)||/^recupero/i.test(name)||/^pausa/i.test(name))return;
     if(seen[name])return;
     seen[name]=1;
-    out.push({name:name,detail:detail||""});
+    out.push({name:name,detail:detail||"",bw:bw});
   }
   var id=null;
   if(state.tab==="bp-workout")id=state.extraWorkoutId;
   else if(state.dayKey&&state.dayKey.indexOf("extra_")===0)id=state.dayKey.replace("extra_","");
   var w=id?getExtraById(id):null;
   if(w&&w.exercises&&w.exercises.length){
-    w.exercises.forEach(function(e){add(e.name,e.detail);});
+    w.exercises.forEach(function(e){add(e.name,e.detail,e.bw);});
     return out;
   }
   var d=state.dayKey?DAYS[state.dayKey]:null;
@@ -10995,7 +11426,7 @@ function getSessionExercises(){
 }
 
 function inferExWeight(ex){
-  if(isBodyweightEx(ex.name))return "bw";
+  if(ex.bw===true||(ex.bw!==false&&isBodyweightEx(ex.name)))return "bw";
   var m=(ex.detail||"").match(/(\d+(?:[.,]\d+)?)\s*kg/i);
   if(m)return String(m[1]).replace(",",".");
   var mem=loadExWeightMemory();
@@ -11141,6 +11572,8 @@ function saveSession(){
     warmup:f.warmup&&f.warmup.length?f.warmup:[],
     partial:state.partial||false,
   };
+  if(state.k30ChipperSec){ entry.chipperSec=state.k30ChipperSec; state.k30ChipperSec=null; }
+  if(isExtra){ var _wx=getExtraById(state.dayKey.replace("extra_","")); if(_wx&&_wx.program) entry.program=_wx.program; }
   state.history.push(entry);
   saveHistory();
   commitExWeightMemory(exW);
@@ -11150,7 +11583,9 @@ function saveSession(){
   state.timerRunning=false;
   var dayObj=DAYS[state.dayKey];
   var exText=(dayObj&&dayObj.seq||[]).map(function(e){return e.name;}).join(' ');
-  showMuscleSummary(exText,'home',null,dayObj?dayObj.label:'');
+  var _k30=entry.day&&entry.day.indexOf("extra_K30-")===0;
+  if(_k30){ var _kw=getExtraById(entry.day.replace("extra_","")); if(_kw) exText=_kw.exercises.map(function(e){return e.name;}).join(' '); }
+  showMuscleSummary(exText,_k30?'train':'home',_k30?{trainSubTab:'k30'}:null,dayObj?dayObj.label:'');
 }
 
 function skipSave(){
@@ -11550,7 +11985,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v99';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v100';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
