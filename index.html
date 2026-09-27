@@ -17,6 +17,138 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="forge-theme">
+// ══════════════════════════════════════════════════════════════════
+// FORGE THEME — Notte (scuro) e Sabbia (chiaro). Tema fissato all'avvio.
+// ══════════════════════════════════════════════════════════════════
+var FORGE_THEME_PREF=(function(){try{return localStorage.getItem('kb-theme')||'dark';}catch(e){return 'dark';}})();
+var FORGE_THEME=(function(){
+  var t=FORGE_THEME_PREF;
+  if(t==='auto'){ try{ t=(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'; }catch(e){ t='dark'; } }
+  return t==='light'?'light':'dark';
+})();
+
+// Mappe esplicite dei colori chiave
+var FT_DARK={
+  "#090c0f":"#0a0e14","#080c0f":"#0a0e14","#0d0d0f":"#0b0f16","#0c1017":"#111823","#0b0e12":"#0c111a",
+  "#0f1419":"#131b27","#10161d":"#121a26","#11161d":"#141c29","#131a22":"#162030","#191c1f":"#172030",
+  "#1d2023":"#1a2333","#272a2e":"#212c3f","#323538":"#2a3446","#1e2a35":"#1b2638","#5a4136":"#3a4a63",
+  "#ffb693":"#c8f169","#50dad1":"#6cc5f0","#00aba2":"#3a9fd6","#43a047":"#a78bfa","#e9c176":"#f5b971","#7dd3fc":"#93c5fd",
+  "#5a4136":"#3a4a63"
+};
+var FT_DARK_RGB={"90,65,54":"96,112,140"};   // bordi caldi → freddi
+var FT_LIGHT={
+  "#090c0f":"#f4f1ea","#080c0f":"#f4f1ea","#0d0d0f":"#f4f1ea","#0a0e14":"#f4f1ea","#0c1017":"#ffffff","#0b0e12":"#fbf9f5",
+  "#0f1419":"#faf8f3","#10161d":"#faf8f3","#11161d":"#f7f4ee","#131a22":"#f7f4ee","#191c1f":"#f6f2eb","#1d2023":"#efeae0",
+  "#272a2e":"#e9e4da","#323538":"#e3ddd1","#e1e2e7":"#1e2227",
+  "#ffb693":"#d2552d","#50dad1":"#1f8a8a","#00aba2":"#16706f","#e9c176":"#b07a14","#43a047":"#3f7a2e","#7dd3fc":"#2e7fb8",
+  "#facc15":"#a57c00","#ffb4ab":"#c24a3a","#f97316":"#c2410c","#22c55e":"#15803d","#38bdf8":"#0369a1","#8b5cf6":"#6d28d9",
+  "#7a9a3a":"#5a7a24","#351000":"#ffffff","#561f00":"#ffffff"
+};
+function ftHex(r,g,b){ return "#"+[r,g,b].map(function(v){v=Math.max(0,Math.min(255,Math.round(v)));return (v<16?"0":"")+v.toString(16);}).join(""); }
+function ftRgb(hex){ return [parseInt(hex.substr(1,2),16),parseInt(hex.substr(3,2),16),parseInt(hex.substr(5,2),16)]; }
+function ftHsl(r,g,b){ r/=255;g/=255;b/=255; var mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,h=0,s=0;
+  if(mx!==mn){ var d=mx-mn; s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+    h=mx===r?((g-b)/d+(g<b?6:0)):mx===g?((b-r)/d+2):((r-g)/d+4); h*=60; }
+  return [h,s,l]; }
+function ftFromHsl(h,s,l){ h=((h%360)+360)%360/360; function f(p,q,t){if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;}
+  if(s===0) return [l*255,l*255,l*255]; var q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q; return [f(p,q,h+1/3)*255,f(p,q,h)*255,f(p,q,h-1/3)*255]; }
+// Regola generale per il tema chiaro
+function ftLightRgb(r,g,b){
+  var x=ftHsl(r,g,b),h=x[0],s=x[1],l=x[2];
+  if(l>=0.985&&s<0.1) return [r,g,b];          // bianco: resta (testo su accenti)
+  if(l<=0.02) return [r,g,b];                  // nero: resta (testo su accenti, ombre)
+  if(l<0.2&&!(s>0.6&&l>0.12)) return ftFromHsl(40,0.22,0.975-l*0.7);   // superfici scure → sabbia
+  if(s<0.15) return ftFromHsl(h,Math.min(s,0.12),Math.max(0.12,0.95-l)); // grigi: invertiti
+  return ftFromHsl(h,s,Math.min(l,0.45));      // accenti: più profondi per il fondo chiaro
+}
+function ftLum(c){ return [c[0],c[1],c[2]].map(function(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}).reduce(function(a,v,i){return a+v*[0.2126,0.7152,0.0722][i];},0); }
+// Sul chiaro ogni accento deve reggere il testo: contrasto ≥ 4.5:1 sul bianco
+function ftGuard(hex){
+  var c=ftRgb(hex), x=ftHsl(c[0],c[1],c[2]);
+  if(x[1]<0.15||x[2]>0.8) return hex;
+  var h=x[0],s=x[1],l=x[2],n=c,guard=0;
+  while((1.05)/(ftLum(n)+0.05)<5.6 && l>0.08 && guard++<40){ l-=0.015; n=ftFromHsl(h,s,l); }
+  return ftHex(n[0],n[1],n[2]);
+}
+var FT_OUT={}, FT_CACHE={};
+function ftColor(hex){  // hex "#rrggbb" minuscolo → hex tema
+  if(FT_CACHE[hex]) return FT_CACHE[hex];
+  var out;
+  if(FORGE_THEME==='light'){
+    if(FT_OUT[hex]) out=hex;
+    else { out=FT_LIGHT[hex]||(function(){var c=ftRgb(hex);var n=ftLightRgb(c[0],c[1],c[2]);return ftHex(n[0],n[1],n[2]);})(); out=ftGuard(out); }
+  }
+  else out=FT_DARK[hex]||hex;
+  FT_CACHE[hex]=out; FT_OUT[out]=1; return out;
+}
+function ftTriple(r,g,b){
+  var key=(+r)+","+(+g)+","+(+b);
+  if(FORGE_THEME!=='light'&&FT_DARK_RGB[key]) return FT_DARK_RGB[key];
+  if(FORGE_THEME==='light'&&key==="255,255,255") return "30,34,39";   // sovrapposizioni bianche → scure
+  if(FORGE_THEME==='light'&&key==="30,34,39") return key;
+  var o=ftRgb(ftColor(ftHex(+r,+g,+b)));
+  return o[0]+","+o[1]+","+o[2];
+}
+var FT_RE=/#([0-9a-fA-F]{6})(?=[0-9a-fA-F]{2}(?![0-9a-fA-F])|(?![0-9a-fA-F]))|(rgba?\(\s*)(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/g;
+var FT_TXT_HEX=/(^|[^-\w])color:(\s*)(#[0-9a-fA-F]{6})[0-9a-fA-F]{2}(?![0-9a-fA-F])/g;
+var FT_TXT_RGBA=/(^|[^-\w])color:(\s*)rgba\(([^,()]+,[^,()]+,[^,()]+),\s*([\d.]+)\s*\)/g;
+function themeHTML(s){
+  if(typeof s!=='string'||!s) return s;
+  s=s.replace(FT_RE,function(m,hex,pre,r,g,b){
+    if(hex) return ftColor("#"+hex.toLowerCase());
+    return pre+ftTriple(r,g,b);
+  });
+  if(FORGE_THEME==='light'){
+    // Sul chiaro il testo non deve mai essere semitrasparente: sbiadirebbe fino a diventare illeggibile
+    s=s.replace(FT_TXT_HEX,'$1color:$2$3');
+    // Il testo nero stava solo sopra accenti brillanti; sul chiaro gli accenti sono profondi → testo bianco
+    s=s.replace(/(^|[^-\w])color:(\s*)(?:#000000|#000|black)(?![0-9a-fA-F\w])/g,'$1color:$2#ffffff');
+    s=s.replace(FT_TXT_RGBA,function(m,a,sp,rgb,al){ return a+'color:'+sp+'rgba('+rgb+','+Math.max(parseFloat(al),0.92)+')'; });
+  }
+  return s;
+}
+
+// Applicazione immediata: niente lampo del tema sbagliato all'avvio
+try{ document.documentElement.classList.add('theme-'+FORGE_THEME);
+  document.documentElement.style.background=FORGE_THEME==='light'?'#f4f1ea':'#0a0e14'; }catch(e){}
+
+// Intercetto i punti in cui l'app scrive HTML e colori: così ogni schermata segue il tema
+(function(){
+  try{
+    var d=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');
+    if(d&&d.set) Object.defineProperty(Element.prototype,'innerHTML',{configurable:true,enumerable:d.enumerable,get:d.get,
+      set:function(v){ d.set.call(this,typeof v==='string'?themeHTML(v):v); }});
+    var ia=Element.prototype.insertAdjacentHTML;
+    Element.prototype.insertAdjacentHTML=function(p,s){ return ia.call(this,p,themeHTML(s)); };
+    ['color','background','backgroundColor','borderColor','borderTopColor','borderBottomColor','borderLeftColor','boxShadow','border','borderLeft','borderBottom','cssText','fill','stroke'].forEach(function(prop){
+      var pd=Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype,prop);
+      if(pd&&pd.set) Object.defineProperty(CSSStyleDeclaration.prototype,prop,{configurable:true,enumerable:pd.enumerable,get:pd.get,
+        set:function(v){ pd.set.call(this,typeof v==='string'?themeHTML(v):v); }});
+    });
+    var sp=CSSStyleDeclaration.prototype.setProperty;
+    CSSStyleDeclaration.prototype.setProperty=function(n,v,pr){ return sp.call(this,n,typeof v==='string'?themeHTML(v):v,pr); };
+  }catch(e){}
+})();
+
+// Colori di Tailwind e dei fogli di stile
+function forgeThemeTailwind(cfg){
+  try{
+    var c=cfg.theme.extend.colors, css='';
+    Object.keys(c).forEach(function(k){ if(typeof c[k]==='string'){ c[k]=themeHTML(c[k]);
+      // classi con trasparenza incorporata (es. text-secondary/60): sul chiaro il testo resta pieno
+      if(FORGE_THEME==='light') css+='[class*="text-'+k+'/"]{color:'+c[k]+' !important;}'; } });
+    if(css){ var st=document.createElement('style'); st.id='forge-theme-text'; st.textContent=css; document.head.appendChild(st); }
+  }catch(e){}
+}
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('style').forEach(function(st){ if(st.textContent.indexOf('--tw-')<0) st.textContent=themeHTML(st.textContent); });
+  var m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content',FORGE_THEME==='light'?'#f4f1ea':'#0a0e14');
+});
+function forgeSetTheme(t){ try{ localStorage.setItem('kb-theme',t); }catch(e){} location.reload(); }
+try{ if(FORGE_THEME_PREF==='auto'&&window.matchMedia) matchMedia('(prefers-color-scheme: light)').addEventListener('change',function(){ location.reload(); }); }catch(e){}
+
+</script>
 <script id="tailwind-config">
       tailwind.config = {
         darkMode: "class",
@@ -85,6 +217,7 @@
           },
         },
       }
+      forgeThemeTailwind(tailwind.config);
     </script>
 <style>
   .material-symbols-outlined {
@@ -133,6 +266,17 @@
   .dm-sans{font-family:'DM Sans',sans-serif;}
   .bebas{font-family:'DM Sans',sans-serif;}
   .font-headline{font-weight:400;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;}
+  .page-pad{padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));}
+  /* testo minimo leggibile */
+  .text-\[8px\],.text-\[9px\],.text-\[10px\]{font-size:11px !important;}
+  /* grigi con contrasto sufficiente sul fondo scuro */
+  .text-gray-700{color:#6f7a8a !important;}
+  .text-gray-600{color:#8a94a4 !important;}
+  .text-gray-500,.text-slate-500{color:#9aa3b2 !important;}
+  [style*="color:#64748b"]{color:#9aa3b2 !important;}
+  .text-gray-300{color:#d1d5db !important;} .text-gray-400{color:#aab2bf !important;}
+  .text-slate-300{color:#cbd5e1 !important;} .text-slate-400{color:#a3afc1 !important;} .text-slate-600{color:#8a94a4 !important;}
+  html.theme-light [class*="border-white"]{border-color:rgba(30,34,39,0.1) !important;}
   button.font-headline,button .font-headline{font-weight:500;}
   .no-scrollbar::-webkit-scrollbar{display:none;}
   .text-axe-violet{color:#8b5cf6;}
@@ -920,28 +1064,28 @@ function ringHTML(total,remaining,color,countdown=false){
   </svg>`;
 }
 
+function navTo(t){
+  // Toccare di nuovo Train quando ci sei già riporta al catalogo
+  if(t==='train'&&state.tab==='train'){ state.trainSubTab=null; }
+  switchTab(t);
+}
 function navHTML(active){
+  var parent={axe:'train',extra:'train',plan:'train',programs:'train',health:'log'};
+  active=parent[active]||active;
   const tabs=[
-    {id:"home",     icon:"home",           label:"HOME"},
-    {id:"train",    icon:"fitness_center", label:"TRAIN"},
-    {id:"morning",  icon:"wb_sunny",       label:"MORNING"},
-    {id:"log",      icon:"query_stats",    label:"LOG"},
-    {id:"settings", icon:"settings",       label:"SET"},
+    {id:"home",     icon:"home",           label:"Home"},
+    {id:"train",    icon:"fitness_center", label:"Train"},
+    {id:"morning",  icon:"wb_sunny",       label:"Morning"},
+    {id:"log",      icon:"query_stats",    label:"Log"},
+    {id:"settings", icon:"settings",       label:"Set"},
   ];
-  return `<nav class="flex justify-between items-center px-5 py-3 w-full bg-background fixed top-0 z-50 max-w-[480px]"
-    style="left:50%;transform:translateX(-50%);border-bottom:0.5px solid rgba(255,255,255,0.07);">
-    <div class="flex items-center gap-2">
-      <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIGZpbGw9IiMwOTBDMEYiLz48cmVjdCB4PSIxMiIgeT0iMTIiIHdpZHRoPSIxNjgiIGhlaWdodD0iMTY4IiBmaWxsPSIjMEYxNDE5Ii8+PHJlY3QgeD0iNTYiIHk9IjQ0IiB3aWR0aD0iMTQiIGhlaWdodD0iMTA0IiBmaWxsPSIjZmZiNjkzIi8+PHBvbHlnb24gcG9pbnRzPSI3MCw5NiAxMzAsNTIgMTMwLDY4IDg4LDk2IDEzMCwxMjQgMTMwLDE0MCIgZmlsbD0iI2ZmYjY5MyIvPjxyZWN0IHg9IjU2IiB5PSIxNDAiIHdpZHRoPSI4MCIgaGVpZ2h0PSIyIiBmaWxsPSIjZmZiNjkzIiBvcGFjaXR5PSIwLjQiLz48dGV4dCB4PSI5NiIgeT0iMTc1IiBmb250LWZhbWlseT0iQmViYXMgTmV1ZSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmaWxsPSIjZmZiNjkzIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBsZXR0ZXItc3BhY2luZz0iNiI+Rk9SR0U8L3RleHQ+PC9zdmc+" alt="FORGE" style="width:32px;height:32px;border-radius:6px;object-fit:cover;"/>
-      
-    </div>
-    <div class="flex items-center gap-1">
-      ${tabs.map(t=>`<button onclick="switchTab('${t.id}')"
-        class="flex flex-col items-center px-3 py-1.5 transition-all duration-150 active:scale-95 ${active===t.id?'text-primary':'text-gray-600 hover:text-gray-400'}"
-        style="border-bottom:2px solid ${active===t.id?'#ffb693':'transparent'}">
-        <span class="material-symbols-outlined text-xl leading-none" style="${active===t.id?"font-variation-settings:'FILL' 1":""}">${t.icon}</span>
-        <span class="font-label text-[8px] font-bold tracking-widest mt-0.5">${t.label}</span>
-      </button>`).join("")}
-    </div>
+  return `<nav class="fixed bottom-0 z-50 w-full max-w-[480px] flex justify-around items-stretch"
+    style="left:50%;transform:translateX(-50%);border-top:0.5px solid rgba(255,255,255,0.08);padding-bottom:env(safe-area-inset-bottom,0px);background:rgba(9,12,15,0.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)">
+    ${tabs.map(t=>{var on=active===t.id; return `<button onclick="navTo('${t.id}')"
+      class="flex-1 flex flex-col items-center justify-center active:scale-95 transition-transform" style="min-height:60px;color:${on?'#ffb693':'#8a94a4'}">
+      <span class="material-symbols-outlined leading-none" style="font-size:24px;${on?"font-variation-settings:'FILL' 1":""}">${t.icon}</span>
+      <span class="font-label mt-1" style="font-size:11px;font-weight:${on?700:500}">${t.label}</span>
+    </button>`;}).join("")}
   </nav>`;
 }
 function switchTab(t){
@@ -1217,7 +1361,7 @@ function renderHome(){
 
 
 
-  return '<div class="screen bg-background" style="padding-top:64px;">'+
+  return '<div class="screen bg-background page-pad">'+
     '<main class="px-5 pt-5 pb-24">'+
 
       aiCard+
@@ -1460,7 +1604,7 @@ function renderDone(){
   const warmupExs=["KB Halo","KB Squat","Hip Hinge","Dead Bug"];
   const wu=f.warmup||[];
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
+  return `<div class="screen bg-background page-pad">
     <div class="flex flex-col items-center flex-1 px-6 py-10 overflow-y-auto pb-8">
 
       <!-- Hero -->
@@ -1949,10 +2093,10 @@ function renderLog(){
     </div>`;
   }
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
+  return `<div class="screen bg-background page-pad">
     <main class="px-5 pt-8 pb-12">
       <header class="mb-8">
-        <h1 class="font-headline text-6xl tracking-tight leading-none">LOG</h1>
+        <h1 class="font-headline text-3xl leading-none">Log</h1>
         <div class="w-12 h-1 bg-primary mt-2"></div>
       </header>
       ${subNav}
@@ -2014,7 +2158,7 @@ function renderAxe(){
   // Target set suggerito
   const suggestedSets=pr.currentSets<10?10:pr.currentSets<20?pr.currentSets+2:Math.min(pr.currentSets+2,30);
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
+  return `<div class="screen bg-background page-pad">
     <div class="axe-page">
 
       <div class="axe-page-header">
@@ -2225,7 +2369,7 @@ function renderAxeDone(){
     nextSugg=`Arrivato a ${ax.setsDone} set — prossima sessione: <b>stesso target</b>`;
   }
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
+  return `<div class="screen bg-background page-pad">
     <div class="axe-done-screen">
       <div class="axe-done-label">SESSIONE AXE COMPLETATA</div>
       <div class="axe-done-sets">${ax.setsDone}</div>
@@ -2277,10 +2421,10 @@ function renderAxeDone(){
 
 // ── RENDER PROGRAMS CONTENT (per uso nel tab PIANO) ───────────────────────────
 function renderProgramsContent(){
-  // Ritorna il contenuto di renderPrograms senza il wrapper <div class="screen bg-background" style="padding-top:64px;">
+  // Ritorna il contenuto di renderPrograms senza il wrapper <div class="screen bg-background page-pad">
   const full=renderPrograms();
-  // Rimuove il primo <div class="screen bg-background" style="padding-top:64px;"> e l'ultimo </div>
-  return full.replace(/^<div class="screen bg-background" style="padding-top:64px;">/, '').replace(/<\/div>\s*$/, '');
+  // Rimuove il primo <div class="screen bg-background page-pad"> e l'ultimo </div>
+  return full.replace(/^<div class="screen bg-background page-pad">/, '').replace(/<\/div>\s*$/, '');
 }
 
 // ── RENDER PROGRAMS ───────────────────────────────────────────────────────────
@@ -2382,7 +2526,7 @@ function renderPrograms(){
     return '<div class="mob-card"><div class="mob-emoji">'+ex.emoji+'</div><div class="mob-name">'+ex.name+'</div><div class="mob-sets">'+ex.sets+'</div><div class="mob-cue">'+ex.cue+'</div><a href="'+ex.yt+'" target="_blank" class="mob-yt">▶️ Video</a></div>';
   }).join("");
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
+  return `<div class="screen bg-background page-pad">
     <div class="prog-page">
 
       <div class="prog-header">
@@ -6891,7 +7035,7 @@ function renderHealth(){
     </svg>`;
   }
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
+  return `<div class="screen bg-background page-pad">
     <header class="bg-background px-6 pt-12 pb-6">
       <h2 class="font-headline text-7xl tracking-[0.05em] text-primary leading-none mb-1">SALUTE</h2>
       <p class="text-slate-400 text-sm border-l-2 border-primary pl-4 font-medium">Daily Biometric Optimization</p>
@@ -7391,7 +7535,7 @@ function renderPlan(){
     ${subTabs.map(t=>`<button onclick="planSetSubTab('${t.id}')" style="flex:1;min-width:0;white-space:nowrap;padding:8px 5px;border-radius:8px;font-size:11px;font-weight:700;background:${sub===t.id?'#0F1419':'transparent'};color:${sub===t.id?'#F0F4F8':'#607080'};border:none;cursor:pointer;">${t.label}</button>`).join("")}
   </div>`;
 
-  return `<div class="screen bg-background" style="padding-top:64px;">
+  return `<div class="screen bg-background page-pad">
     <div style="padding:28px 22px 14px;text-align:center;">
       <div style="font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:5px;color:#43A047;margin-bottom:6px;">PROGRAMMA SETTIMANALE</div>
       <div style="font-family:'DM Sans',sans-serif;font-size:34px;line-height:1.05;">KB · BW · ANELLI</div>
@@ -7404,7 +7548,7 @@ function renderPlan(){
 }
 // ── RENDER TRAIN ─────────────────────────────────────────────────────────────
 function renderTrain(){
-  var sub = state.trainSubTab||"base";
+  var sub = state.trainSubTab||null;
   var CATEGORIE={
     forza:{label:"⚡ Forza",color:"#ffb693",ids:["D1","B2","B3","B8","DPU","CORE7"]},
     condizionamento:{label:"🔥 Condizionamento",color:"#e9c176",ids:["B4","B5","B6","B7","B9"]},
@@ -7938,11 +8082,83 @@ function renderTrain(){
     return h;
   }
 
-  return '<div class="screen bg-background" style="padding-top:64px;">'+
-    '<main class="px-5 pt-5 pb-24">'+
-      '<h1 class="font-headline text-5xl tracking-tight leading-none mb-4">TRAIN</h1>'+
-      tabBar+
-      (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():sub==="lm"?tabLeoMoves():sub==="k30"?tabK30():tabKdp())+
+  // ── CATALOGO ────────────────────────────────────────────────────
+  var CATS={kb:{label:"Kettlebell",color:"#ffb693"},bw:{label:"Corpo libero",color:"#43A047"},sport:{label:"Sport",color:"#38bdf8"}};
+  var PROGS=[
+    {id:"base",    cat:"kb",   icon:"🔔",name:"KB A·B·C",  desc:"La rotazione base: EMOM, HIIT e Ladder"},
+    {id:"k30",     cat:"kb",   icon:"📅",name:"30 Days KB",desc:"4 settimane con un solo kettlebell"},
+    {id:"alt",     cat:"kb",   icon:"⚡",name:"Extra",     desc:"Forza, condizionamento e tecnica"},
+    {id:"bellplex",cat:"kb",   icon:"🔗",name:"Complex",   desc:"Complex senza posare il KB, per livello"},
+    {id:"flow",    cat:"kb",   icon:"🌊",name:"Flow",      desc:"Sequenze continue di movimenti"},
+    {id:"kdp",     cat:"kb",   icon:"📈",name:"KDP-26",    desc:"Forge Density Protocol"},
+    {id:"axe",     cat:"kb",   icon:"🫀",name:"AXE",       desc:"Aerobico anti-glicolitico"},
+    {id:"bw",      cat:"bw",   icon:"🤸",name:"Bodyweight",desc:"Bodyweight Jacked e Limitless, a round"},
+    {id:"lm",      cat:"bw",   icon:"🎥",name:"LeoMoves",  desc:"Allenamenti video a corpo libero"},
+    {id:"wf",      cat:"sport",icon:"🏄",name:"Wing Foil", desc:"Equilibrio, core e potenza d'anca"},
+  ];
+  function dParse(s){ try{var p=String(s).split('/');return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):null;}catch(e){return null;} }
+  function lastOf(id){
+    var cand=[], H=state.history||[], X=state.externalHistory||[];
+    var extraIds=[].concat(CATEGORIE.forza.ids,CATEGORIE.condizionamento.ids,CATEGORIE.tecnica.ids);
+    var re={base:/^[ABC]$/,bellplex:/^extra_BP/,wf:/^extra_WF/,bw:/^extra_(BWJ|LTL)-/,lm:/^extra_LM/,k30:/^extra_K30-/}[id];
+    if(re) H.forEach(function(e){ if(e.day&&re.test(e.day)) cand.push(e.date); });
+    if(id==="alt") H.forEach(function(e){ if(e.day&&extraIds.indexOf(e.day.replace("extra_",""))>=0) cand.push(e.date); });
+    if(id==="flow") X.forEach(function(e){ if(e._flow) cand.push(e.date); });
+    if(id==="kdp")  X.forEach(function(e){ if(e._kdp) cand.push(e.date); });
+    if(id==="axe")  (state.axeHistory||[]).forEach(function(e){ if(e.date) cand.push(e.date); });
+    var best=null; cand.forEach(function(c){ var d=dParse(c); if(d&&!isNaN(d)&&(!best||d>best)) best=d; });
+    return best?String(best.getDate()).padStart(2,'0')+'/'+String(best.getMonth()+1).padStart(2,'0'):null;
+  }
+  function metaOf(id){
+    if(id==="base") return "3 giorni";
+    if(id==="k30"){ var p=k30Progress(state.history); return p.nDone+" / "+p.total; }
+    if(id==="alt") return (CATEGORIE.forza.ids.length+CATEGORIE.condizionamento.ids.length+CATEGORIE.tecnica.ids.length)+" sessioni";
+    if(id==="bellplex") return BP_LEVELS.reduce(function(a,l){return a+l.ids.length;},0)+" complex";
+    if(id==="flow") return FLOWS.length+" flow";
+    if(id==="bw") return EXTRA_WORKOUTS.filter(function(w){return /^(BWJ|LTL)-/.test(w.id);}).length+" circuiti";
+    if(id==="lm") return LM_WORKOUTS.length+" video";
+    if(id==="wf") return EXTRA_WORKOUTS.filter(function(w){return /^WF/.test(w.id);}).length+" sessioni";
+    return "";
+  }
+  function progCard(p){
+    var c=CATS[p.cat].color, last=lastOf(p.id);
+    return '<button onclick="state.trainSubTab=\''+p.id+'\';render();window.scrollTo(0,0)" class="w-full flex items-center gap-3 px-4 py-3.5 mb-2 text-left bg-surface-container active:scale-[0.99] transition-transform" style="border-left:3px solid '+c+';min-height:72px">'+
+      '<span class="text-2xl w-9 text-center flex-shrink-0">'+p.icon+'</span>'+
+      '<div class="flex-1 min-w-0"><p class="font-headline text-lg leading-tight" style="color:#e1e2e7">'+p.name+'</p>'+
+        '<p class="font-label text-[12px] text-gray-400 mt-0.5 leading-snug">'+p.desc+'</p></div>'+
+      '<div class="text-right flex-shrink-0">'+(metaOf(p.id)?'<p class="font-label text-[11px]" style="color:'+c+'">'+metaOf(p.id)+'</p>':'')+
+        (last?'<p class="font-label text-[11px] text-gray-500">ultima '+last+'</p>':'')+'</div>'+
+      '<span class="material-symbols-outlined text-gray-600 text-lg flex-shrink-0">chevron_right</span>'+
+    '</button>';
+  }
+  function catalogHTML(){
+    var f=state.trainFilter||"all";
+    var chips=[["all","Tutti"],["kb","Kettlebell"],["bw","Corpo libero"],["sport","Sport"]].map(function(o){
+      var on=f===o[0], c=o[0]==="all"?"#ffb693":CATS[o[0]].color;
+      return '<button onclick="state.trainFilter=\''+o[0]+'\';render()" class="flex-shrink-0 px-4 font-label text-[13px] active:scale-95" style="min-height:44px;border:1px solid '+(on?c:'rgba(255,255,255,0.12)')+';color:'+(on?c:'#9aa3b2')+';background:'+(on?c+'1a':'transparent')+'">'+o[1]+'</button>';
+    }).join('');
+    var out='<h1 class="font-headline text-3xl leading-none mb-4">Train</h1>'+
+      '<div class="flex gap-2 mb-5 overflow-x-auto" style="scrollbar-width:none">'+chips+'</div>';
+    Object.keys(CATS).forEach(function(k){
+      if(f!=="all"&&f!==k) return;
+      var list=PROGS.filter(function(p){return p.cat===k;});
+      out+='<p class="font-label text-[11px] uppercase tracking-widest mb-2 mt-1" style="color:'+CATS[k].color+'">'+CATS[k].label+' · '+list.length+'</p>'+list.map(progCard).join('')+'<div class="mb-4"></div>';
+    });
+    return out;
+  }
+  function programHeader(){
+    var p=PROGS.filter(function(x){return x.id===sub;})[0]||{name:sub,cat:"kb"};
+    return '<button onclick="state.trainSubTab=null;render();window.scrollTo(0,0)" class="flex items-center gap-1 -ml-1 mb-1 active:scale-95" style="min-height:44px;color:#9aa3b2">'+
+        '<span class="material-symbols-outlined">chevron_left</span><span class="font-label text-sm">Catalogo</span></button>'+
+      '<div class="flex items-baseline gap-2 mb-4"><h1 class="font-headline text-3xl leading-none">'+p.name+'</h1>'+
+        '<span class="font-label text-[11px] uppercase tracking-widest" style="color:'+CATS[p.cat].color+'">'+CATS[p.cat].label+'</span></div>';
+  }
+
+  return '<div class="screen bg-background page-pad">'+
+    '<main class="px-5 pt-3">'+
+      (!sub ? catalogHTML() :
+        programHeader()+
+        (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():sub==="lm"?tabLeoMoves():sub==="k30"?tabK30():tabKdp()))+
     '</main>'+
     navHTML("train")+
   '</div>';
@@ -8557,9 +8773,9 @@ function renderMorning(){
   var content = morningTab==='routine' ? routineContent : pianoContent;
 
   return '<div class="screen bg-background" style="display:flex;flex-direction:column;height:100vh;">'+
-    '<div class="flex-shrink-0" style="padding-top:64px">'+
+    '<div class="flex-shrink-0" style="padding-top:calc(env(safe-area-inset-top,0px) + 12px)">'+
       '<div class="px-5 pt-5 pb-0">'+
-        '<h1 class="font-headline text-5xl tracking-tight leading-none mb-4">MORNING</h1>'+
+        '<h1 class="font-headline text-3xl leading-none mb-4">Morning</h1>'+
         tabBar+
       '</div>'+
     '</div>'+
@@ -9652,9 +9868,16 @@ function renderSettings(){
   var days=FORGE_PROFILE.trainingDays||[];
   var DAY_JS=[{l:'Lun',j:1},{l:'Mar',j:2},{l:'Mer',j:3},{l:'Gio',j:4},{l:'Ven',j:5},{l:'Sab',j:6},{l:'Dom',j:0}];
   var FILL="font-variation-settings:'FILL' 1";
-  var h='<div class="screen bg-background" style="padding-top:64px;">';
+  var h='<div class="screen bg-background page-pad">';
   h+='<main class="px-5 pt-8 pb-12 space-y-6">';
-  h+='<header class="mb-6"><h1 class="font-headline text-6xl tracking-tight leading-none">SETTINGS</h1><div class="w-12 h-1 bg-primary mt-2"></div></header>';
+  h+='<header class="mb-6"><h1 class="font-headline text-3xl leading-none">Impostazioni</h1></header>';
+  h+='<section><p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-2">Aspetto</p><div class="flex gap-2">'+
+    [['dark','Scuro','dark_mode'],['light','Chiaro','light_mode'],['auto','Automatico','brightness_auto']].map(function(o){
+      var on=FORGE_THEME_PREF===o[0];
+      return '<button onclick="forgeSetTheme(\''+o[0]+'\')" class="flex-1 flex flex-col items-center justify-center gap-1 active:scale-95" style="min-height:64px;border:1px solid '+(on?'#ffb693':'rgba(255,255,255,0.12)')+';background:'+(on?'#ffb6931a':'transparent')+';color:'+(on?'#ffb693':'#9aa3b2')+'">'+
+        '<span class="material-symbols-outlined" style="font-size:22px">'+o[2]+'</span><span class="font-label text-[12px]">'+o[1]+'</span></button>';
+    }).join('')+
+  '</div><p class="font-label text-[11px] text-gray-500 mt-2">Automatico segue il tema del telefono. Al cambio l\'app si riavvia.</p></section>';
   h+='<section><p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1">OBIETTIVI PRIORITARI</p>';
   h+='<p class="font-label text-[9px] text-gray-600 mb-4">Il primo è il primario — guida il suggerimento</p>';
   for(var i=0;i<FORGE_OBJ.length;i++){
@@ -10045,7 +10268,7 @@ function renderAIPlan(){
   if(!r){ state.tab='morning'; render(); return ''; }
 
   var intensityColors={'Alta':'#ffb4ab','Media':'#e9c176','Bassa':'#7A9A3A'};
-  var h='<div class="screen bg-background" style="padding-top:64px;">';
+  var h='<div class="screen bg-background page-pad">';
   h+='<main class="px-5 pt-6 pb-12">';
   h+='<div class="flex items-center justify-between mb-6">';
   h+='<div><h1 class="font-headline text-5xl tracking-tight leading-none">PIANO AI</h1>';
@@ -11097,8 +11320,22 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v104";
+var APP_VERSION = "v106";
 var APP_CHANGELOG = [
+  {v:"v106", data:"27/09/2026", items:[
+    "Due temi: Notte (scuro, blu e lime) e Sabbia (chiaro, avorio e terracotta)",
+    "Scelta in Set → Aspetto: Scuro, Chiaro o Automatico (segue il telefono)",
+    "Tutta l'app, allenamenti compresi, segue il tema scelto",
+    "Nel tema chiaro colori e testi sono calibrati per restare leggibili",
+  ]},
+  {v:"v105", data:"27/09/2026", items:[
+    "Barra di navigazione in basso, a portata di pollice",
+    "Titoli delle pagine compatti al posto di quelli giganti",
+    "Train: catalogo unico dei programmi, con filtri Kettlebell / Corpo libero / Sport",
+    "Ogni programma mostra descrizione, quante sessioni contiene e l'ultima volta che l'hai fatto",
+    "Tocca di nuovo Train per tornare al catalogo; i salvataggi rientrano nel programma giusto",
+    "Testo minimo 11 px e grigi più leggibili in tutta l'app",
+  ]},
   {v:"v104", data:"27/09/2026", items:[
     "Wim Hof: nuova bolla fluida come nel Respiro, con conteggio respiri al centro",
     "Dopo l'ultimo respiro l'apnea parte da sola (prima il conteggio continuava)",
@@ -12102,7 +12339,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v104';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v106';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
