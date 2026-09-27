@@ -14,7 +14,7 @@
 <title>FORGE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script id="tailwind-config">
@@ -78,7 +78,7 @@
                     "full": "0.75rem"
             },
             "fontFamily": {
-                    "headline": ["Bebas Neue"],
+                    "headline": ["DM Sans"],
                     "body": ["DM Sans"],
                     "label": ["DM Sans"]
             }
@@ -131,7 +131,9 @@
   /* Kinetic Prestige utilities */
   .ghost-border{border:1px solid rgba(90,65,54,0.15);}
   .dm-sans{font-family:'DM Sans',sans-serif;}
-  .bebas{font-family:'Bebas Neue',sans-serif;}
+  .bebas{font-family:'DM Sans',sans-serif;}
+  .font-headline{font-weight:400;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;}
+  button.font-headline,button .font-headline{font-weight:500;}
   .no-scrollbar::-webkit-scrollbar{display:none;}
   .text-axe-violet{color:#8b5cf6;}
   .bg-axe-violet{background:#8b5cf6;}
@@ -145,11 +147,11 @@
 @keyframes kdp-pulse{0%,100%{opacity:1}50%{opacity:.55}}
 .kdp-prog-bar{height:2px;background:rgba(255,255,255,0.06);margin:0 20px;border-radius:1px;flex-shrink:0}
 .kdp-prog-fill{height:100%;background:#7A9A3A;border-radius:1px;transition:width .5s linear}
-.kdp-block-label{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.25em;color:#7A9A3A}
-.kdp-round-label{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#f0f0f0;margin-top:2px}
-.kdp-ex-name{font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;color:#f0f0f0}
+.kdp-block-label{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.25em;color:#7A9A3A}
+.kdp-round-label{font-family:'DM Sans',sans-serif;font-size:22px;color:#f0f0f0;margin-top:2px}
+.kdp-ex-name{font-family:'DM Sans',sans-serif;font-size:52px;line-height:1;color:#f0f0f0}
 .kdp-ex-meta{display:flex;gap:16px;margin-top:6px;align-items:baseline}
-.kdp-ex-kg{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#7A9A3A}
+.kdp-ex-kg{font-family:'DM Sans',sans-serif;font-size:28px;color:#7A9A3A}
 .kdp-ex-unit{font-size:11px;letter-spacing:.15em;color:#64748b;margin-left:2px}
 .kdp-ex-reps{font-size:14px;font-weight:700;color:#f0f0f0}
 .kdp-next{background:rgba(122,154,58,.08);border:1px solid rgba(122,154,58,.2);padding:10px 16px;margin:0 20px;border-radius:4px}
@@ -157,8 +159,8 @@
 .kdp-next-val{font-size:13px;font-weight:600;color:#a0a0a0;margin-top:2px}
 .kdp-amrap-bar{display:flex;justify-content:space-between;align-items:center;margin:0 20px;padding:12px 16px;background:rgba(122,154,58,.08);border:1px solid rgba(122,154,58,.2);border-radius:4px}
 .kdp-rnd-lbl{font-size:9px;letter-spacing:.2em;color:#64748b;text-transform:uppercase}
-.kdp-rnd-val{font-family:'Bebas Neue',sans-serif;font-size:40px;color:#7A9A3A;line-height:1}
-.kdp-plus-btn{background:#7A9A3A;color:#0D0D0F;border:none;border-radius:4px;padding:10px 18px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em;cursor:pointer;active:scale-95}
+.kdp-rnd-val{font-family:'DM Sans',sans-serif;font-size:40px;color:#7A9A3A;line-height:1}
+.kdp-plus-btn{background:#7A9A3A;color:#0D0D0F;border:none;border-radius:4px;padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:18px;letter-spacing:.1em;cursor:pointer;active:scale-95}
 .kdp-amrap-item{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.05)}
 .kdp-amrap-item.cur{background:rgba(122,154,58,.08)}
 .kdp-amrap-item.done .kdp-ai-chk{background:#7A9A3A;border-color:#7A9A3A;color:#0D0D0F}
@@ -167,7 +169,7 @@
 .kdp-ai-det{font-size:11px;color:#64748b;margin-top:2px}
 .kdp-fin-side{display:flex;align-items:center;gap:14px;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer}
 .kdp-fin-side.done .kdp-fin-icon{background:#7A9A3A;border-color:#7A9A3A;color:#0D0D0F}
-.kdp-fin-icon{width:40px;height:40px;border-radius:4px;border:1px solid #2A2A2E;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#64748b;flex-shrink:0}
+.kdp-fin-icon{width:40px;height:40px;border-radius:4px;border:1px solid #2A2A2E;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:16px;color:#64748b;flex-shrink:0}
 .kdp-fin-name{font-weight:700;font-size:15px}
 .kdp-fin-det{font-size:11px;color:#64748b;margin-top:2px}
 .kdp-hold-box{margin:0 20px;background:rgba(122,154,58,.08);border:1px solid rgba(122,154,58,.3);border-radius:8px;padding:20px;text-align:center}
@@ -175,16 +177,16 @@
 .kdp-hold-num{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:64px;color:#f0f0f0;line-height:1}
 .kdp-trans{position:fixed;inset:0;background:rgba(9,12,15,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;max-width:480px;margin:0 auto}
 .kdp-trans.show{opacity:1;pointer-events:all}
-.kdp-trans-name{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:.05em;color:#7A9A3A;text-align:center;line-height:1}
+.kdp-trans-name{font-family:'DM Sans',sans-serif;font-size:40px;letter-spacing:.05em;color:#7A9A3A;text-align:center;line-height:1}
 .kdp-trans-sub{font-size:12px;letter-spacing:.15em;color:#64748b;text-align:center;margin-top:8px;text-transform:uppercase}
 .kdp-trans-count{font-family:'JetBrains Mono',monospace;font-size:96px;font-weight:700;color:#f0f0f0;margin-top:32px;line-height:1}
 .kdp-done{position:fixed;inset:0;background:rgba(9,12,15,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;max-width:480px;margin:0 auto;padding:40px 24px}
 .kdp-done.show{opacity:1;pointer-events:all}
 .kdp-ctrl{display:flex;gap:10px;padding:16px 20px;flex-shrink:0}
-.kdp-pause-btn{flex:1;padding:16px;border:1px solid rgba(122,154,58,.3);background:transparent;color:#7A9A3A;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.kdp-pause-btn{flex:1;padding:16px;border:1px solid rgba(122,154,58,.3);background:transparent;color:#7A9A3A;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:18px;letter-spacing:.1em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .kdp-pause-btn.paused{background:rgba(122,154,58,.1)}
 .kdp-skip-btn{width:54px;height:54px;border:1px solid rgba(255,255,255,.1);background:transparent;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.kdp-complete-btn{flex:1;padding:16px;background:#7A9A3A;border:none;color:#0D0D0F;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.1em;cursor:pointer}
+.kdp-complete-btn{flex:1;padding:16px;background:#7A9A3A;border:none;color:#0D0D0F;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:20px;letter-spacing:.1em;cursor:pointer}
 
 </style>
 </head>
@@ -906,14 +908,14 @@ function ringHTML(total,remaining,color,countdown=false){
   const dash=circ*pct;
   const col=countdown?"#EF5350":color;
   const pulse=countdown?'class="countdown-pulse"':'';
-  const sub=countdown?`<text x="${cx}" y="${cy+34}" text-anchor="middle" fill="#EF5350" font-family="'Bebas Neue',sans-serif" font-size="14" letter-spacing="3">PRONTI!</text>`:'';
+  const sub=countdown?`<text x="${cx}" y="${cy+34}" text-anchor="middle" fill="#EF5350" font-family="'DM Sans',sans-serif" font-size="14" letter-spacing="3">PRONTI!</text>`:'';
   return `<svg width="160" height="160" ${pulse} style="filter:drop-shadow(0 0 18px ${col}55)">
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1E2A35" stroke-width="9"/>
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="9"
       stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ*0.25}"
       stroke-linecap="round" style="transition:stroke-dasharray 0.45s ease"/>
     <text x="${cx}" y="${cy+14}" text-anchor="middle" fill="${countdown?'#EF5350':'#F0F4F8'}"
-      font-family="'Bebas Neue',sans-serif" font-size="40">${fmtTime(remaining)}</text>
+      font-family="'DM Sans',sans-serif" font-size="40">${fmtTime(remaining)}</text>
     ${sub}
   </svg>`;
 }
@@ -1297,7 +1299,7 @@ function renderWorkout(){
           style="transition:stroke-dasharray 0.4s ease;filter:drop-shadow(0 0 6px ${glowColor}55)"/>
       </svg>
       <div class="flex flex-col items-center text-center relative z-10">
-        <span id="timer-display" class="font-headline leading-none" style="font-size:88px;color:${glowColor};line-height:1">${fmtTime(state.remaining)}</span>
+        <span id="timer-display" class="font-headline leading-none" style="font-size:72px;color:${glowColor};line-height:1">${fmtTime(state.remaining)}</span>
         <span class="font-headline text-lg tracking-widest mt-1" style="color:${glowColor}88">${isRest?"RECUPERO":repsLabel||"SEC"}</span>
       </div>
     </div>`;
@@ -1380,8 +1382,8 @@ function renderWorkout(){
 
       <!-- Nome esercizio -->
       <h2 class="font-headline leading-none tracking-tight text-center mb-4 relative z-10"
-        style="font-size:${step.name.length>12?'40px':step.name.length>8?'52px':'64px'};color:${isRest?'#50dad1':'#e1e2e7'}">
-        ${step.name.toUpperCase()}
+        style="font-size:${step.name.length>16?'32px':step.name.length>12?'38px':step.name.length>8?'46px':'56px'};color:${isRest?'#50dad1':'#e1e2e7'}">
+        ${step.name}
       </h2>
 
       <!-- Timer ring o reps box -->
@@ -1598,7 +1600,7 @@ function renderLog(){
     const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
     const EXT_C={"Calisthenics":"#50dad1","Corsa":"#ffb693","SUP":"#06b6d4","Wing Foil":"#38bdf8","Yoga":"#8b5cf6","Ciclismo":"#e9c176","Nuoto":"#0891b2","Calcio":"#22c55e","Altro":"#64748b"};
 
-    const filterBar=`<div class="flex gap-2 mb-5">
+    const filterBar=`<div class="flex flex-wrap gap-2 mb-5">
       ${[{id:"all",l:"Tutti"},{id:"kb",l:"KB"},{id:"external",l:"Altri"}].map(f=>`<button onclick="setStatsFilter('${f.id}')"
         class="px-4 py-1.5 font-label text-[10px] font-bold tracking-widest uppercase transition-all"
         style="border-radius:2px;background:${filter===f.id?'#ffb693':'transparent'};border:1px solid ${filter===f.id?'#ffb693':'rgba(90,65,54,0.4)'};color:${filter===f.id?'#351000':'#64748b'}">${f.l}</button>`).join("")}
@@ -1702,7 +1704,7 @@ function renderLog(){
             <p class="font-label text-[8px] uppercase text-gray-600">${mo}</p>
           </div>
           <div class="flex-1 min-w-0">
-            <p class="font-headline text-lg leading-none" style="color:${col}">${label.toUpperCase()}</p>
+            <p class="font-headline text-lg leading-tight" style="color:${col}">${label}</p>
             <div class="flex gap-3 mt-1 flex-wrap">
               ${h.duration?`<span class="font-label text-[9px] text-gray-500 uppercase">${h.duration} min</span>`:''}
               ${h.hrAvg?`<span class="font-label text-[9px] uppercase" style="color:#ffb4ab">❤️ ${h.hrAvg}</span>`:''}
@@ -2369,7 +2371,7 @@ function renderPrograms(){
     const btnHTML=isActive
       ?'<button class="micro-activate-btn" style="background:#1A1200;border:1.5px solid #FFC107;color:#FFC107;margin-top:6px;" onclick="deactivateProgram()">✅ Attivo — Disattiva</button>'
       :'<button class="micro-activate-btn" style="background:'+mc.color+';color:#000;margin-top:6px;" onclick="activateProgram(\'macro\',\''+mc.id+'\')">▶ Attiva questo macrociclo</button>';
-    return '<div class="macro-card '+(isActive?'active-prog':'')+'"><div class="macro-card-header"><span style="font-size:28px;">'+mc.emoji+'</span><div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;">'+mc.title+'</div><div style="font-size:12px;color:var(--muted);">'+mc.subtitle+'</div></div></div>'
+    return '<div class="macro-card '+(isActive?'active-prog':'')+'"><div class="macro-card-header"><span style="font-size:28px;">'+mc.emoji+'</span><div><div style="font-family:\'DM Sans\',sans-serif;font-size:20px;">'+mc.title+'</div><div style="font-size:12px;color:var(--muted);">'+mc.subtitle+'</div></div></div>'
       +'<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">'+mc.desc+'</div>'
       +'<div class="macro-weeks">'+weekRows+'</div>'
       +btnHTML+'</div>';
@@ -2384,7 +2386,7 @@ function renderPrograms(){
     <div class="prog-page">
 
       <div class="prog-header">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:5px;color:#00BFA5;margin-bottom:4px;">PIANIFICAZIONE</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:13px;letter-spacing:5px;color:#00BFA5;margin-bottom:4px;">PIANIFICAZIONE</div>
         <div class="prog-header-title">PROGRAMMI</div>
         <div class="prog-header-sub">Ispirati, scegli un template o attivalo come guida settimanale.</div>
       </div>
@@ -5265,7 +5267,7 @@ function renderExtra(){
         style="display:flex;width:100%;align-items:center;gap:12px;padding:14px 18px;background:none;border:none;text-align:left;color:#F0F4F8;">
         <div style="font-size:32px;flex-shrink:0;">${w.emoji}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${w.color};line-height:1.1;">${w.label} — ${w.title}</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:20px;color:${w.color};line-height:1.1;">${w.label} — ${w.title}</div>
           <div style="font-size:11px;color:#607080;margin-top:2px;">${w.meta}</div>
         </div>
         <div id="extra-arrow-${w.id}"
@@ -5293,12 +5295,12 @@ function renderExtra(){
           <div style="display:flex;flex-direction:column;gap:6px;">
             ${w.exercises.map(e=>`
               <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#080C0F;border-radius:10px;border:1px solid #1E2A35;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${e.c};width:24px;flex-shrink:0;">${e.n}</div>
+                <div style="font-family:'DM Sans',sans-serif;font-size:16px;color:${e.c};width:24px;flex-shrink:0;">${e.n}</div>
                 <div style="flex:1;">
                   <div style="font-size:13px;font-weight:700;">${e.name}</div>
                   <div style="font-size:11px;color:#607080;margin-top:1px;">${e.detail}</div>
                 </div>
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:${e.c};flex-shrink:0;">${e.t}</div>
+                <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:${e.c};flex-shrink:0;">${e.t}</div>
               </div>`).join("")}
           </div>
         </div>
@@ -5311,7 +5313,7 @@ function renderExtra(){
         <div style="padding:0 18px 18px;">
           ${amazfitBadge('cross')}
       <button onclick="startExtraWorkout('${w.id}')"
-            style="width:100%;padding:16px;border-radius:14px;background:${w.color};color:#000;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;border:none;">
+            style="width:100%;padding:16px;border-radius:14px;background:${w.color};color:#000;font-family:'DM Sans',sans-serif;font-size:22px;letter-spacing:2px;border:none;">
             ▶ START ${w.label}
           </button>
         </div>
@@ -5320,8 +5322,8 @@ function renderExtra(){
 
   return `<div class="screen" style="overflow-y:auto;">
     <div style="padding:32px 22px 14px;text-align:center;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:5px;color:#FF5722;margin-bottom:6px;">WORKOUT</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;">EXTRA HIIT</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:5px;color:#FF5722;margin-bottom:6px;">WORKOUT</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:38px;line-height:1;">EXTRA HIIT</div>
       <div style="font-size:13px;color:#607080;margin-top:8px;">${EXTRA_WORKOUTS.length} workout · KB 10 kg · Tocca per espandere</div>
     </div>
     <div style="padding:0 16px 20px;">
@@ -6317,7 +6319,7 @@ var BREATH_PHASES = [
   {id:"p2", dur:300, title:"Respirazione leggera",
    copy:"Respira dal naso. Riduci delicatamente il volume del respiro. Cerca un respiro più leggero e silenzioso."},
   {id:"p3", dur:180, title:"Recupero del respiro",
-   copy:"La pausa deve rimanere confortevole. Se compare disagio, riprendi subito a respirare normalmente."},
+   copy:"Dopo un'espirazione normale fermati pochi secondi, prima che arrivi la voglia di respirare. Il primo respiro dopo la pausa deve essere calmo e dal naso: se ti viene da boccheggiare, accorcia la pausa."},
   {id:"p4", dur:300, title:"Respirazione consapevole",
    copy:"Porta l'attenzione al respiro. Non cercare di modificarlo. Osserva semplicemente inspirazione ed espirazione."},
 ];
@@ -6482,6 +6484,7 @@ function breathStartRoutine(){
   state.breath.feedback={nasal_breathing:null,comfort:null,activation:null,notes:""};
   state.tab="breath-session";
   render();
+  bgEnsureLoop();
   clearBreathInterval();
   breathInterval=setInterval(function(){
     if(!state.breath){clearBreathInterval();return;}
@@ -6513,6 +6516,7 @@ function breathTogglePause(){
   if(state.breath.phase==="running") breathPause(state.breath);
   else if(state.breath.phase==="paused") breathResume(state.breath);
   render();
+  bgEnsureLoop();
 }
 
 function breathEndNow(){
@@ -6608,6 +6612,84 @@ function boltExitWithoutSaving(){
   render();
 }
 
+// ── GUIDA RESPIRO (bolla) — logica pura, avanzata a delta di tempo ──────
+var BG_P2={inhale:4000,exhale:6000};                 // riferimento fase 2
+var BG_P3={exhale:4000,resume:4000,recover:30000};   // ciclo fase 3 (pausa da impostazioni)
+function bgEase(x){ x=Math.max(0,Math.min(1,x)); return x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2; }
+function bgLerp(a,b,t){ return a+(b-a)*bgEase(t); }
+
+function bgInit(phaseIdx){ return {phaseIdx:phaseIdx, ms:0, step:"exhale", stepMs:0, holdEndedEarly:0}; }
+
+// Avanza lo stato della guida di dt ms e restituisce cosa disegnare.
+// cfg: {phaseId, holdSec, pacer}
+function bgAdvance(g, dt, cfg){
+  g.ms+=dt; g.stepMs+=dt;
+  var ev=null;
+  if(cfg.phaseId==="p3"){
+    var holdMs=cfg.holdSec*1000;
+    var guard=0;
+    while(guard++<10){
+      var dur = g.step==="exhale"?BG_P3.exhale : g.step==="hold"?holdMs : g.step==="resume"?BG_P3.resume : BG_P3.recover;
+      if(g.stepMs<dur) break;
+      g.stepMs-=dur;
+      var nxt = g.step==="exhale"?"hold" : g.step==="hold"?"resume" : g.step==="resume"?"recover" : "exhale";
+      ev=nxt; g.step=nxt;
+    }
+    var v=bgView3(g,cfg);
+    v.event=ev;
+    return v;
+  }
+  if(cfg.phaseId==="p2" && cfg.pacer){
+    var cyc=BG_P2.inhale+BG_P2.exhale, t=g.ms%cyc;
+    if(t<BG_P2.inhale) return {scale:bgLerp(0.35,1,t/BG_P2.inhale),label:"Inspira",sub:"leggero, dal naso",step:"inhale",event:null};
+    return {scale:bgLerp(1,0.35,(t-BG_P2.inhale)/BG_P2.exhale),label:"Espira",sub:"lascia uscire l'aria",step:"exhale",event:null};
+  }
+  // Fasi 1, 4 (e 2 senza guida): sfondo quasi fermo, nessun ritmo da seguire
+  var lbl = cfg.phaseId==="p4"?"Osserva il respiro":cfg.phaseId==="p2"?"Respiro leggero":"Respira dal naso";
+  return {scale:0.62+0.04*Math.sin(g.ms/2400),label:lbl,sub:"",step:"free",event:null};
+}
+function bgView3(g,cfg){
+  var holdMs=cfg.holdSec*1000;
+  if(g.step==="exhale") return {scale:bgLerp(0.8,0.3,g.stepMs/BG_P3.exhale),label:"Espira normalmente",sub:"senza svuotare",step:"exhale"};
+  if(g.step==="hold")   return {scale:0.3,label:"Pausa",sub:Math.max(1,Math.ceil((holdMs-g.stepMs)/1000))+"\" · tocca per riprendere",step:"hold"};
+  if(g.step==="resume") return {scale:bgLerp(0.3,0.72,g.stepMs/BG_P3.resume),label:"Riprendi dal naso",sub:"primo respiro calmo",step:"resume"};
+  return {scale:0.66+0.06*Math.sin(g.stepMs/1500),label:"Recupera",sub:"respiro normale · "+Math.max(1,Math.ceil((BG_P3.recover-g.stepMs)/1000))+"\"",step:"recover"};
+}
+// Tocco sulla bolla durante la pausa: si riprende subito a respirare
+function bgEndHold(g){ if(g.step==="hold"){ g.step="resume"; g.stepMs=0; g.holdEndedEarly++; return true; } return false; }
+
+// ── Impostazioni guida (mai modificate in automatico) ───────────────────
+function breathHoldSec(){ var v=Number(localStorage.getItem("kb-breath-hold")); return (v===3||v===5||v===8)?v:5; }
+function breathPacerOn(){ return localStorage.getItem("kb-breath-pacer")!=="0"; }
+function breathSetHold(v){ try{localStorage.setItem("kb-breath-hold",String(v));}catch(e){} render(); }
+function breathTogglePacer(){ try{localStorage.setItem("kb-breath-pacer",breathPacerOn()?"0":"1");}catch(e){} render(); }
+
+// ── Loop di animazione della bolla (requestAnimationFrame) ──────────────
+var bgRAF=null, bgLast=0;
+function bgEnsureLoop(){ if(bgRAF) return; bgLast=performance.now(); bgRAF=requestAnimationFrame(bgFrame); }
+function bgFrame(now){
+  var b=state.breath;
+  if(state.tab!=="breath-session"||!b||(b.phase!=="running"&&b.phase!=="paused")){ bgRAF=null; return; }
+  var dt=Math.min(1000,now-bgLast); bgLast=now;
+  if(b.phase==="paused") dt=0;
+  if(!b.g||b.g.phaseIdx!==b.phaseIdx) b.g=bgInit(b.phaseIdx);
+  var ph=BREATH_PHASES[b.phaseIdx];
+  var v=bgAdvance(b.g,dt,{phaseId:ph.id,holdSec:breathHoldSec(),pacer:breathPacerOn()});
+  if(v.event&&navigator.vibrate&&(v.event==="hold"||v.event==="resume")) navigator.vibrate(30);
+  var el=document.querySelector('[data-bubble]');
+  if(el){
+    el.style.transform='scale('+v.scale.toFixed(3)+')';
+    el.style.opacity=(v.step==="hold"?0.95:0.8);
+    var l=document.querySelector('[data-bubble-label]'); if(l&&l.textContent!==v.label) l.textContent=v.label;
+    var s=document.querySelector('[data-bubble-sub]'); if(s&&s.textContent!==v.sub) s.textContent=v.sub;
+  }
+  bgRAF=requestAnimationFrame(bgFrame);
+}
+function breathBubbleTap(){
+  var b=state.breath; if(!b||!b.g) return;
+  if(bgEndHold(b.g)&&navigator.vibrate) navigator.vibrate(30);
+}
+
 // ── RENDER BREATH SESSION ───────────────────────────────────────────────────
 var BREATH_COLOR="#7dd3fc";
 var P2_SCALE=["Troppo facile","Facile","Leggera fame d'aria","Intenso","Troppo intenso"];
@@ -6676,6 +6758,8 @@ function renderBreathSession(){
   var mm=Math.floor(b.remaining/60), ss=b.remaining%60;
   var showP2Scale = phase.id==="p2";
   var showWarning = showP2Scale && breathP2Warning(b.p2Feeling);
+  if(!b.g||b.g.phaseIdx!==b.phaseIdx) b.g=bgInit(b.phaseIdx);
+  var gv=bgAdvance(b.g,0,{phaseId:phase.id,holdSec:breathHoldSec(),pacer:breathPacerOn()});
 
   return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
     <div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
@@ -6687,17 +6771,26 @@ function renderBreathSession(){
     <div class="flex-1 flex flex-col items-center justify-center px-6 overflow-y-auto py-4">
       <p class="font-label text-[10px] uppercase tracking-widest mb-2" style="color:${BREATH_COLOR}">${phase.title}</p>
 
-      <div class="relative flex items-center justify-center mb-6" style="width:200px;height:200px">
-        <svg viewBox="0 0 100 100" style="width:200px;height:200px;transform:rotate(-90deg)">
-          <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="4"/>
-          <circle cx="50" cy="50" r="46" fill="none" stroke="${BREATH_COLOR}" stroke-width="4" stroke-linecap="round"
-            stroke-dasharray="${2*Math.PI*46}" stroke-dashoffset="${2*Math.PI*46*(1-pct/100)}"
-            style="transition:stroke-dashoffset 1s linear"/>
-        </svg>
-        <span data-breath-timer class="font-headline absolute" style="font-size:48px;color:${BREATH_COLOR}">${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}</span>
+      <span data-breath-timer class="font-headline mb-3" style="font-size:28px;color:${BREATH_COLOR}99">${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}</span>
+
+      <div onclick="breathBubbleTap()" class="relative flex items-center justify-center mb-3" style="width:${showP2Scale?200:230}px;height:${showP2Scale?200:230}px">
+        <div class="absolute inset-0 rounded-full" style="border:1px solid ${BREATH_COLOR}33"></div>
+        <div data-bubble class="absolute inset-0 rounded-full" style="transform:scale(${gv.scale.toFixed(3)});opacity:${gv.step==="hold"?0.95:0.8};background:radial-gradient(circle at 50% 40%,${BREATH_COLOR}66,${BREATH_COLOR}22 60%,${BREATH_COLOR}0a 75%);box-shadow:0 0 40px ${BREATH_COLOR}33;will-change:transform"></div>
+        <div class="relative z-10 text-center px-4 pointer-events-none">
+          <p data-bubble-label class="font-headline text-2xl leading-tight" style="color:#e1e2e7">${gv.label}</p>
+          <p data-bubble-sub class="font-label text-[10px] uppercase tracking-widest mt-1" style="color:${BREATH_COLOR}">${gv.sub||'&nbsp;'}</p>
+        </div>
       </div>
 
-      <p class="font-label text-sm text-gray-400 text-center leading-relaxed max-w-xs mb-6">${phase.copy}</p>
+      ${phase.id==="p3"?`<div class="flex items-center gap-1.5 mb-3">
+        <span class="font-label text-[9px] uppercase tracking-widest text-gray-600 mr-1">pausa</span>
+        ${[3,5,8].map(s=>`<button onclick="breathSetHold(${s})" class="font-label text-[11px] px-3 py-1.5 active:scale-95"
+          style="border:1px solid ${breathHoldSec()===s?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${breathHoldSec()===s?BREATH_COLOR:'#64748b'};background:${breathHoldSec()===s?BREATH_COLOR+'1a':'transparent'}">${s}"</button>`).join('')}
+      </div>`:''}
+      ${phase.id==="p2"?`<button onclick="breathTogglePacer()" class="font-label text-[10px] uppercase tracking-widest px-3 py-1.5 mb-3 active:scale-95"
+          style="border:1px solid ${breathPacerOn()?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${breathPacerOn()?BREATH_COLOR:'#64748b'}">Guida ritmo ${breathPacerOn()?'ON · 4" / 6"':'OFF'}</button>`:''}
+
+      <p class="font-label text-sm text-gray-400 text-center leading-relaxed max-w-xs mb-5">${phase.copy}</p>
 
       ${showP2Scale?`<div class="w-full mb-2">
         <p class="font-label text-[9px] uppercase tracking-widest text-gray-600 text-center mb-2">COME TI SENTI ADESSO?</p>
@@ -7053,7 +7146,7 @@ function renderPlan(){
           <div style="font-size:11px;font-weight:700;color:${sugColor};margin-bottom:8px;">${wk.name}</div>
           ${wk.ex.map(e=>`<div style="font-size:12px;color:#8090A0;padding:3px 0;border-bottom:1px solid #1E2A35;">· ${e}</div>`).join("")}
           <div style="margin-top:6px;font-size:11px;color:#3A4A55;">${wk.note}</div>
-          <button onclick="startRingsWorkout(${p.ringsPhase},${p.ringsWorkout})" style="width:100%;margin-top:10px;padding:14px;border-radius:12px;background:#43A047;color:#000;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;border:none;">▶ START ANELLI W${p.ringsWorkout}</button>
+          <button onclick="startRingsWorkout(${p.ringsPhase},${p.ringsWorkout})" style="width:100%;margin-top:10px;padding:14px;border-radius:12px;background:#43A047;color:#000;font-family:'DM Sans',sans-serif;font-size:20px;letter-spacing:1px;border:none;">▶ START ANELLI W${p.ringsWorkout}</button>
         </div>`;
     }else if(sug.type==="bw"){
       sugDetail=`<div style="margin-top:10px;font-size:12px;color:#8090A0;">Scegli il circuito qui sotto ↓</div>`;
@@ -7067,7 +7160,7 @@ function renderPlan(){
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
         <span style="font-size:32px;">${sugEmo}</span>
         <div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${sugColor};line-height:1.1;">${sugName}</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:22px;color:${sugColor};line-height:1.1;">${sugName}</div>
           <div style="font-size:11px;color:var(--muted);">${sug.type==="rings"?`Phase ${p.ringsPhase} · W${p.ringsWorkout}`:"Scegli dalla lista"}</div>
         </div>
       </div>
@@ -7081,19 +7174,19 @@ function renderPlan(){
     <div style="margin:0 16px 8px;border-radius:14px;overflow:hidden;border:1.5px solid #FF572444;">
       <button onclick="planAccToggle('kb')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:#FF572412;width:100%;text-align:left;border:none;color:var(--text);">
         <span style="font-size:28px;">🏋️</span>
-        <div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF5722;">FORGE KB</div><div style="font-size:11px;color:var(--muted);">A · B · C · D1 · 14 EXTRA</div></div>
+        <div style="flex:1;"><div style="font-family:'DM Sans',sans-serif;font-size:20px;color:#FF5722;">FORGE KB</div><div style="font-size:11px;color:var(--muted);">A · B · C · D1 · 14 EXTRA</div></div>
         <span style="font-size:18px;color:var(--muted);transition:transform 0.2s;${p.openAcc==='kb'?'transform:rotate(90deg)':''}">›</span>
       </button>
       ${p.openAcc==='kb'?`<div style="padding:12px 16px 14px;border-top:1px solid #1E2A35;background:#080C0F;">
         ${["A","B","C"].map(k=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#0F1419;border-radius:10px;border:1px solid #1E2A35;margin-bottom:6px;">
           <div style="width:8px;height:8px;border-radius:2px;background:${DAYS[k].color};flex-shrink:0;"></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Giorno ${k} — ${DAYS[k].subtitle}</div><div style="font-size:11px;color:var(--muted);">${DAYS[k].focus}</div></div>
-          <button onclick="startWorkout('${k}')" style="background:${DAYS[k].color};color:#000;border-radius:10px;padding:8px 12px;font-family:'Bebas Neue',sans-serif;font-size:15px;border:none;">▶</button>
+          <button onclick="startWorkout('${k}')" style="background:${DAYS[k].color};color:#000;border-radius:10px;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:15px;border:none;">▶</button>
         </div>`).join("")}
         <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#0F1419;border-radius:10px;border:1px solid #1E2A35;margin-bottom:6px;">
           <div style="width:8px;height:8px;border-radius:2px;background:#FF1744;flex-shrink:0;"></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:700;">D1 — Total Tension</div><div style="font-size:11px;color:var(--muted);">Pavel · Clean→Press→Squat→Row</div></div>
-          <button onclick="state.extraWorkoutId='D1';state.tab='extra-detail';render();" style="background:#FF1744;color:#fff;border-radius:10px;padding:8px 12px;font-family:'Bebas Neue',sans-serif;font-size:15px;border:none;">▶</button>
+          <button onclick="state.extraWorkoutId='D1';state.tab='extra-detail';render();" style="background:#FF1744;color:#fff;border-radius:10px;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:15px;border:none;">▶</button>
         </div>
         <button onclick="switchTab('extra')" style="width:100%;padding:10px;border-radius:10px;background:#7C4DFF20;border:1px solid #7C4DFF44;color:#7C4DFF;font-size:13px;font-weight:700;margin-top:2px;">⚡ Vedi tutti gli EXTRA →</button>
       </div>`:""}
@@ -7103,7 +7196,7 @@ function renderPlan(){
     <div style="margin:0 16px 8px;border-radius:14px;overflow:hidden;border:1.5px solid #00BCD444;">
       <button onclick="planAccToggle('bw')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:#00BCD412;width:100%;text-align:left;border:none;color:var(--text);">
         <span style="font-size:28px;">🤸</span>
-        <div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#00BCD4;">Bodyweight</div><div style="font-size:11px;color:var(--muted);">Circuiti · no attrezzi · Leo Moves style</div></div>
+        <div style="flex:1;"><div style="font-family:'DM Sans',sans-serif;font-size:20px;color:#00BCD4;">Bodyweight</div><div style="font-size:11px;color:var(--muted);">Circuiti · no attrezzi · Leo Moves style</div></div>
         <span style="font-size:18px;color:var(--muted);transition:transform 0.2s;${p.openAcc==='bw'?'transform:rotate(90deg)':''}">›</span>
       </button>
       ${p.openAcc==='bw'?`<div style="padding:12px 16px 14px;border-top:1px solid #1E2A35;background:#080C0F;">
@@ -7125,7 +7218,7 @@ function renderPlan(){
     <div style="margin:0 16px 8px;border-radius:14px;overflow:hidden;border:1.5px solid #43A04744;">
       <button onclick="planAccToggle('rings')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:#43A04712;width:100%;text-align:left;border:none;color:var(--text);">
         <span style="font-size:28px;">🔩</span>
-        <div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#43A047;">Anelli — BW Jacked</div><div style="font-size:11px;color:var(--muted);">Phase ${p.ringsPhase} · W${p.ringsWorkout} · Coulson 2020</div></div>
+        <div style="flex:1;"><div style="font-family:'DM Sans',sans-serif;font-size:20px;color:#43A047;">Anelli — BW Jacked</div><div style="font-size:11px;color:var(--muted);">Phase ${p.ringsPhase} · W${p.ringsWorkout} · Coulson 2020</div></div>
         <span style="font-size:18px;color:var(--muted);transition:transform 0.2s;${p.openAcc==='rings'?'transform:rotate(90deg)':''}">›</span>
       </button>
       ${p.openAcc==='rings'?`<div style="padding:12px 16px 14px;border-top:1px solid #1E2A35;background:#080C0F;">
@@ -7213,9 +7306,9 @@ function renderPlan(){
       const phEq=["Pull-up bar","Pull-up bar + anelli ginnici","Pull-up bar + anelli ginnici"];
       return `<div id="pacc-ph${ph}" style="margin:0 16px 8px;border-radius:14px;overflow:hidden;border:1.5px solid ${active?'#43A04766':'#1E2A35'};${locked?'opacity:0.5;':''}">
         <button onclick="${!locked?`planAccToggle('ph${ph}')`:''}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:${active?'#43A04710':'transparent'};width:100%;text-align:left;border:none;color:var(--text);">
-          <div style="width:36px;height:36px;border-radius:10px;background:${active?'#43A04720':'#1E2A35'};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:${active?'#43A047':'var(--muted)'};flex-shrink:0;">P${ph}</div>
+          <div style="width:36px;height:36px;border-radius:10px;background:${active?'#43A04720':'#1E2A35'};display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:14px;color:${active?'#43A047':'var(--muted)'};flex-shrink:0;">P${ph}</div>
           <div style="flex:1;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${active?'#43A047':'var(--muted)'};">${phNames[ph-1]}</div>
+            <div style="font-family:'DM Sans',sans-serif;font-size:18px;color:${active?'#43A047':'var(--muted)'};">${phNames[ph-1]}</div>
             <div style="font-size:11px;color:var(--dim);">${phDescs[ph-1]}</div>
           </div>
           ${active?`<span style="background:#43A047;color:#000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:6px;">ATTIVO</span>`:''}
@@ -7293,8 +7386,8 @@ function renderPlan(){
 
   return `<div class="screen bg-background" style="padding-top:64px;">
     <div style="padding:28px 22px 14px;text-align:center;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:5px;color:#43A047;margin-bottom:6px;">PROGRAMMA SETTIMANALE</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1.05;">KB · BW · ANELLI</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:5px;color:#43A047;margin-bottom:6px;">PROGRAMMA SETTIMANALE</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:34px;line-height:1.05;">KB · BW · ANELLI</div>
       <div style="font-size:13px;color:var(--muted);margin-top:5px;">Infrasettimanale flessibile · Weekend con anelli</div>
     </div>
     ${innerTabBar}
@@ -7986,7 +8079,7 @@ function forgeShowTrans(title, sub, cb){
     ov.className = 'kdp-trans';
     ov.innerHTML = '<div class="kdp-trans-name" id="forge-trans-name"></div>' +
       '<div class="kdp-trans-sub" id="forge-trans-sub"></div>' +
-      '<div class="kdp-trans-count" id="forge-trans-count" style="font-family:\'JetBrains Mono\',\'Bebas Neue\',monospace;font-size:96px;font-weight:700;color:#ffb693;margin-top:32px;line-height:1">5</div>';
+      '<div class="kdp-trans-count" id="forge-trans-count" style="font-family:\'JetBrains Mono\',\'DM Sans\',monospace;font-size:96px;font-weight:700;color:#ffb693;margin-top:32px;line-height:1">5</div>';
     document.body.appendChild(ov);
   }
   document.getElementById('forge-trans-name').textContent = title;
@@ -9043,17 +9136,17 @@ function showExitDialog(saveFn, exitFn){
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:flex-end;justify-content:center;max-width:480px;left:50%;transform:translateX(-50%)';
 
   overlay.innerHTML=`<div style="width:100%;background:#0C1017;padding:24px 20px 36px;border-top:2px solid rgba(255,255,255,0.08)">
-    <p style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.25em;color:#64748b;text-transform:uppercase;margin-bottom:16px;text-align:center">INTERROMPI ALLENAMENTO</p>
+    <p style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.25em;color:#64748b;text-transform:uppercase;margin-bottom:16px;text-align:center">INTERROMPI ALLENAMENTO</p>
     <button id="exit-save-btn"
-      style="width:100%;padding:16px;background:linear-gradient(135deg,#ffb693,#ff6b00);color:#000;border:none;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.1em;margin-bottom:8px;cursor:pointer;display:block">
+      style="width:100%;padding:16px;background:linear-gradient(135deg,#ffb693,#ff6b00);color:#000;border:none;font-family:'DM Sans',sans-serif;font-size:20px;letter-spacing:.1em;margin-bottom:8px;cursor:pointer;display:block">
       SALVA E ESCI
     </button>
     <button id="exit-nosave-btn"
-      style="width:100%;padding:14px;background:transparent;color:#64748b;border:1px solid rgba(90,65,54,0.4);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em;margin-bottom:8px;cursor:pointer;display:block">
+      style="width:100%;padding:14px;background:transparent;color:#64748b;border:1px solid rgba(90,65,54,0.4);font-family:'DM Sans',sans-serif;font-size:18px;letter-spacing:.1em;margin-bottom:8px;cursor:pointer;display:block">
       ESCI SENZA SALVARE
     </button>
     <button id="exit-cancel-btn"
-      style="width:100%;padding:14px;background:transparent;color:#64748b;border:none;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;cursor:pointer;display:block">
+      style="width:100%;padding:14px;background:transparent;color:#64748b;border:none;font-family:'DM Sans',sans-serif;font-size:16px;letter-spacing:.1em;cursor:pointer;display:block">
       CONTINUA L'ALLENAMENTO
     </button>
   </div>`;
@@ -11010,8 +11103,24 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v100";
+var APP_VERSION = "v102";
 var APP_CHANGELOG = [
+  {v:"v102", data:"27/09/2026", items:[
+    "Nuovo carattere in tutta l'app: DM Sans al posto di Bebas Neue, maiuscole e minuscole",
+    "Titoli più leggeri e leggibili; bottoni in grassetto medio",
+    "Runner: nome esercizio in maiuscolo/minuscolo con dimensioni ricalibrate",
+    "Timer del runner ridimensionato per restare dentro il cerchio",
+    "LOG: etichette sessione in maiuscolo/minuscolo; filtri che vanno a capo sui telefoni stretti",
+  ]},
+  {v:"v101", data:"27/09/2026", items:[
+    "Respiro: bolla guida al centro della routine",
+    "Fase 3 guidata: espira, pausa breve, riprendi dal naso, recupera 30\"",
+    "Durata della pausa a scelta (3 / 5 / 8\"), mai aumentata in automatico",
+    "Tocca la bolla per chiudere la pausa in qualsiasi momento",
+    "Fase 2: ritmo guida 4\" / 6\" attivabile e disattivabile",
+    "Fasi 1 e 4 senza ritmo: la bolla resta quasi ferma",
+    "Istruzioni della fase 3 riscritte in modo più chiaro",
+  ]},
   {v:"v100", data:"26/09/2026", items:[
     "Nuovo tab 30 DAYS KB in TRAIN: programma One Kettlebell, 24 sessioni + 6 riposi",
     "Calendario a 4 settimane con prossima sessione, sessioni fatte e avanzamento",
@@ -11985,7 +12094,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v100';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v102';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
@@ -11997,7 +12106,7 @@ render();
       const ban=document.createElement('div');
       ban.id='pwa-banner';
       ban.style.cssText='position:fixed;bottom:80px;left:16px;right:16px;background:#0F1419;border:1.5px solid #FF5722;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:999;box-shadow:0 4px 20px #00000080;';
-      ban.innerHTML='<span style="font-size:26px;">📲</span><div style="flex:1;"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:#FF5722;">INSTALLA L\'APP</div><div style="font-size:11px;color:#607080;">Aggiungila alla home per usarla offline</div></div><button id="pwa-ok" style="background:#FF5722;color:#000;border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;">Installa</button><button id="pwa-no" style="background:none;border:none;color:#607080;font-size:20px;padding:4px;">✕</button>';
+      ban.innerHTML='<span style="font-size:26px;">📲</span><div style="flex:1;"><div style="font-family:\'DM Sans\',sans-serif;font-size:16px;color:#FF5722;">INSTALLA L\'APP</div><div style="font-size:11px;color:#607080;">Aggiungila alla home per usarla offline</div></div><button id="pwa-ok" style="background:#FF5722;color:#000;border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;">Installa</button><button id="pwa-no" style="background:none;border:none;color:#607080;font-size:20px;padding:4px;">✕</button>';
       document.body.appendChild(ban);
       document.getElementById('pwa-ok').onclick=async()=>{if(dp){dp.prompt();await dp.userChoice;dp=null;}ban.remove();};
       document.getElementById('pwa-no').onclick=()=>{ban.remove();dp=null;};
