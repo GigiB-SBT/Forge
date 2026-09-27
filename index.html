@@ -6929,15 +6929,20 @@ function breathStartRoutine(){
     if(state.breath.phase==="feedback"){
       clearBreathInterval();
       releaseWakeLock();
+      bsStopWaves(); bsEnd();
       if(navigator.vibrate)navigator.vibrate([120,60,120,60,200]);
       render();
       return;
     }
     if(state.breath.phaseIdx!==prevPhaseIdx){
       if(navigator.vibrate)navigator.vibrate(100);
+      bsPhase();
+      if(BREATH_PHASES[state.breath.phaseIdx].id==='p4') bsStartWaves(); else bsStopWaves();
       render();
       return;
     }
+    var phN=BREATH_PHASES[state.breath.phaseIdx];
+    if(phN.id==='p4'){ var rN=state.breath.remaining; if(rN===Math.floor(phN.dur/2)) bsHalf(); else if(rN===60) bsMinute(); else if(rN===30) bs30(); }
     var el=document.querySelector('[data-breath-timer]');
     if(el){
       var m=Math.floor(state.breath.remaining/60), s=state.breath.remaining%60;
@@ -6948,8 +6953,8 @@ function breathStartRoutine(){
 
 function breathTogglePause(){
   if(!state.breath)return;
-  if(state.breath.phase==="running") breathPause(state.breath);
-  else if(state.breath.phase==="paused") breathResume(state.breath);
+  if(state.breath.phase==="running"){ breathPause(state.breath); bsStopWaves(); }
+  else if(state.breath.phase==="paused"){ breathResume(state.breath); if(BREATH_PHASES[state.breath.phaseIdx].id==='p4') bsStartWaves(); }
   render();
   bgEnsureLoop();
 }
@@ -6958,6 +6963,7 @@ function breathEndNow(){
   if(!state.breath)return;
   clearBreathInterval();
   releaseWakeLock();
+  bsStopWaves();
   breathEndEarly(state.breath);
   render();
 }
@@ -7072,18 +7078,18 @@ function bgAdvance(g, dt, cfg){
       ev=nxt; g.step=nxt;
     }
     var v=bgView3(g,cfg);
-    v.event=ev;
+    v.event=ev; v.stepMs=g.stepMs;
     return v;
   }
   if(cfg.phaseId==="p2" && cfg.pacer){
     var cyc=BG_P2.inhale+BG_P2.exhale, t=g.ms%cyc;
-    if(t<BG_P2.inhale) return {scale:bgLerp(0.35,1,t/BG_P2.inhale),label:"Inspira",sub:"leggero, dal naso",step:"inhale",event:null};
-    return {scale:bgLerp(1,0.35,(t-BG_P2.inhale)/BG_P2.exhale),label:"Espira",sub:"lascia uscire l'aria",step:"exhale",event:null};
+    if(t<BG_P2.inhale) return {scale:bgLerp(0.35,1,t/BG_P2.inhale),label:"Inspira",sub:"leggero, dal naso",step:"inhale",event:null,stepMs:t};
+    return {scale:bgLerp(1,0.35,(t-BG_P2.inhale)/BG_P2.exhale),label:"Espira",sub:"lascia uscire l'aria",step:"exhale",event:null,stepMs:t-BG_P2.inhale};
   }
   if(cfg.phaseId==="p1" && cfg.pacer){
     var cyc1=BG_P1.inhale+BG_P1.exhale, t1=g.ms%cyc1;
-    if(t1<BG_P1.inhale) return {scale:bgLerp(0.45,0.82,t1/BG_P1.inhale),label:"Inspira",sub:"ritmo naturale, dal naso",step:"inhale",event:null};
-    return {scale:bgLerp(0.82,0.45,(t1-BG_P1.inhale)/BG_P1.exhale),label:"Espira",sub:"senza forzare",step:"exhale",event:null};
+    if(t1<BG_P1.inhale) return {scale:bgLerp(0.45,0.82,t1/BG_P1.inhale),label:"Inspira",sub:"ritmo naturale, dal naso",step:"inhale",event:null,stepMs:t1};
+    return {scale:bgLerp(0.82,0.45,(t1-BG_P1.inhale)/BG_P1.exhale),label:"Espira",sub:"senza forzare",step:"exhale",event:null,stepMs:t1-BG_P1.inhale};
   }
   // Fase 4 (e 1-2 senza guida): bolla viva e ben visibile, ma senza ritmo da seguire
   var lbl = cfg.phaseId==="p4"?"Osserva il respiro":cfg.phaseId==="p2"?"Respiro leggero":"Respira dal naso";
@@ -7111,13 +7117,21 @@ var bgRAF=null, bgLast=0;
 function bgEnsureLoop(){ if(bgRAF) return; bgLast=performance.now(); bgRAF=requestAnimationFrame(bgFrame); }
 function bgFrame(now){
   var b=state.breath;
-  if(state.tab!=="breath-session"||!b||(b.phase!=="running"&&b.phase!=="paused")){ bgRAF=null; return; }
+  if(state.tab!=="breath-session"||!b||(b.phase!=="running"&&b.phase!=="paused")){ bgRAF=null; bsStopWaves(); return; }
   var dt=Math.min(1000,now-bgLast); bgLast=now;
   if(b.phase==="paused") dt=0;
   if(!b.g||b.g.phaseIdx!==b.phaseIdx) b.g=bgInit(b.phaseIdx);
   var ph=BREATH_PHASES[b.phaseIdx];
   var v=bgAdvance(b.g,dt,{phaseId:ph.id,holdSec:breathHoldSec(),pacer:breathPacerOn()});
   if(v.event&&navigator.vibrate&&(v.event==="hold"||v.event==="resume")) navigator.vibrate(30);
+  if(dt>0){
+    var guided=ph.id==='p3'||((ph.id==='p1'||ph.id==='p2')&&breathPacerOn());
+    var sn=b.snd||(b.snd={idx:-1,step:null,sec:0});
+    if(sn.idx!==b.phaseIdx){ sn.idx=b.phaseIdx; sn.step=v.step; sn.sec=Math.floor((v.stepMs||0)/1000); }
+    else if(v.step!==sn.step){ sn.step=v.step; sn.sec=0;
+      if(guided){ if(v.step==='inhale'||v.step==='resume') bsInhale(); else if(v.step==='exhale') bsExhale(); else if(v.step==='hold') bsHold(); } }
+    else if(guided&&v.step!=='recover'&&v.step!=='free'){ var s_=Math.floor((v.stepMs||0)/1000); if(s_>sn.sec){ sn.sec=s_; bsTick(); } }
+  }
   var el=document.querySelector('[data-bubble]');
   if(el){
     el.style.transform='scale('+v.scale.toFixed(3)+')';
@@ -7130,6 +7144,86 @@ function bgFrame(now){
 function breathBubbleTap(){
   var b=state.breath; if(!b||!b.g) return;
   if(bgEndHold(b.g)&&navigator.vibrate) navigator.vibrate(30);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SUONI DEL RESPIRO — sintetizzati sul telefono, nessun file audio
+// ══════════════════════════════════════════════════════════════════
+var BS={waves:null,log:null};
+function bsOn(){ try{ return localStorage.getItem('kb-breath-sound')!=='0'; }catch(e){ return true; } }
+function bsWavesOn(){ try{ return localStorage.getItem('kb-breath-waves')!=='0'; }catch(e){ return true; } }
+function bsMark(n){ if(BS.log) BS.log.push({n:n,t:Math.round(performance.now())}); }
+
+// Tono con attacco morbido; se glide, la frequenza scivola (su per l'inspira, giù per l'espira)
+function bsTone(freq,dur,vol,type,glide){
+  try{
+    var ctx=getAudioCtx(); if(ctx.state==='suspended') ctx.resume();
+    var t=ctx.currentTime, o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,t);
+    if(glide) o.frequency.exponentialRampToValueAtTime(glide,t+dur*0.85);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+dur+0.05);
+  }catch(e){}
+}
+// Campana: fondamentale più un parziale inarmonico, lunga coda
+function bsBell(freq,dur,vol){
+  try{
+    var ctx=getAudioCtx(); if(ctx.state==='suspended') ctx.resume();
+    var t=ctx.currentTime;
+    [[1,vol],[2.76,vol*0.35],[5.4,vol*0.12]].forEach(function(p){
+      var o=ctx.createOscillator(), g=ctx.createGain(); o.type='sine'; o.frequency.setValueAtTime(freq*p[0],t);
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(p[1],t+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dur/(p[0]>1?1.8:1));
+      o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+dur+0.05);
+    });
+  }catch(e){}
+}
+function bsTick(){   if(!bsOn()) return; bsMark('tic');      bsTone(1150,0.045,0.08,'sine'); }
+function bsInhale(){ if(!bsOn()) return; bsMark('inspira');  bsTone(392,0.45,0.2,'sine',587); }
+function bsExhale(){ if(!bsOn()) return; bsMark('espira');   bsTone(587,0.55,0.2,'sine',349); }
+function bsHold(){   if(!bsOn()) return; bsMark('pausa');    bsTone(262,0.6,0.18,'triangle'); }
+function bsPhase(){  if(!bsOn()) return; bsMark('fase');     bsBell(587,2.0,0.18); }
+function bsHalf(){   if(!bsOn()) return; bsMark('metà');     bsBell(528,2.4,0.22); }
+function bsMinute(){ if(!bsOn()) return; bsMark('1 minuto'); bsBell(660,1.8,0.2); setTimeout(function(){ bsBell(495,2.2,0.2); },480); }
+function bs30(){     if(!bsOn()) return; bsMark('30 secondi'); [784,659,523].forEach(function(f,i){ setTimeout(function(){ bsBell(f,1.3,0.18); },i*300); }); }
+function bsEnd(){    if(!bsOn()) return; bsMark('fine');     bsBell(392,3.2,0.22); setTimeout(function(){ bsBell(587,3.0,0.14); },120); }
+
+// Onde del mare: rumore "marrone" filtrato; volume e brillantezza salgono e scendono come una risacca
+function bsStartWaves(){
+  if(BS.waves||!bsOn()||!bsWavesOn()) return;
+  try{
+    var ctx=getAudioCtx(); if(ctx.state==='suspended'&&ctx.resume) ctx.resume().catch(function(){});
+    var len=ctx.sampleRate*4, buf=ctx.createBuffer(1,len,ctx.sampleRate), d=buf.getChannelData(0), last=0;
+    for(var i=0;i<len;i++){ var w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=last*3.5; }
+    var src=ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+    var lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=520; lp.Q.value=0.6;
+    var swell=ctx.createGain(); swell.gain.value=0.16;
+    var master=ctx.createGain(); master.gain.setValueAtTime(0.0001,ctx.currentTime); master.gain.exponentialRampToValueAtTime(0.9,ctx.currentTime+2.5);
+    var l1=ctx.createOscillator(), l1g=ctx.createGain(); l1.frequency.value=0.085; l1g.gain.value=320; l1.connect(l1g); l1g.connect(lp.frequency);
+    var l2=ctx.createOscillator(), l2g=ctx.createGain(); l2.frequency.value=0.085; l2g.gain.value=0.07; l2.connect(l2g); l2g.connect(swell.gain);
+    var l3=ctx.createOscillator(), l3g=ctx.createGain(); l3.frequency.value=0.031; l3g.gain.value=0.03; l3.connect(l3g); l3g.connect(swell.gain);
+    src.connect(lp); lp.connect(swell); swell.connect(master); master.connect(ctx.destination);
+    [src,l1,l2,l3].forEach(function(n){ n.start(); });
+    BS.waves={nodes:[src,l1,l2,l3],master:master}; bsMark('onde avvio');
+  }catch(e){}
+}
+function bsStopWaves(){
+  var w=BS.waves; if(!w) return; BS.waves=null; bsMark('onde stop');
+  try{ var ctx=getAudioCtx(), t=ctx.currentTime;
+    w.master.gain.cancelScheduledValues(t); w.master.gain.setValueAtTime(Math.max(0.0001,w.master.gain.value),t); w.master.gain.exponentialRampToValueAtTime(0.0001,t+1.2);
+    setTimeout(function(){ w.nodes.forEach(function(n){ try{n.stop();}catch(e){} }); },1400);
+  }catch(e){}
+}
+function bsToggle(){
+  try{ localStorage.setItem('kb-breath-sound',bsOn()?'0':'1'); }catch(e){}
+  if(!bsOn()) bsStopWaves(); else if(state.breath&&state.breath.phase==='running'&&BREATH_PHASES[state.breath.phaseIdx].id==='p4') bsStartWaves();
+  render();
+}
+function bsToggleWaves(){
+  try{ localStorage.setItem('kb-breath-waves',bsWavesOn()?'0':'1'); }catch(e){}
+  if(!bsWavesOn()) bsStopWaves(); else if(state.breath&&state.breath.phase==='running') bsStartWaves();
+  render();
 }
 
 // ── RENDER BREATH SESSION ───────────────────────────────────────────────────
@@ -7207,7 +7301,8 @@ function renderBreathSession(){
     <div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
       <button onclick="breathEndNow()" class="p-1"><span class="material-symbols-outlined text-gray-600">close</span></button>
       <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">FASE ${b.phaseIdx+1} DI ${BREATH_PHASES.length}</p>
-      <div style="width:32px"></div>
+      <button onclick="bsToggle()" class="flex items-center justify-center active:scale-95" style="width:44px;height:44px;color:${bsOn()?BREATH_COLOR:'#8a94a4'}" title="Suoni">
+        <span class="material-symbols-outlined">${bsOn()?'volume_up':'volume_off'}</span></button>
     </div>
 
     <div class="flex-1 flex flex-col items-center justify-center px-6 overflow-y-auto py-4">
@@ -7231,6 +7326,8 @@ function renderBreathSession(){
       </div>`:''}
       ${(phase.id==="p1"||phase.id==="p2")?`<button onclick="breathTogglePacer()" class="font-label text-[10px] uppercase tracking-widest px-3 py-1.5 mb-3 active:scale-95"
           style="border:1px solid ${breathPacerOn()?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${breathPacerOn()?BREATH_COLOR:'#64748b'}">Guida ritmo ${breathPacerOn()?(phase.id==="p1"?'ON · naturale':'ON · 4" / 6"'):'OFF'}</button>`:''}
+      ${phase.id==="p4"&&bsOn()?`<button onclick="bsToggleWaves()" class="flex items-center gap-1.5 font-label text-[10px] uppercase tracking-widest px-3 py-1.5 mb-3 active:scale-95"
+          style="border:1px solid ${bsWavesOn()?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${bsWavesOn()?BREATH_COLOR:'#64748b'}"><span class="material-symbols-outlined" style="font-size:15px">waves</span>Onde del mare ${bsWavesOn()?'ON':'OFF'}</button>`:''}
 
       <p class="font-label text-sm text-gray-400 text-center leading-relaxed max-w-xs mb-5">${phase.copy}</p>
 
@@ -11698,8 +11795,16 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v110";
+var APP_VERSION = "v111";
 var APP_CHANGELOG = [
+  {v:"v111", data:"27/09/2026", items:[
+    "Respiro: un tic ogni secondo quando segui la bolla",
+    "Suoni diversi al cambio: tono che sale all'inspira, che scende all'espira, basso alla pausa",
+    "Respirazione consapevole: onde del mare in sottofondo, generate dal telefono",
+    "Campane diverse a metà tempo, a 1 minuto e a 30 secondi dalla fine",
+    "Campana al cambio di fase e alla fine della sessione",
+    "Tasto altoparlante per disattivare i suoni; interruttore separato per le onde",
+  ]},
   {v:"v110", data:"27/09/2026", items:[
     "Macrocicli: piano di 12 settimane sull'obiettivo scelto (fiato, dimagrire, forza, ipertrofia, mobilità)",
     "Tre blocchi con una settimana di scarico ciascuno e una settimana di test finale con i benchmark",
@@ -12746,7 +12851,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v110';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v111';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
