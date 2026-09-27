@@ -1070,12 +1070,11 @@ function navTo(t){
   switchTab(t);
 }
 function navHTML(active){
-  var parent={axe:'train',extra:'train',plan:'train',programs:'train',health:'log'};
+  var parent={axe:'train',extra:'train',plan:'train',programs:'train',health:'log',morning:'home','ai-plan':'home'};
   active=parent[active]||active;
   const tabs=[
-    {id:"home",     icon:"home",           label:"Home"},
+    {id:"home",     icon:"today",          label:"Oggi"},
     {id:"train",    icon:"fitness_center", label:"Train"},
-    {id:"morning",  icon:"wb_sunny",       label:"Morning"},
     {id:"log",      icon:"query_stats",    label:"Log"},
     {id:"settings", icon:"settings",       label:"Set"},
   ];
@@ -1226,192 +1225,180 @@ function getSmartSuggestion(){
 // ── RENDER HOME ───────────────────────────────────────────────────────────────
 function hex2rgb(hex){hex=hex.replace("#","");return parseInt(hex.substring(0,2),16)+","+parseInt(hex.substring(2,4),16)+","+parseInt(hex.substring(4,6),16);}
 
-function renderHome(){
-  var sug = getSmartSuggestion();
-  var KPhex = {A:"#ffb693", B:"#e9c176", C:"#50dad1"};
-  var suggested = getTodaySuggested();
+// ══════════════════════════════════════════════════════════════════
+// HOME "OGGI" — la giornata: mattino, allenamento, sera
+// ══════════════════════════════════════════════════════════════════
+function homeDMY(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+function homeParse(s){ var p=String(s||'').split('/'); return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):null; }
 
-  // ── Piano AI del giorno (se importato) ──────────────────────────
-  var aiCard = '';
-  if(FORGE_AI_RESULT && FORGE_AI_RESULT.piano_settimana){
-    var GIORNI_IT=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
-    var ABBR={lun:'lunedì',mar:'martedì',mer:'mercoledì',gio:'giovedì',ven:'venerdì',sab:'sabato',dom:'domenica'};
-    var oggiNome=GIORNI_IT[new Date().getDay()].toLowerCase();
-    var normG=function(g){var l=(g||'').trim().toLowerCase();return ABBR[l]||l;};
-    var todayAI=FORGE_AI_RESULT.piano_settimana.filter(function(w){return normG(w.giorno)===oggiNome;})[0]||null;
-    var intensColor={'Alta':'#ffb4ab','Media':'#e9c176','Bassa':'#7A9A3A'};
-    var ic = todayAI ? (intensColor[todayAI.intensita]||'#8b5cf6') : '#8b5cf6';
-    aiCard =
-      '<div class="bg-surface-container ghost-border p-4 border-l-2 mb-3" style="border-color:#8b5cf6">'+
-        '<div class="flex justify-between items-center mb-1">'+
-          '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:#8b5cf6">📋 PIANO SETTIMANA</p>'+
-          '<button onclick="goAiPlan()" class="font-label text-[9px] uppercase tracking-widest px-2 py-1 active:scale-95" style="border:1px solid rgba(139,92,246,0.4);color:#8b5cf6">APRI</button>'+
-        '</div>'+
-        (todayAI ?
-          '<div class="flex items-center justify-between">'+
-            '<div>'+
-              '<p class="font-headline text-xl leading-none" style="color:'+ic+'">'+todayAI.workout+'</p>'+
-              '<p class="font-label text-[9px] text-gray-500 mt-0.5">'+todayAI.motivo+'</p>'+
-            '</div>'+
-            (sug.action ?
-              '<button onclick="'+sug.action+'" class="ml-3 flex-shrink-0 w-10 h-10 flex items-center justify-center active:scale-90" style="background:'+ic+';color:#000">'+
-                '<span class="material-symbols-outlined text-lg" style="font-variation-settings:\'FILL\' 1">play_arrow</span>'+
-              '</button>' : '')+
-          '</div>'
-        : '<p class="font-label text-[10px] text-gray-500">Nessun allenamento previsto oggi</p>')+
-      '</div>';
-  } else {
-    aiCard =
-      '<button onclick="switchTab(\'settings\')" class="w-full flex items-center justify-between p-4 ghost-border mb-3 active:scale-[0.98]" style="border:1px solid rgba(139,92,246,0.25);background:rgba(139,92,246,0.04)">'+
-        '<div class="flex items-center gap-3">'+
-          '<span class="material-symbols-outlined text-base" style="color:#8b5cf6;font-variation-settings:\'FILL\' 1">calendar_month</span>'+
-          '<div class="text-left">'+
-            '<p class="font-headline text-base leading-none" style="color:#8b5cf6">Piano settimanale AI</p>'+
-            '<p class="font-label text-[9px] text-gray-600">Esporta dati e importa piano</p>'+
-          '</div>'+
-        '</div>'+
-        '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
-      '</button>';
+function homeWeek(){
+  var now=new Date(), dow=(now.getDay()+6)%7;
+  var mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow);
+  var days={}, n=0, mins=0;
+  function add(dateStr,dur){ var d=homeParse(dateStr); if(!d) return; var i=Math.round((d-mon)/86400000); if(i<0||i>6) return; days[i]=(days[i]||0)+1; n++; mins+=(+dur||0); }
+  (state.history||[]).forEach(function(h){ if(!h.partial) add(h.date,h.duration); });
+  (state.externalHistory||[]).forEach(function(h){ if(h._morning||h._wimhof||h._axe) return; add(h.date,h.duration); });
+  (state.axeHistory||[]).forEach(function(h){ add(h.date,h.duration); });
+  var planned=(FORGE_PROFILE.trainingDays||[]).length||4;
+  return {n:n,mins:Math.round(mins),days:days,planned:planned,todayIdx:dow};
+}
+
+function homeTrainingToday(){
+  var today=homeDMY(new Date()), last=null;
+  (state.history||[]).forEach(function(h){ if(h.date===today&&!h.partial) last={day:h.day,dur:h.duration}; });
+  (state.externalHistory||[]).forEach(function(h){ if(h.date===today&&!h._morning&&!h._wimhof) last={type:h.type,dur:h.duration}; });
+  (state.axeHistory||[]).forEach(function(h){ if(h.date===today) last={type:'AXE Protocol',dur:h.duration}; });
+  if(!last) return null;
+  var label=last.type||'';
+  if(last.day){
+    var id=String(last.day).replace('extra_','');
+    var w=getExtraById(id), lm=(typeof getLmById==='function')?getLmById(id):null;
+    label=w?(w.label+(w.title?' · '+w.title:'')):lm?lm.label:(DAYS[last.day]?DAYS[last.day].label:'Giorno '+last.day);
   }
+  return {label:label,dur:last.dur};
+}
 
-  // ── Suggerimento algoritmo (compatto) ─────────────────────────
-  var sugCard =
-    '<div class="bg-surface-container ghost-border p-4 border-l-2 mb-4" style="border-color:'+(sug.color||'#ffb693')+'">'+
-      '<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1.5">Suggerimento del giorno</p>'+
-      '<div class="flex items-center justify-between">'+
-        '<div class="flex items-center gap-3">'+
-          '<span style="font-size:20px">'+sug.icon+'</span>'+
-          '<div>'+
-            '<p class="font-headline text-xl leading-none" style="color:'+(sug.color||'#ffb693')+'">'+sug.title.toUpperCase()+'</p>'+
-            '<p class="font-label text-[9px] text-gray-500 mt-0.5 leading-snug">'+sug.reason+'</p>'+
-          '</div>'+
+// Innesto "come stai": una riga solo quando i dati di oggi o ieri ci sono
+function homeReadinessNote(){
+  var H=(state.healthHistory||[]).slice().filter(function(h){return homeParse(h.date);})
+    .sort(function(a,b){return homeParse(a.date)-homeParse(b.date);});
+  if(!H.length) return null;
+  var last=H[H.length-1], age=Math.round((new Date(new Date().toDateString())-homeParse(last.date))/86400000);
+  if(age>1) return null;
+  if(last.sleep&&last.sleep<6) return 'Hai dormito '+String(last.sleep).replace('.',',')+' ore: se ti senti scarico, scegli una versione più leggera.';
+  if(last.hrv){
+    var prev=H.slice(0,-1).filter(function(h){return h.hrv;}).slice(-7).map(function(h){return h.hrv;});
+    if(prev.length>=3){ var avg=prev.reduce(function(a,b){return a+b;},0)/prev.length;
+      if(last.hrv<avg*0.85) return 'HRV '+last.hrv+', sotto la tua media ('+Math.round(avg)+'): meglio un\'intensità moderata.'; }
+  }
+  return null;
+}
+
+function renderHome(){
+  var now=new Date(), todayDMY=homeDMY(now);
+  var GG=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+  var MM=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  var wk=homeWeek(), streak=breathStreak(state.breathHistory||[]);
+  var breathDone=(state.breathHistory||[]).some(function(e){return e.date===isoToday();});
+  var boltToday=(state.boltHistory||[]).filter(function(e){return e.date===isoToday();}).slice(-1)[0];
+  var mrDone=(state.externalHistory||[]).some(function(e){return e._morning&&e.date===todayDMY;});
+  var whDone=(state.externalHistory||[]).some(function(e){return e._wimhof&&e.date===todayDMY;});
+  var trained=homeTrainingToday();
+  var eveIds=['extra_K30-D06','extra_K30-D13','extra_K30-D20','extra_K30-D27','extra_WFB'];
+  var eveDone=(state.history||[]).some(function(h){return h.date===todayDMY&&eveIds.indexOf(h.day)>=0;});
+  var sug=getWorkoutSuggestion()||{};
+  var isTrainingDay=(FORGE_PROFILE.trainingDays||[]).indexOf(now.getDay())>=0;
+  var isRest=!trained&&(!sug.action||(!sug._fromAI&&!isTrainingDay));
+  var morningDone=breathDone||mrDone||whDone;
+  var doneCount=(morningDone?1:0)+(trained?1:0)+(eveDone?1:0);
+  var note=homeReadinessNote();
+  var P='#ffb693', FILL="font-variation-settings:'FILL' 1";
+
+  // ── Anello settimana + serie Respiro ──
+  var pct=Math.min(1,wk.n/wk.planned), C=2*Math.PI*42;
+  var dots=['L','M','M','G','V','S','D'].map(function(l,i){
+    var js=(i+1)%7, planned=(FORGE_PROFILE.trainingDays||[]).indexOf(js)>=0, done=!!wk.days[i], today=i===wk.todayIdx;
+    var inner=done?'<span class="material-symbols-outlined" style="font-size:13px;'+FILL+'">check</span>':'';
+    return '<div class="flex flex-col items-center gap-1" style="flex:1">'+
+      '<span class="font-label text-[11px]" style="color:'+(today?P:'#9aa3b2')+';font-weight:'+(today?700:500)+'">'+l+'</span>'+
+      '<span class="flex items-center justify-center rounded-full" style="width:22px;height:22px;'+
+        (done?'background:'+P+';color:#000':planned?'border:1.5px solid '+P+'77':'border:1px solid rgba(255,255,255,0.1)')+'">'+inner+'</span></div>';
+  }).join('');
+  var weekCard='<div class="bg-surface-container p-4 mb-5" style="border:1px solid rgba(255,255,255,0.06)">'+
+    '<div class="flex items-center gap-4">'+
+      '<div class="relative flex-shrink-0" style="width:72px;height:72px">'+
+        '<svg viewBox="0 0 100 100" width="72" height="72" style="transform:rotate(-90deg)"><circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>'+
+        '<circle cx="50" cy="50" r="42" fill="none" stroke="'+P+'" stroke-width="10" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+(C*(1-pct)).toFixed(1)+'"/></svg>'+
+        '<div class="absolute inset-0 flex items-center justify-center font-headline" style="font-size:22px">'+wk.n+'<span class="text-gray-500" style="font-size:14px">/'+wk.planned+'</span></div>'+
+      '</div>'+
+      '<div class="flex-1 min-w-0"><p class="font-label text-[11px] uppercase tracking-widest text-gray-500">Settimana</p>'+
+        '<p class="font-headline text-lg leading-tight mt-0.5">'+wk.mins+' minuti di allenamento</p>'+
+        '<p class="font-label text-[12px] text-gray-400 mt-0.5">'+(streak?'Respiro: '+streak+(streak===1?' giorno':' giorni di fila'):'Respiro: inizia la serie oggi')+'</p></div>'+
+    '</div>'+
+    '<div class="flex mt-4">'+dots+'</div>'+
+  '</div>';
+
+  // ── Linea del tempo ──
+  function node(state_,color){
+    return '<span class="absolute flex items-center justify-center rounded-full" style="left:-27px;top:15px;width:18px;height:18px;'+
+      (state_==='done'?'background:'+color+';color:#000':'background:#090C0F;border:2px solid '+(state_==='now'?color:'rgba(255,255,255,0.25)'))+'">'+
+      (state_==='done'?'<span class="material-symbols-outlined" style="font-size:12px;'+FILL+'">check</span>':'')+'</span>';
+  }
+  function item(icon,color,title,sub,btn,onclick,done){
+    return '<div class="relative mb-2">'+node(done?'done':'todo',color)+
+      '<div class="bg-surface-container flex items-center gap-3 px-3.5 py-3" style="border:1px solid rgba(255,255,255,0.06);min-height:60px">'+
+        '<span class="material-symbols-outlined flex-shrink-0" style="font-size:22px;color:'+color+';'+FILL+'">'+icon+'</span>'+
+        '<div class="flex-1 min-w-0"><p class="font-headline text-base leading-tight">'+title+'</p><p class="font-label text-[12px] text-gray-400 mt-0.5">'+sub+'</p></div>'+
+        (btn?'<button onclick="'+onclick+'" class="flex-shrink-0 px-3 font-label text-[13px] active:scale-95" style="min-height:44px;color:'+color+'">'+btn+'</button>':
+          (done?'<span class="material-symbols-outlined flex-shrink-0" style="color:'+color+';'+FILL+'">check_circle</span>':''))+
+      '</div></div>';
+  }
+  var BC='#7dd3fc';
+  var mattino='<div class="flex items-center justify-between mb-2"><p class="font-label text-[11px] uppercase tracking-widest" style="color:'+(morningDone?'#9aa3b2':BC)+'">Mattino</p>'+
+      '<button onclick="goMorning()" class="font-label text-[12px] text-gray-400 active:scale-95" style="min-height:32px">Tutto il mattino ›</button></div>'+
+    item('spa',BC,'Respiro',breathDone?('fatto oggi'+(boltToday?' · BOLT '+boltToday.bolt_seconds+'"':'')):'15 minuti · naso e lentezza',breathDone?'':'Inizia','breathStartRoutine()',breathDone)+
+    item('wb_sunny','#e9c176','Routine di risveglio',mrDone?'fatta oggi':'8 minuti · facoltativa',mrDone?'':'Inizia','mrStart(60)',mrDone)+
+    item('air','#50dad1','Wim Hof',whDone?'fatto oggi':'3 round · facoltativo',whDone?'':'Inizia','whStart()',whDone);
+
+  var tCol=sug.color||P, training;
+  if(trained){
+    training='<div class="relative mb-5">'+node('done',P)+
+      '<div class="bg-surface-container p-4" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid '+P+'">'+
+        '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+P+'">Fatto</p>'+
+        '<p class="font-headline text-xl leading-tight mt-1">'+trained.label+'</p>'+
+        '<p class="font-label text-[12px] text-gray-400 mt-0.5">'+(trained.dur?trained.dur+' minuti':'')+'</p>'+
+        '<button onclick="state.trainSubTab=null;switchTab(\'train\')" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:'+P+'">Allenarti ancora? Apri il catalogo ›</button>'+
+      '</div></div>';
+  } else if(isRest){
+    training='<div class="relative mb-5">'+node('now','#7A9A3A')+
+      '<div class="bg-surface-container p-4" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid #7A9A3A">'+
+        '<p class="font-label text-[11px] uppercase tracking-widest" style="color:#7A9A3A">Riposo</p>'+
+        '<p class="font-headline text-xl leading-tight mt-1">Oggi recupero</p>'+
+        '<p class="font-label text-[12px] text-gray-400 mt-0.5">'+(sug._fromAI?'Nessuna seduta nel piano di oggi.':'Oggi non è un tuo giorno di allenamento.')+' Muoviti leggero, se ti va.</p>'+
+        (sug.action?'<button onclick="'+sug.action+'" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:#7A9A3A">Vuoi allenarti lo stesso? '+sug.title+' ›</button>':'')+
+      '</div></div>';
+  } else {
+    training='<div class="relative mb-5">'+node('now',tCol)+
+      '<div class="p-4" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid '+tCol+';background:linear-gradient(135deg,'+tCol+'1f,#0C1017 70%)">'+
+        '<div class="flex items-center justify-between gap-2"><p class="font-label text-[11px] uppercase tracking-widest" style="color:'+tCol+'">'+(sug._fromAI?'Dal piano':'Suggerito')+'</p>'+
+          (sug._fromAI?'<button onclick="goAiPlan()" class="font-label text-[12px] text-gray-400 active:scale-95" style="min-height:32px">Piano ›</button>':'')+'</div>'+
+        '<p class="font-headline text-2xl leading-tight mt-1">'+sug.title+'</p>'+
+        (sug.reason?'<p class="font-label text-[12px] text-gray-400 mt-1 leading-snug">'+String(sug.reason).replace(/^📋 Piano AI · ?/,'')+'</p>':'')+
+        (note?'<p class="font-label text-[12px] mt-2 leading-snug flex gap-1.5" style="color:#e9c176"><span class="material-symbols-outlined" style="font-size:16px">info</span><span>'+note+'</span></p>':'')+
+        '<div class="flex gap-2 mt-3">'+
+          '<button onclick="'+sug.action+'" class="flex-1 flex items-center justify-center gap-1.5 font-headline text-lg active:scale-95" style="min-height:48px;background:linear-gradient(135deg,'+tCol+','+tCol+'bb);color:#000">'+
+            '<span class="material-symbols-outlined" style="'+FILL+'">play_arrow</span>Inizia</button>'+
+          '<button onclick="state.trainSubTab=null;switchTab(\'train\')" class="flex items-center justify-center gap-1 px-4 font-label text-[13px] active:scale-95" style="min-height:48px;border:1px solid '+tCol+'77;color:'+tCol+'">'+
+            '<span class="material-symbols-outlined" style="font-size:18px">swap_horiz</span>Cambia</button>'+
         '</div>'+
-        (sug.action?'<button onclick="'+sug.action+'" class="ml-4 flex-shrink-0 w-10 h-10 flex items-center justify-center active:scale-90" style="background:'+(sug.color||'#ffb693')+';color:#000">'+
-          '<span class="material-symbols-outlined text-lg">arrow_forward</span>'+
-        '</button>':'')+
-      '</div>'+
-    '</div>';
+      '</div></div>';
+  }
+  var allenamento='<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:'+(trained?'#9aa3b2':tCol)+'">Allenamento</p>'+training;
 
-  // Giorni KB (chip compatte)
-  var dayChips = ['A','B','C'].map(function(key){
-    var accent = KPhex[key]; var day = DAYS[key];
-    var isToday = suggested===key;
-    return '<button data-k="'+key+'" onclick="startWorkout(this.dataset.k)"'+
-      ' class="flex-1 py-3 text-center active:scale-95 transition-transform"'+
-      ' style="background:'+(isToday?'rgba('+hex2rgb(accent)+',0.15)':'transparent')+';border:1px solid '+(isToday?accent:'rgba(90,65,54,0.4)')+'">'+
-      '<div class="font-headline text-2xl" style="color:'+accent+'">'+key+'</div>'+
-      '<div class="font-label text-[8px] text-gray-500 mt-0.5">'+day.subtitle+'</div>'+
-      (isToday?'<div class="font-label text-[7px] mt-0.5" style="color:'+accent+'">OGGI</div>':'')+
-    '</button>';
-  }).join('');
+  var sera='<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:'+(eveDone?'#9aa3b2':'#a3be6b')+'">Sera</p>'+
+    item('self_improvement','#7A9A3A','Mobilità leggera',eveDone?'fatta oggi':'Core & Mobility · ~15 minuti',eveDone?'':'Apri',"openExtraDetail('K30-D13')",eveDone);
 
-  // Link rapidi alle sezioni principali
-  var links = [
-    {label:'Morning',      sub:'Routine + Wim Hof',     icon:'wb_sunny',        color:'#e9c176', action:"switchTab('morning')"},
-    {label:'Tutti i workout', sub:'KB · Complex · Flow · AXE · KDP', icon:'fitness_center', color:'#ffb693', action:"switchTab('train')"},
-    {label:'⚡ Finisher',   sub:'5 min AMRAP Snatch',   icon:'bolt',            color:'#e9c176', action:"state.finisherReturnTab='home';finStart()"},
-  ].map(function(l){
-    return '<button onclick="'+l.action+'"'+
-      ' class="flex items-center gap-4 py-4 px-4 active:scale-[0.98] transition-transform w-full"'+
-      ' style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06)">'+
-      '<span class="material-symbols-outlined text-xl flex-shrink-0" style="color:'+l.color+';font-variation-settings:\'FILL\' 1">'+l.icon+'</span>'+
-      '<div class="text-left flex-1">'+
-        '<p class="font-headline text-base leading-none" style="color:'+l.color+'">'+l.label+'</p>'+
-        '<p class="font-label text-[9px] text-gray-600 mt-0.5">'+l.sub+'</p>'+
-      '</div>'+
-      '<span class="material-symbols-outlined text-gray-700">chevron_right</span>'+
-    '</button>';
-  }).join('');
-
-  // Chip Wing Foil
-  var wfChips = ['WF1','WF2','WF3','WFB'].map(function(id){
-    var w=getExtraById(id);
-    if(!w) return '';
-    return '<button onclick="openExtraDetail(\''+id+'\')"'+
-      ' class="flex-shrink-0 px-3 py-2.5 text-left active:scale-95"'+
-      ' style="background:'+w.color+'0f;border:1px solid '+w.color+'40;min-width:130px">'+
-      '<p class="font-headline text-sm leading-tight">'+w.label.replace('WF ','')+'</p>'+
-      '<p class="font-label text-[8px] text-gray-500 mt-0.5">'+w.totalMin+' min · '+(w.kb==='0'?'corpo libero':'1 KB')+'</p>'+
-    '</button>';
-  }).join('');
-
-  // Chip Flow
-  var flowChips = FLOWS.map(function(fl){
-    var totMin=Math.round((fl.durataRound*fl.roundsMin + fl.rest*(fl.roundsMin-1))/60);
-    return '<button onclick="openFlowDetail(\''+fl.id+'\')"'+
-      ' class="flex-shrink-0 px-3 py-2.5 text-left active:scale-95"'+
-      ' style="background:'+fl.color+'0f;border:1px solid '+fl.color+'40;min-width:135px">'+
-      '<div class="flex items-center gap-1.5 mb-0.5">'+
-        '<span class="font-headline text-xs" style="color:'+fl.color+'">'+fl.id+'</span>'+
-        '<span class="font-headline text-sm leading-none">'+fl.nome.replace(' Flow','')+'</span>'+
-      '</div>'+
-      '<p class="font-label text-[8px] text-gray-500">'+fl.livello+' · ~'+totMin+' min</p>'+
-    '</button>';
-  }).join('');
-
-  // Riscaldamento chip (accesso rapido esercizi singoli)
-  var warmupChips = MORNING_ROUTINE.exercises.map(function(ex,i){
-    return '<button onclick="startSingleEx(\'warmup\','+i+')"'+
-      ' class="flex-shrink-0 px-3 py-2 text-left active:scale-95"'+
-      ' style="background:rgba(233,193,118,0.06);border:1px solid rgba(233,193,118,0.2);min-width:100px">'+
-      '<p class="font-headline text-sm leading-tight" style="color:#e9c176">'+ex.name+'</p>'+
-      '<p class="font-label text-[8px] text-gray-500 mt-0.5">'+ex.duration+'s</p>'+
-    '</button>';
-  }).join('');
-
-
+  var shortcuts='<div class="flex gap-2 mt-6 overflow-x-auto" style="scrollbar-width:none">'+
+    [['bolt','Finisher 5\'',"state.finisherReturnTab='home';finStart()"],['calendar_month','Piano AI','goAiPlan()'],['fitness_center','Catalogo',"state.trainSubTab=null;switchTab('train')"]].map(function(s){
+      return '<button onclick="'+s[2]+'" class="flex-shrink-0 flex items-center gap-1.5 px-3.5 font-label text-[13px] text-gray-400 active:scale-95" style="min-height:44px;border:1px solid rgba(255,255,255,0.1)">'+
+        '<span class="material-symbols-outlined" style="font-size:18px">'+s[0]+'</span>'+s[1]+'</button>';
+    }).join('')+'</div>';
 
   return '<div class="screen bg-background page-pad">'+
-    '<main class="px-5 pt-5 pb-24">'+
-
-      aiCard+
-
-      // Giorni KB
-      '<div class="mb-5">'+
-        '<div class="flex justify-between items-center mb-2">'+
-          '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500">GIORNI KB</p>'+
-          '<button onclick="switchTab(\'train\')" class="font-label text-[9px] uppercase tracking-widest text-gray-600">Tutti →</button>'+
-        '</div>'+
-        '<div class="grid grid-cols-3 gap-2">'+dayChips+'</div>'+
+    '<main class="px-5 pt-3">'+
+      '<p class="font-label text-[12px] text-gray-400">'+GG[now.getDay()]+' '+now.getDate()+' '+MM[now.getMonth()]+'</p>'+
+      '<div class="flex items-end justify-between mb-4"><h1 class="font-headline text-3xl leading-none">Oggi</h1>'+
+        '<span class="font-label text-[12px] text-gray-400">'+doneCount+' di 3 fatti</span></div>'+
+      weekCard+
+      '<div class="relative" style="padding-left:27px">'+
+        '<div class="absolute" style="left:8px;top:30px;bottom:30px;width:2px;background:rgba(255,255,255,0.08)"></div>'+
+        mattino+'<div class="mb-4"></div>'+allenamento+sera+
       '</div>'+
-
-      // Wing Foil
-      '<div class="mb-5">'+
-        '<div class="flex justify-between items-center mb-2">'+
-          '<p class="font-label text-[9px] uppercase tracking-widest" style="color:#38bdf8">🏄 WING FOIL · preparazione</p>'+
-          '<button onclick="state.trainSubTab=\'wf\';switchTab(\'train\')" class="font-label text-[9px] uppercase tracking-widest text-gray-600">Tutti →</button>'+
-        '</div>'+
-        '<div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none">'+wfChips+'</div>'+
-      '</div>'+
-
-      // Flow
-      '<div class="mb-5">'+
-        '<div class="flex justify-between items-center mb-2">'+
-          '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500">FLOW · sequenze continue</p>'+
-          '<button onclick="state.trainSubTab=\'flow\';switchTab(\'train\')" class="font-label text-[9px] uppercase tracking-widest text-gray-600">Tutti →</button>'+
-        '</div>'+
-        '<div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none">'+flowChips+'</div>'+
-      '</div>'+
-
-      // Link sezioni
-      '<div class="space-y-1.5 mb-5">'+links+'</div>'+
-
-      // Riscaldamento rapido
-      '<div class="mb-6">'+
-        '<p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-2">RISCALDAMENTO RAPIDO</p>'+
-        '<div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none">'+warmupChips+'</div>'+
-      '</div>'+
-
-      // Versione
-      '<button onclick="state.tab=\'changelog\';render()" class="w-full text-center py-2 active:scale-95">'+
-        '<span class="font-label text-[9px] uppercase tracking-widest text-gray-700">FORGE '+APP_VERSION+' · novità</span>'+
-      '</button>'+
-
+      shortcuts+
     '</main>'+
     navHTML('home')+
   '</div>';
 }
-
 
 function renderWorkout(){
   const day=DAYS[state.dayKey],seq=day.seq,step=seq[state.stepIdx];
@@ -6691,7 +6678,7 @@ function breathSubmitFeedback(){
   clearBreathInterval();
   releaseWakeLock();
   state.breath=null;
-  state.tab="morning";
+  state.tab="home";
   render();
 }
 
@@ -6699,7 +6686,7 @@ function breathExitWithoutSaving(){
   clearBreathInterval();
   releaseWakeLock();
   state.breath=null;
-  state.tab="morning";
+  state.tab="home";
   render();
 }
 
@@ -6745,14 +6732,14 @@ function boltSaveUI(){
   state.boltHistory.push(entry);
   saveBoltHistory();
   state.bolt=null;
-  state.tab="morning";
+  state.tab="home";
   render();
 }
 
 function boltExitWithoutSaving(){
   clearBoltInterval();
   state.bolt=null;
-  state.tab="morning";
+  state.tab="home";
   render();
 }
 
@@ -8830,7 +8817,7 @@ function mrTick(){
         duration:Math.round(MORNING_ROUTINE.exercises.length*MR_STATE.exDuration/60)||8,notes:'8 esercizi · '+(MR_STATE.exDuration||60)+'" cad.',_src:'ext',_morning:true
       });
       saveExternalHistory();
-      state.tab='morning'; render();
+      state.tab='home'; render();
       setTimeout(function(){alert('🌅 Routine completata! Ottimo inizio giornata.');},300);
       return;
     }
@@ -8863,7 +8850,7 @@ function mrSkip(){
       duration:8,notes:'Completata (con skip)',_src:'ext',_morning:true
     });
     saveExternalHistory();
-    state.tab='morning'; render();
+    state.tab='home'; render();
     return;
   }
   if('vibrate'in navigator) navigator.vibrate([80,40,80]);
@@ -8890,7 +8877,7 @@ function mrExit(){
     }
     doExit();
   }
-  function doExit(){ mrReset(); releaseWakeLock(); state.tab='morning'; render(); }
+  function doExit(){ mrReset(); releaseWakeLock(); state.tab='home'; render(); }
 
   if(MR_STATE.exIdx>0){
     showExitDialog(doSave, doExit);
@@ -9134,7 +9121,7 @@ function whExit(){
     saveExternalHistory();
     doExit();
   }
-  function doExit(){ whReset(); releaseWakeLock(); state.tab='morning'; render(); }
+  function doExit(){ whReset(); releaseWakeLock(); state.tab='home'; render(); }
 
   if(WH_STATE.retentionLog.length>0 && WH_STATE.phase!=='done'){
     showExitDialog(doSave, doExit);
@@ -9729,7 +9716,7 @@ function aiWorkoutToAction(workoutName){
   if(/bellplex|\bcomplex\b/.test(n)) return {action:'forgeBellplex();',icon:'🔴',color:'#ffb4ab'};
   if(/core\s*(&|e)?\s*forza|\bcore\s*7|\bcore7\b/.test(n)) return {action:'forgeCore7();',icon:'💥',color:'#ffb693'};
   if(/deep push|\bdpu\b|push-?up emom/.test(n)) return {action:'forgeDpu();',icon:'💪',color:'#50dad1'};
-  if(/respiro|breath|\bbolt\b/.test(n)) return {action:"switchTab('morning');",icon:'🫁',color:'#7dd3fc'};
+  if(/respiro|breath|\bbolt\b/.test(n)) return {action:"breathStartRoutine();",icon:'🫁',color:'#7dd3fc'};
   if(/mattutina|morning|risveglio/.test(n)) return {action:'mrStart(60);',icon:'🌅',color:'#e9c176'};
   if(/wim\s*hof|\bwim\b/.test(n)) return {action:'whStart();',icon:'🫁',color:'#50dad1'};
   if(/\brecupero\b/.test(n)) return {action:null,icon:'😴',color:'#64748b'};
@@ -11364,8 +11351,16 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v107";
+var APP_VERSION = "v108";
 var APP_CHANGELOG = [
+  {v:"v108", data:"27/09/2026", items:[
+    "Nuova Home \"Oggi\": la giornata in una linea del tempo — mattino, allenamento, sera",
+    "Settimana in cima: sedute fatte su quelle previste, minuti e giorni di fila del Respiro",
+    "Allenamento del giorno dal piano, con Inizia e Cambia; card Fatto e card Riposo",
+    "Nota su sonno corto o HRV bassa, solo quando registri i dati",
+    "Morning entra in Oggi: la barra passa a 4 voci (Oggi, Train, Log, Set)",
+    "Finiti Respiro, Wim Hof o la routine, si torna a Oggi",
+  ]},
   {v:"v107", data:"27/09/2026", items:[
     "Piano della settimana: le sedute di 30 Days KB aprono il giorno giusto (prima partiva il Giorno A)",
     "Giorno A, B e C del piano avviano ciascuno il proprio giorno (prima partiva sempre il prossimo della rotazione)",
@@ -12389,7 +12384,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v107';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v108';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
