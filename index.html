@@ -6614,6 +6614,7 @@ function boltExitWithoutSaving(){
 
 // ── GUIDA RESPIRO (bolla) — logica pura, avanzata a delta di tempo ──────
 var BG_P2={inhale:4000,exhale:6000};                 // riferimento fase 2
+var BG_P1={inhale:2000,exhale:3000};                 // fase 1: ritmo naturale da riposo (~12/min)
 var BG_P3={exhale:4000,resume:4000,recover:30000};   // ciclo fase 3 (pausa da impostazioni)
 function bgEase(x){ x=Math.max(0,Math.min(1,x)); return x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2; }
 function bgLerp(a,b,t){ return a+(b-a)*bgEase(t); }
@@ -6644,9 +6645,15 @@ function bgAdvance(g, dt, cfg){
     if(t<BG_P2.inhale) return {scale:bgLerp(0.35,1,t/BG_P2.inhale),label:"Inspira",sub:"leggero, dal naso",step:"inhale",event:null};
     return {scale:bgLerp(1,0.35,(t-BG_P2.inhale)/BG_P2.exhale),label:"Espira",sub:"lascia uscire l'aria",step:"exhale",event:null};
   }
-  // Fasi 1, 4 (e 2 senza guida): sfondo quasi fermo, nessun ritmo da seguire
+  if(cfg.phaseId==="p1" && cfg.pacer){
+    var cyc1=BG_P1.inhale+BG_P1.exhale, t1=g.ms%cyc1;
+    if(t1<BG_P1.inhale) return {scale:bgLerp(0.45,0.82,t1/BG_P1.inhale),label:"Inspira",sub:"ritmo naturale, dal naso",step:"inhale",event:null};
+    return {scale:bgLerp(0.82,0.45,(t1-BG_P1.inhale)/BG_P1.exhale),label:"Espira",sub:"senza forzare",step:"exhale",event:null};
+  }
+  // Fase 4 (e 1-2 senza guida): bolla viva e ben visibile, ma senza ritmo da seguire
   var lbl = cfg.phaseId==="p4"?"Osserva il respiro":cfg.phaseId==="p2"?"Respiro leggero":"Respira dal naso";
-  return {scale:0.62+0.04*Math.sin(g.ms/2400),label:lbl,sub:"",step:"free",event:null};
+  var sub = cfg.phaseId==="p4"?"non seguire la bolla":"al tuo ritmo";
+  return {scale:0.6+0.09*Math.sin(g.ms/2600),opacity:0.5+0.35*(0.5+0.5*Math.sin(g.ms/1300)),label:lbl,sub:sub,step:"free",event:null};
 }
 function bgView3(g,cfg){
   var holdMs=cfg.holdSec*1000;
@@ -6679,7 +6686,7 @@ function bgFrame(now){
   var el=document.querySelector('[data-bubble]');
   if(el){
     el.style.transform='scale('+v.scale.toFixed(3)+')';
-    el.style.opacity=(v.step==="hold"?0.95:0.8);
+    el.style.opacity=(v.opacity!=null?v.opacity:(v.step==="hold"?0.95:0.8)).toFixed(2);
     var l=document.querySelector('[data-bubble-label]'); if(l&&l.textContent!==v.label) l.textContent=v.label;
     var s=document.querySelector('[data-bubble-sub]'); if(s&&s.textContent!==v.sub) s.textContent=v.sub;
   }
@@ -6775,7 +6782,7 @@ function renderBreathSession(){
 
       <div onclick="breathBubbleTap()" class="relative flex items-center justify-center mb-3" style="width:${showP2Scale?200:230}px;height:${showP2Scale?200:230}px">
         <div class="absolute inset-0 rounded-full" style="border:1px solid ${BREATH_COLOR}33"></div>
-        <div data-bubble class="absolute inset-0 rounded-full" style="transform:scale(${gv.scale.toFixed(3)});opacity:${gv.step==="hold"?0.95:0.8};background:radial-gradient(circle at 50% 40%,${BREATH_COLOR}66,${BREATH_COLOR}22 60%,${BREATH_COLOR}0a 75%);box-shadow:0 0 40px ${BREATH_COLOR}33;will-change:transform"></div>
+        <div data-bubble class="absolute inset-0 rounded-full" style="transform:scale(${gv.scale.toFixed(3)});opacity:${gv.opacity!=null?gv.opacity.toFixed(2):(gv.step==="hold"?0.95:0.8)};background:radial-gradient(circle at 50% 40%,${BREATH_COLOR}66,${BREATH_COLOR}22 60%,${BREATH_COLOR}0a 75%);box-shadow:0 0 40px ${BREATH_COLOR}33;will-change:transform"></div>
         <div class="relative z-10 text-center px-4 pointer-events-none">
           <p data-bubble-label class="font-headline text-2xl leading-tight" style="color:#e1e2e7">${gv.label}</p>
           <p data-bubble-sub class="font-label text-[10px] uppercase tracking-widest mt-1" style="color:${BREATH_COLOR}">${gv.sub||'&nbsp;'}</p>
@@ -6787,8 +6794,8 @@ function renderBreathSession(){
         ${[3,5,8].map(s=>`<button onclick="breathSetHold(${s})" class="font-label text-[11px] px-3 py-1.5 active:scale-95"
           style="border:1px solid ${breathHoldSec()===s?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${breathHoldSec()===s?BREATH_COLOR:'#64748b'};background:${breathHoldSec()===s?BREATH_COLOR+'1a':'transparent'}">${s}"</button>`).join('')}
       </div>`:''}
-      ${phase.id==="p2"?`<button onclick="breathTogglePacer()" class="font-label text-[10px] uppercase tracking-widest px-3 py-1.5 mb-3 active:scale-95"
-          style="border:1px solid ${breathPacerOn()?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${breathPacerOn()?BREATH_COLOR:'#64748b'}">Guida ritmo ${breathPacerOn()?'ON · 4" / 6"':'OFF'}</button>`:''}
+      ${(phase.id==="p1"||phase.id==="p2")?`<button onclick="breathTogglePacer()" class="font-label text-[10px] uppercase tracking-widest px-3 py-1.5 mb-3 active:scale-95"
+          style="border:1px solid ${breathPacerOn()?BREATH_COLOR:'rgba(90,65,54,0.3)'};color:${breathPacerOn()?BREATH_COLOR:'#64748b'}">Guida ritmo ${breathPacerOn()?(phase.id==="p1"?'ON · naturale':'ON · 4" / 6"'):'OFF'}</button>`:''}
 
       <p class="font-label text-sm text-gray-400 text-center leading-relaxed max-w-xs mb-5">${phase.copy}</p>
 
@@ -11103,8 +11110,14 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v102";
+var APP_VERSION = "v103";
 var APP_CHANGELOG = [
+  {v:"v103", data:"27/09/2026", items:[
+    "Respiro: la bolla ora si muove fin dall'inizio (in fase 1 sembrava ferma)",
+    "Fase 1: guida con ritmo naturale da riposo, inspira 2\" / espira 3\"",
+    "Guida ritmo attivabile e disattivabile in fase 1 e 2",
+    "Fase 4 e guida spenta: bolla viva (luce e misura), senza ritmo da seguire",
+  ]},
   {v:"v102", data:"27/09/2026", items:[
     "Nuovo carattere in tutta l'app: DM Sans al posto di Bebas Neue, maiuscole e minuscole",
     "Titoli più leggeri e leggibili; bottoni in grassetto medio",
@@ -12094,7 +12107,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v102';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v103';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
