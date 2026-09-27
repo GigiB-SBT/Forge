@@ -8761,72 +8761,80 @@ function whStart(){
 
 // ── WIM HOF: timer automatico respirazione ────────────────────────
 // Ogni ciclo = 2 fasi: INSPIRA (inhaleMs) + ESPIRA (exhaleMs)
-var WH_INHALE_MS = 2200;  // durata inspirazione
-var WH_EXHALE_MS = 2200;  // durata espirazione
-var WH_BREATH_TID = null; // interval ciclo
-var WH_ANIM_TID   = null; // timeout cambio fase
+// ── WIM HOF — motore della bolla (a delta di tempo, pausa e velocità sicure) ──
+var WH_SPEEDS={lento:2600,standard:2200,veloce:1700};   // ms per inspira e per espira
+function whSpeedKey(){ try{var v=localStorage.getItem("kb-wh-speed");return WH_SPEEDS[v]?v:"standard";}catch(e){return "standard";} }
+function whEase(x){ x=Math.max(0,Math.min(1,x)); return x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2; }
+function whLerp(a,b,t){ return a+(b-a)*whEase(t); }
 
-function whStartBreathing(){
-  if(WH_BREATH_TID) return;
-  WH_STATE.breathPhase = 'inhale';
-  whDoBreatheStep();
-}
-
-function whDoBreatheStep(){
-  if(WH_STATE.phase!=='breathing'){ whStopBreathing(); return; }
-
-  var isInhale = WH_STATE.breathPhase === 'inhale';
-
-  // Aggiorna bolla via DOM diretto (evita render completo)
-  var ring = document.getElementById('wh-bubble');
-  var lbl  = document.getElementById('wh-phase-lbl');
-  var cnt  = document.getElementById('wh-breath-count');
-  var apnBtn = document.getElementById('wh-apn-btn');
-
-  if(isInhale){
-    // ESPIRA → INSPIRA: incrementa conteggio
-    WH_STATE.breathCount++;
-    if(cnt) cnt.textContent = WH_STATE.breathCount;
-    if(ring){
-      ring.style.width='220px'; ring.style.height='220px';
-      ring.style.background='rgba(80,218,209,0.14)';
-      ring.style.boxShadow='0 0 50px rgba(80,218,209,0.25)';
-      ring.style.borderWidth='3px';
-    }
-    if(lbl){ lbl.textContent='INSPIRA'; lbl.style.color='#50dad1'; }
-    // Aggiorna barra progresso
-    var bar=document.getElementById('wh-prog');
-    if(bar) bar.style.width=Math.min(WH_STATE.breathCount/WH_CONFIG.breathsPerRound*100,100)+'%';
-    // Mostra pulsante apnea da 30 respiri
-    if(apnBtn){
-      if(WH_STATE.breathCount>=25){
-        apnBtn.style.display='flex';
-        apnBtn.querySelector('span.wh-apn-n').textContent=WH_STATE.breathCount;
-      }
-    }
-    WH_ANIM_TID = setTimeout(function(){
-      WH_STATE.breathPhase='exhale';
-      whDoBreatheStep();
-    }, WH_INHALE_MS);
-  } else {
-    // INSPIRA → ESPIRA
-    if(ring){
-      ring.style.width='130px'; ring.style.height='130px';
-      ring.style.background='rgba(80,218,209,0.03)';
-      ring.style.boxShadow='0 0 10px rgba(80,218,209,0.05)';
-      ring.style.borderWidth='1.5px';
-    }
-    if(lbl){ lbl.textContent='ESPIRA'; lbl.style.color='#7A9A3A'; }
-    WH_ANIM_TID = setTimeout(function(){
-      WH_STATE.breathPhase='inhale';
-      whDoBreatheStep();
-    }, WH_EXHALE_MS);
+function whBreathInit(){ return {count:1,step:"inhale",stepMs:0,done:false}; }
+// Avanza il ciclo respiri: 1 respiro = inspira + espira. done dopo l'espira dell'ultimo respiro.
+function whBreathAdvance(b,dt,halfMs,total){
+  if(b.done) return b;
+  b.stepMs+=dt;
+  var guard=0;
+  while(b.stepMs>=halfMs && guard++<20){
+    b.stepMs-=halfMs;
+    if(b.step==="inhale"){ b.step="exhale"; }
+    else if(b.count>=total){ b.done=true; b.stepMs=0; break; }
+    else { b.count++; b.step="inhale"; }
   }
+  return b;
+}
+function whView(phase,b,ms,halfMs,recoveryHold){
+  if(phase==="breathing"){
+    var t=Math.min(1,b.stepMs/halfMs);
+    if(b.done) return {scale:0.42,opacity:0.8,label:"Espira e trattieni",sub:"polmoni vuoti"};
+    return b.step==="inhale"
+      ? {scale:whLerp(0.42,1,t),opacity:0.85,label:"Inspira",sub:"profondo, pancia e petto"}
+      : {scale:whLerp(1,0.42,t),opacity:0.75,label:"Espira",sub:"lascia andare, senza forzare"};
+  }
+  if(phase==="retention")
+    return {scale:0.34+0.02*Math.sin(ms/900),opacity:0.5+0.3*(0.5+0.5*Math.sin(ms/1100)),label:"Trattieni",sub:"polmoni vuoti · tocca per respirare"};
+  if(phase==="recovery"){
+    if(ms<2000) return {scale:whLerp(0.34,1,ms/2000),opacity:0.85,label:"Inspira profondo",sub:""};
+    var left=Math.max(0,Math.ceil(recoveryHold-(ms-2000)/1000));
+    return {scale:1+0.015*Math.sin(ms/700),opacity:0.9,label:"Trattieni",sub:left+"\""};
+  }
+  return {scale:0.6,opacity:0.7,label:"",sub:""};
 }
 
-function whStopBreathing(){
-  if(WH_BREATH_TID){clearInterval(WH_BREATH_TID);WH_BREATH_TID=null;}
-  if(WH_ANIM_TID){clearTimeout(WH_ANIM_TID);WH_ANIM_TID=null;}
+var WH_RAF=null, WH_LAST=0;
+function whSetSpeed(k){ try{localStorage.setItem("kb-wh-speed",k);}catch(e){} render(); }
+function whStartBreathing(){
+  WH_STATE.b=whBreathInit();
+  WH_STATE.t0=performance.now();
+  whEnsureLoop();
+}
+function whEnsureLoop(){ if(WH_RAF) return; WH_LAST=performance.now(); WH_RAF=requestAnimationFrame(whFrame); }
+function whStopBreathing(){ if(WH_RAF){cancelAnimationFrame(WH_RAF);WH_RAF=null;} }
+function whFrame(now){
+  var ph=WH_STATE.phase;
+  if(state.tab!=="wim-hof"||(ph!=="breathing"&&ph!=="retention"&&ph!=="recovery")){ WH_RAF=null; return; }
+  var dt=Math.min(1000,now-WH_LAST); WH_LAST=now;
+  var half=WH_SPEEDS[whSpeedKey()];
+  var ms=now-(WH_STATE.t0||now);
+  if(ph==="breathing"&&WH_STATE.b){
+    var shown=WH_STATE.breathCount, wasDone=WH_STATE.b.done;
+    whBreathAdvance(WH_STATE.b,dt,half,WH_CONFIG.breathsPerRound);
+    if(WH_STATE.b.count!==shown){
+      WH_STATE.breathCount=WH_STATE.b.count;
+      var cnt=document.getElementById('wh-breath-count'); if(cnt) cnt.textContent=WH_STATE.b.count;
+      var bar=document.getElementById('wh-prog'); if(bar) bar.style.width=Math.min(WH_STATE.b.count/WH_CONFIG.breathsPerRound*100,100)+'%';
+      var ab=document.getElementById('wh-apn-btn'); if(ab&&WH_STATE.b.count>=25){ ab.style.display='flex'; var n=ab.querySelector('span.wh-apn-n'); if(n) n.textContent=WH_STATE.b.count; }
+    }
+    if(WH_STATE.b.done&&!wasDone){
+      // ultimo respiro completato: breve "Espira e trattieni", poi apnea automatica
+      if('vibrate'in navigator) navigator.vibrate([60,40,60]);
+      setTimeout(function(){ if(WH_STATE.phase==='breathing') whGoApnea(); },1200);
+    }
+  }
+  var v=whView(ph,WH_STATE.b,ms,half,WH_CONFIG.recoveryHold);
+  var el=document.querySelector('[data-wh-bubble]');
+  if(el){ el.style.transform='scale('+v.scale.toFixed(3)+')'; el.style.opacity=v.opacity.toFixed(2); }
+  var l=document.querySelector('[data-wh-label]'); if(l&&l.textContent!==v.label) l.textContent=v.label;
+  var s=document.querySelector('[data-wh-sub]'); if(s&&s.textContent!==v.sub) s.textContent=v.sub;
+  WH_RAF=requestAnimationFrame(whFrame);
 }
 
 function whBreath(){ /* non più usata — automatico */ }
@@ -8837,7 +8845,9 @@ function whGoApnea(){
   WH_STATE.phase='retention';
   WH_STATE.retentionSec=0;
   if('vibrate'in navigator)navigator.vibrate([100,50,200]);
+  WH_STATE.t0=performance.now();
   render();
+  whEnsureLoop();
   WH_STATE.tid=setInterval(function(){
     WH_STATE.retentionSec++;
     var el=document.getElementById('wh-ret-timer');
@@ -8856,8 +8866,10 @@ function whEndRetention(){
   if('vibrate'in navigator)navigator.vibrate([200,100,200]);
   // Fase recovery: inspira fondo e trattieni 15"
   WH_STATE.phase='recovery';
-  WH_STATE.recoverySec=WH_CONFIG.recoveryHold;
+  WH_STATE.recoverySec=WH_CONFIG.recoveryHold+2; // 2" di inspirazione + trattenuta
+  WH_STATE.t0=performance.now();
   render();
+  whEnsureLoop();
   WH_STATE.tid=setInterval(function(){
     WH_STATE.recoverySec--;
     var el=document.getElementById('wh-rec-timer');
@@ -8875,6 +8887,7 @@ function whEndRetention(){
 function whContinue(){
   WH_STATE.round++;
   WH_STATE.breathCount=0;
+  WH_STATE.b=whBreathInit();
   WH_STATE.phase='breathing';
   WH_STATE.breathPhase='inhale';
   render();
@@ -8931,7 +8944,7 @@ function renderWimHof(){
         <span class="font-headline text-4xl" style="color:#50dad1">${WH_STATE.round}</span>
       </div>
       <p class="font-label text-[9px] uppercase tracking-[0.25em] mb-2" style="color:#50dad1">ROUND COMPLETATO</p>
-      <h2 class="font-headline text-5xl mb-2">WIM HOF</h2>
+      <h2 class="font-headline text-5xl mb-2">Wim Hof</h2>
       <p class="font-label text-sm text-gray-500 mb-8">${WH_STATE.retentionLog.length} round · apnea: ${lastRet.sec>59?Math.floor(lastRet.sec/60)+"'"+String(lastRet.sec%60).padStart(2,'0')+'"':lastRet.sec+'"'}</p>
 
       <!-- Storico apnee -->
@@ -8967,7 +8980,7 @@ function renderWimHof(){
         <span class="material-symbols-outlined text-4xl" style="color:#50dad1;font-variation-settings:'FILL' 1">self_improvement</span>
       </div>
       <p class="font-label text-[9px] uppercase tracking-[0.25em] mb-2" style="color:#50dad1">WIM HOF COMPLETATO</p>
-      <h2 class="font-headline text-5xl mb-8">${WH_STATE.retentionLog.length} ROUND</h2>
+      <h2 class="font-headline text-5xl mb-8">${WH_STATE.retentionLog.length} round</h2>
       <div class="w-full space-y-2 mb-8">
         ${WH_STATE.retentionLog.map(function(r){
           return `<div class="flex justify-between items-center bg-surface-container ghost-border px-5 py-3 border-l-2" style="border-color:#50dad1">
@@ -8988,123 +9001,97 @@ function renderWimHof(){
     </div>`;
   }
 
-  // RETENTION — apnea
-  if(ph==='retention'){
-    return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
-      <div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(80,218,209,0.15)">
-        <div>
-          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">ROUND ${round}</p>
-          <p class="font-headline text-xl" style="color:#50dad1">APNEA</p>
-        </div>
-        <button onclick="whExit()" class="w-8 h-8 flex items-center justify-center" style="background:rgba(255,255,255,0.05)">
-          <span class="material-symbols-outlined text-gray-500 text-base">close</span>
-        </button>
-      </div>
-      <div class="flex-1 flex flex-col items-center justify-center px-5">
-        <p class="font-label text-[9px] uppercase tracking-widest text-gray-600 mb-4">Polmoni vuoti — non respirare</p>
-        <div class="kdp-timer-num mb-2" id="wh-ret-timer" style="font-size:86px;color:#50dad1">0"</div>
-        <p class="font-label text-xs text-gray-600 mt-4">Il tuo tempo scorre...</p>
-      </div>
-      <div class="flex-shrink-0 px-5 pb-8 pt-3">
-        <button onclick="whEndRetention()"
-          class="w-full py-6 font-headline text-2xl tracking-widest active:scale-95 transition-transform"
-          style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">
-          ✓ RIPRENDO FIATO
-        </button>
-      </div>
-    </div>`;
-  }
-
-  // RECOVERY
-  if(ph==='recovery'){
-    var lastLog=WH_STATE.retentionLog[WH_STATE.retentionLog.length-1];
-    return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
-      <div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(80,218,209,0.15)">
-        <div>
-          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">ROUND ${round}</p>
-          <p class="font-headline text-xl" style="color:#50dad1">RECUPERO</p>
-        </div>
-        <button onclick="whExit()" class="w-8 h-8 flex items-center justify-center" style="background:rgba(255,255,255,0.05)">
-          <span class="material-symbols-outlined text-gray-500 text-base">close</span>
-        </button>
-      </div>
-      <div class="flex-1 flex flex-col items-center justify-center px-5">
-        ${lastLog?`<div class="mb-6 text-center">
-          <p class="font-label text-[9px] uppercase tracking-widest text-gray-500 mb-1">Apnea round ${lastLog.round}</p>
-          <p class="font-headline text-4xl" style="color:#50dad1">${lastLog.sec > 59 ? Math.floor(lastLog.sec/60)+"' "+String(lastLog.sec%60).padStart(2,'0')+'"' : lastLog.sec+'"'}</p>
-        </div>`:''}
-        <p class="font-label text-[9px] uppercase tracking-widest text-gray-600 mb-4">Inspira fondo — trattieni</p>
-        <div class="kdp-timer-num" id="wh-rec-timer" style="font-size:86px;color:#e9c176">${WH_STATE.recoverySec}"</div>
-      </div>
-      <div class="flex-shrink-0 px-5 pb-8">
-        <p class="font-label text-[10px] text-center text-gray-600">Torna a respirare per il prossimo round...</p>
-      </div>
-    </div>`;
-  }
-
-  // BREATHING — bolla automatica guidata
-  var canGoApnea=WH_STATE.breathCount>=25;
-
-  return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
-    <!-- Header -->
-    <div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(80,218,209,0.15)">
+  var WHC="#50dad1";
+  var half=WH_SPEEDS[whSpeedKey()];
+  var gv=whView(ph,WH_STATE.b||whBreathInit(),performance.now()-(WH_STATE.t0||performance.now()),half,WH_CONFIG.recoveryHold);
+  function header(title){
+    return `<div class="flex-shrink-0 flex justify-between items-center px-5 pt-5 pb-3" style="border-bottom:1px solid rgba(80,218,209,0.15)">
       <div>
-        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">ROUND ${round}</p>
-        <p class="font-headline text-xl" style="color:#50dad1">RESPIRAZIONE</p>
+        <p class="font-label text-[9px] uppercase tracking-widest text-gray-500">Round ${round} · Wim Hof</p>
+        <p class="font-headline text-xl" style="color:${WHC}">${title}</p>
       </div>
       <button onclick="whExit()" class="w-8 h-8 flex items-center justify-center" style="background:rgba(255,255,255,0.05)">
         <span class="material-symbols-outlined text-gray-500 text-base">close</span>
       </button>
-    </div>
-    <!-- Barra progresso -->
-    <div class="h-0.5 flex-shrink-0" style="background:rgba(255,255,255,0.06)">
-      <div id="wh-prog" style="height:100%;width:${Math.min(WH_STATE.breathCount/cfg.breathsPerRound*100,100)}%;background:#50dad1;transition:width 0.3s"></div>
-    </div>
+    </div>`;
+  }
+  function bubble(inner,onTap){
+    return `<div ${onTap?`onclick="${onTap}"`:''} class="relative flex items-center justify-center" style="width:240px;height:240px">
+      <div class="absolute inset-0 rounded-full" style="border:1px solid ${WHC}33"></div>
+      <div data-wh-bubble class="absolute inset-0 rounded-full" style="transform:scale(${gv.scale.toFixed(3)});opacity:${gv.opacity.toFixed(2)};background:radial-gradient(circle at 50% 40%,${WHC}66,${WHC}22 60%,${WHC}0a 75%);box-shadow:0 0 44px ${WHC}33;will-change:transform"></div>
+      <div class="relative z-10 text-center px-4 pointer-events-none">${inner}</div>
+    </div>`;
+  }
+  function roundsStrip(){
+    if(!WH_STATE.retentionLog.length) return '';
+    return `<div class="flex gap-6 mt-5">${WH_STATE.retentionLog.map(function(r){return `<div class="text-center">
+      <p class="font-label text-[8px] uppercase text-gray-600 mb-1">Round ${r.round}</p>
+      <p class="font-headline text-lg" style="color:rgba(80,218,209,0.5)">${r.sec>59?Math.floor(r.sec/60)+"'"+String(r.sec%60).padStart(2,'0')+'"':r.sec+'"'}</p>
+    </div>`;}).join("")}</div>`;
+  }
+  var safety=`<p class="font-label text-[10px] text-center text-gray-600 leading-relaxed">Seduto o sdraiato · mai in acqua o alla guida · se ti gira la testa torna a respirare normalmente</p>`;
 
-    <div class="flex-1 flex flex-col items-center justify-center px-5">
-
-      <!-- Label fase -->
-      <p id="wh-phase-lbl" class="font-headline text-2xl tracking-widest mb-8"
-        style="color:${WH_STATE.breathPhase==='inhale'?'#50dad1':'#7A9A3A'}">
-        ${WH_STATE.breathPhase==='inhale'?'INSPIRA':'ESPIRA'}
-      </p>
-
-      <!-- Bolla animata automatica -->
-      <div id="wh-bubble"
-        class="flex flex-col items-center justify-center"
-        style="border-radius:50%;border:3px solid #50dad1;
-          width:${WH_STATE.breathPhase==='inhale'?'220px':'130px'};
-          height:${WH_STATE.breathPhase==='inhale'?'220px':'130px'};
-          background:${WH_STATE.breathPhase==='inhale'?'rgba(80,218,209,0.14)':'rgba(80,218,209,0.03)'};
-          box-shadow:${WH_STATE.breathPhase==='inhale'?'0 0 50px rgba(80,218,209,0.25)':'0 0 10px rgba(80,218,209,0.05)'};
-          transition:all ${WH_INHALE_MS}ms cubic-bezier(0.4,0,0.2,1)">
-        <span id="wh-breath-count" class="font-headline leading-none" style="font-size:64px;color:#50dad1">${WH_STATE.breathCount}</span>
-        <span class="font-label text-[9px] uppercase tracking-widest mt-1" style="color:rgba(80,218,209,0.5)">respiri</span>
+  // RETENTION — apnea a polmoni vuoti
+  if(ph==='retention'){
+    return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+      ${header('Apnea')}
+      <div class="flex-1 flex flex-col items-center justify-center px-5">
+        ${bubble(`<p data-wh-label class="font-headline text-xl" style="color:#e1e2e7">${gv.label}</p>
+          <div class="kdp-timer-num" id="wh-ret-timer" style="font-size:56px;color:${WHC}">${WH_STATE.retentionSec}"</div>
+          <p data-wh-sub class="font-label text-[9px] uppercase tracking-widest mt-1" style="color:${WHC}">${gv.sub}</p>`,'whEndRetention()')}
+        ${roundsStrip()}
       </div>
+      <div class="flex-shrink-0 px-5 pb-8 pt-3">
+        <button onclick="whEndRetention()"
+          class="w-full py-5 font-headline text-xl tracking-wide active:scale-95 transition-transform"
+          style="background:linear-gradient(135deg,${WHC},#00aba2);color:#000">Respiro — inizia il recupero</button>
+      </div>
+    </div>`;
+  }
 
-      <!-- Suggerimento -->
-      <p class="font-label text-xs text-gray-600 mt-8 text-center">
-        ${WH_STATE.breathPhase==='inhale'?'Inspira profondo — gonfia petto e pancia':'Espira rilassato — svuota completamente'}
-      </p>
+  // RECOVERY — inspira profondo e trattieni
+  if(ph==='recovery'){
+    var lastLog=WH_STATE.retentionLog[WH_STATE.retentionLog.length-1];
+    return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+      ${header('Recupero')}
+      <div class="flex-1 flex flex-col items-center justify-center px-5">
+        ${lastLog?`<p class="font-label text-[10px] uppercase tracking-widest text-gray-500 mb-4">Apnea round ${lastLog.round}: <span style="color:${WHC}">${lastLog.sec>59?Math.floor(lastLog.sec/60)+"' "+String(lastLog.sec%60).padStart(2,'0')+'"':lastLog.sec+'"'}</span></p>`:''}
+        ${bubble(`<p data-wh-label class="font-headline text-2xl" style="color:#e1e2e7">${gv.label}</p>
+          <p data-wh-sub class="font-headline text-4xl mt-1" style="color:#e9c176">${gv.sub}</p>`)}
+      </div>
+      <div class="flex-shrink-0 px-5 pb-8">
+        <p class="font-label text-[10px] text-center text-gray-600">Poi espira e torna a respirare normalmente</p>
+      </div>
+    </div>`;
+  }
 
-      <!-- Round precedenti -->
-      ${WH_STATE.retentionLog.length>0?`<div class="flex gap-6 mt-5">
-        ${WH_STATE.retentionLog.map(function(r){return `<div class="text-center">
-          <p class="font-label text-[8px] uppercase text-gray-600 mb-1">Round ${r.round}</p>
-          <p class="font-headline text-lg" style="color:rgba(80,218,209,0.4)">${r.sec>59?Math.floor(r.sec/60)+"'"+String(r.sec%60).padStart(2,'0')+'"':r.sec+'"'}</p>
-        </div>`;}).join("")}
-      </div>`:''}
+  // BREATHING — bolla guidata, apnea automatica dopo l'ultimo respiro
+  var canGoApnea=WH_STATE.breathCount>=25;
+  var sp=whSpeedKey();
+  return `<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+    ${header('Respirazione')}
+    <div class="h-0.5 flex-shrink-0" style="background:rgba(255,255,255,0.06)">
+      <div id="wh-prog" style="height:100%;width:${Math.min(WH_STATE.breathCount/cfg.breathsPerRound*100,100)}%;background:${WHC};transition:width 0.3s"></div>
     </div>
-
-    <!-- Footer -->
-    <div class="flex-shrink-0 px-5 pb-6 pt-3">
+    <div class="flex-1 flex flex-col items-center justify-center px-5 overflow-y-auto py-3">
+      ${bubble(`<p data-wh-label class="font-headline text-2xl leading-tight" style="color:#e1e2e7">${gv.label}</p>
+        <p class="font-headline leading-none mt-1" style="font-size:44px;color:${WHC}"><span id="wh-breath-count">${WH_STATE.breathCount}</span><span class="text-xl" style="color:${WHC}88"> / ${cfg.breathsPerRound}</span></p>
+        <p data-wh-sub class="font-label text-[9px] uppercase tracking-widest mt-1" style="color:${WHC}">${gv.sub}</p>`)}
+      <div class="flex items-center gap-1.5 mt-5">
+        <span class="font-label text-[9px] uppercase tracking-widest text-gray-600 mr-1">ritmo</span>
+        ${[['lento','Lento'],['standard','Standard'],['veloce','Veloce']].map(o=>`<button onclick="whSetSpeed('${o[0]}')" class="font-label text-[11px] px-3 py-1.5 active:scale-95"
+          style="border:1px solid ${sp===o[0]?WHC:'rgba(90,65,54,0.3)'};color:${sp===o[0]?WHC:'#64748b'};background:${sp===o[0]?WHC+'1a':'transparent'}">${o[1]}</button>`).join('')}
+      </div>
+      ${roundsStrip()}
+    </div>
+    <div class="flex-shrink-0 px-5 pb-6 pt-3 space-y-3">
       <button id="wh-apn-btn" onclick="whGoApnea()"
-        class="w-full py-4 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform"
-        style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000;display:${canGoApnea?'flex':'none'}">
-        APNEA ORA (<span class="wh-apn-n">${WH_STATE.breathCount}</span> respiri)
+        class="w-full py-4 font-headline text-lg tracking-wide flex justify-between items-center px-5 active:scale-95 transition-transform"
+        style="background:linear-gradient(135deg,${WHC},#00aba2);color:#000;display:${canGoApnea?'flex':'none'}">
+        Apnea subito (<span class="wh-apn-n">${WH_STATE.breathCount}</span> respiri)
         <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">pause_circle</span>
       </button>
-      ${!canGoApnea?`<p class="font-label text-[10px] text-center text-gray-600">La bolla guida il tuo respiro — apnea disponibile da 30 respiri</p>`:''}
+      ${safety}
     </div>
   </div>`;
 }
@@ -11110,8 +11097,16 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v103";
+var APP_VERSION = "v104";
 var APP_CHANGELOG = [
+  {v:"v104", data:"27/09/2026", items:[
+    "Wim Hof: nuova bolla fluida come nel Respiro, con conteggio respiri al centro",
+    "Dopo l'ultimo respiro l'apnea parte da sola (prima il conteggio continuava)",
+    "Apnea: bolla piccola che pulsa e cronometro; tocca la bolla per respirare",
+    "Recupero guidato: inspira profondo, poi trattieni 15\" con conto alla rovescia",
+    "Ritmo Lento / Standard / Veloce, ricordato per le volte successive",
+    "Avvertenza di sicurezza sempre visibile durante la respirazione",
+  ]},
   {v:"v103", data:"27/09/2026", items:[
     "Respiro: la bolla ora si muove fin dall'inizio (in fase 1 sembrava ferma)",
     "Fase 1: guida con ritmo naturale da riposo, inspira 2\" / espira 3\"",
@@ -12107,7 +12102,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v103';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v104';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
