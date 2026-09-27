@@ -9672,28 +9672,67 @@ var DAY_LABELS = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
 
 // Mappa workout AI → action FORGE
 function aiWorkoutToAction(workoutName){
-  var n=(workoutName||'').toLowerCase();
-  if(n.indexOf('flow')>=0||n.indexOf('fl1')>=0||n.indexOf('fl2')>=0||n.indexOf('fl3')>=0||n.indexOf('fl4')>=0){
-    var fid = n.indexOf('fl1')>=0?'FL1':n.indexOf('fl2')>=0?'FL2':n.indexOf('fl3')>=0?'FL3':n.indexOf('fl4')>=0?'FL4':null;
-    if(fid) return {action:'openFlowDetail(\''+fid+'\');',icon:'🌊',color:'#50dad1'};
-    return {action:"state.trainSubTab='flow';switchTab('train');",icon:'🌊',color:'#50dad1'};
+  var n=(workoutName||'').toLowerCase().replace(/\s+/g,' ').trim(), m;
+  function det(id,icon,color){ return {action:"openExtraDetail('"+id+"');",icon:icon,color:color}; }
+  function tab(sub,icon,color){ return {action:"state.trainSubTab='"+sub+"';switchTab('train');",icon:icon,color:color}; }
+  function has(id){ try{ return !!getExtraById(id); }catch(e){ return false; } }
+  // Riposo per primo: "Riposo / recupero attivo" non deve avviare nulla
+  if(/\b(riposo|rest day|giorno di recupero)\b/.test(n)) return {action:null,icon:'😴',color:'#64748b'};
+  // 30 Days KB: "KB Day 5", "30 Days KB · Day 5", "Day 5", "K30 D5"
+  if(/30\s*days?|\bk30\b|\bkb\s*day\b|\bday\s*\d{1,2}\b/.test(n)){
+    m=n.match(/\bday\s*(\d{1,2})\b|\bk30[\s\-·]*d?\s*(\d{1,2})\b|\bd(\d{1,2})\b/);
+    var d=m?+(m[1]||m[2]||m[3]):null;
+    if(d&&d>=1&&d<=30){ var kid='K30-D'+String(d).padStart(2,'0'); if(has(kid)) return det(kid,'🔔','#facc15'); }
+    return tab('k30','🔔','#facc15');
   }
-  if(n.indexOf('wing')>=0||n.indexOf('foil')>=0||n.indexOf('wf')===0){
-    var wid = n.indexOf('wf1')>=0||n.indexOf('base')>=0?'WF1':n.indexOf('wf2')>=0||n.indexOf('dynamic')>=0?'WF2':n.indexOf('wf3')>=0||n.indexOf('complex')>=0?'WF3':n.indexOf('balance')>=0?'WFB':n.indexOf('warm')>=0?'WFW':null;
-    if(wid) return {action:"openExtraDetail('"+wid+"');",icon:'🏄',color:'#38bdf8'};
-    return {action:"state.trainSubTab='wf';switchTab('train');",icon:'🏄',color:'#38bdf8'};
+  // LeoMoves: "LeoMoves 2", "LM2"
+  if(/leo\s*moves|\blm\s*\d\b/.test(n)){
+    m=n.match(/(?:leo\s*moves|\blm)\s*(\d)\b/);
+    if(m) return {action:"openLmDetail('LM"+m[1]+"');",icon:'🎥',color:'#22c55e'};
+    return tab('lm','🎥','#22c55e');
   }
-  if(n.indexOf('axe')>=0) return {action:'forgeAxe();',icon:'🪓',color:'#8b5cf6'};
-  if(n.indexOf('kdp')>=0) return {action:'forgeKdp();',icon:'⚡',color:'#7A9A3A'};
-  if(n.indexOf('bellplex')>=0) return {action:'forgeBellplex();',icon:'🔴',color:'#ffb4ab'};
-  if(n.indexOf('core')>=0) return {action:'forgeCore7();',icon:'💥',color:'#ffb693'};
-  if(n.indexOf('push')>=0||n.indexOf('dpu')>=0) return {action:'forgeDpu();',icon:'💪',color:'#50dad1'};
-  if(n.indexOf('mattutina')>=0||n.indexOf('morning')>=0) return {action:'mrStart(60);',icon:'🌅',color:'#e9c176'};
-  if(n.indexOf('wim')>=0) return {action:'whStart();',icon:'🫁',color:'#50dad1'};
-  if(n.indexOf('giorno a')>=0||n.indexOf(' a ')>=0||n==='a') return {action:'forgeStartKb();',icon:'🔥',color:'#ffb693'};
-  if(n.indexOf('giorno b')>=0||n==='b') return {action:'forgeStartKb();',icon:'🔥',color:'#e9c176'};
-  if(n.indexOf('giorno c')>=0||n==='c') return {action:'forgeStartKb();',icon:'🔥',color:'#50dad1'};
-  if(n.indexOf('riposo')>=0||n.indexOf('recupero')>=0||n.indexOf('rest')>=0) return {action:null,icon:'😴',color:'#64748b'};
+  // Limitless: "Limitless Fase 2 W1", "LTL-P2-1"
+  if(/limitless|\bltl\b/.test(n)){
+    m=n.match(/(?:fase|p)\s*(\d)[^\d]{1,6}(?:w|workout)?\s*(\d)/);
+    if(m&&has('LTL-P'+m[1]+'-'+m[2])) return det('LTL-P'+m[1]+'-'+m[2],'🔥','#f97316');
+    return tab('bw','🔥','#f97316');
+  }
+  // Bodyweight Jacked: "Bodyweight Fase 1 W2", "BWJ Beginner W1"
+  if(/bodyweight|jacked|\bbwj\b|corpo libero/.test(n)){
+    m=n.match(/(?:fase|p)\s*(\d)[^\d]{1,6}(?:w|workout)?\s*(\d)/);
+    if(m&&has('BWJ-P'+m[1]+'-'+m[2])) return det('BWJ-P'+m[1]+'-'+m[2],'🤸','#43A047');
+    m=n.match(/beginner[^\d]{0,6}(\d)/);
+    if(m&&has('BWJ-BEG-'+m[1])) return det('BWJ-BEG-'+m[1],'🤸','#43A047');
+    return tab('bw','🤸','#43A047');
+  }
+  // Wing Foil (prima di "complex" e "core")
+  if(/wing|foil|\bwf[1-3wb]?\b/.test(n)){
+    var wid=/\bwf1\b|\bbase\b/.test(n)?'WF1':/\bwf2\b|dynamic/.test(n)?'WF2':/\bwf3\b|complex/.test(n)?'WF3':/balance|\bwfb\b/.test(n)?'WFB':/warm|\bwfw\b/.test(n)?'WFW':null;
+    return wid?det(wid,'🏄','#38bdf8'):tab('wf','🏄','#38bdf8');
+  }
+  // Flow
+  if(/\bflow\b|\bfl[1-4]\b/.test(n)){
+    m=n.match(/\bfl([1-4])\b/);
+    return m?{action:"openFlowDetail('FL"+m[1]+"');",icon:'🌊',color:'#50dad1'}:tab('flow','🌊','#50dad1');
+  }
+  // Complex singolo: "Complex CX12" o "BP12"
+  m=n.match(/\b(?:cx|bp)\s*(\d{1,2})\b/);
+  if(m&&has('BP'+m[1])) return det('BP'+m[1],'🔴','#ffb4ab');
+  // Giorni KB: solo "Giorno A/B/C" o "KB A/B/C", ciascuno col suo giorno
+  m=n.match(/\bgiorno\s*([abc])\b|\bkb\s*([abc])\b|^([abc])$/);
+  if(m){ var g=(m[1]||m[2]||m[3]).toUpperCase(); return {action:"startWorkout('"+g+"');",icon:'🔥',color:{A:'#ffb693',B:'#e9c176',C:'#50dad1'}[g]}; }
+  // Sessioni Extra per codice: "B4", "C3", "D1"
+  m=n.match(/\b([bcd]\d)\b/);
+  if(m&&has(m[1].toUpperCase())) return det(m[1].toUpperCase(),'⚡','#ffb693');
+  if(/\baxe\b/.test(n)) return {action:'forgeAxe();',icon:'🪓',color:'#8b5cf6'};
+  if(/\bkdp/.test(n)) return {action:'forgeKdp();',icon:'⚡',color:'#7A9A3A'};
+  if(/bellplex|\bcomplex\b/.test(n)) return {action:'forgeBellplex();',icon:'🔴',color:'#ffb4ab'};
+  if(/core\s*(&|e)?\s*forza|\bcore\s*7|\bcore7\b/.test(n)) return {action:'forgeCore7();',icon:'💥',color:'#ffb693'};
+  if(/deep push|\bdpu\b|push-?up emom/.test(n)) return {action:'forgeDpu();',icon:'💪',color:'#50dad1'};
+  if(/respiro|breath|\bbolt\b/.test(n)) return {action:"switchTab('morning');",icon:'🫁',color:'#7dd3fc'};
+  if(/mattutina|morning|risveglio/.test(n)) return {action:'mrStart(60);',icon:'🌅',color:'#e9c176'};
+  if(/wim\s*hof|\bwim\b/.test(n)) return {action:'whStart();',icon:'🫁',color:'#50dad1'};
+  if(/\brecupero\b/.test(n)) return {action:null,icon:'😴',color:'#64748b'};
   return {action:'forgeTrain();',icon:'🔥',color:'#ffb693'};
 }
 
@@ -10179,13 +10218,18 @@ function forgeExportWeekly(){
     giorni_allenamento:(FORGE_PROFILE.trainingDays||[]).map(function(d){return DAY_NAMES[d];}),
     allenamenti_ultimi_7_giorni:all,
     dati_salute_ultimi_7_giorni:health7.map(function(h){return {data:h.date,peso_kg:h.weight||null,hrv:h.hrv||null,ore_sonno:h.sleep||null,qualita_sonno:h.sleepQ||null};}),
-    workout_disponibili:['AXE (aerobico anti-glicolitico)','KDP-26 (EMOM+AMRAP)','Giorno A (EMOM forza)','Giorno B (HIIT)','Giorno C (Ladder+AMRAP)','Complex CX1-CX21','Wing Foil WF1-WF3 + Balance&Core','Core & Forza 7R','Deep Push-Up EMOM','Condizionamento B4-B9','Flow FL1-FL4 (sequenze continue)','Routine Mattutina 8min','Wim Hof']
+    workout_disponibili:['AXE (aerobico anti-glicolitico)','KDP-26 (EMOM+AMRAP)','Giorno A (EMOM forza)','Giorno B (HIIT)','Giorno C (Ladder+AMRAP)',
+      '30 Days KB · Day 1-30 (indica il giorno, es. "30 Days KB · Day 5")','Complex CX1-CX21 (indica il numero, es. "Complex CX12")',
+      'Wing Foil WF1-WF3 + Balance&Core','Core & Forza 7R','Deep Push-Up EMOM','Condizionamento B4-B9',
+      'Flow FL1-FL4 (sequenze continue)','Bodyweight Jacked · Beginner W1-W3 e Fase 1-3 W1-W3 (es. "Bodyweight Jacked Fase 1 W2")',
+      'Limitless · Fase 1-3 W1-W3 (es. "Limitless Fase 2 W1")','LeoMoves 1-4 (video)','Respiro (routine 15 min)','Routine Mattutina 8min','Wim Hof']
   };
 
   var prompt='Sei un coach di kettlebell. Analizza i dati e fornisci raccomandazioni per la settimana prossima.\n\n'+
     'ISTRUZIONI:\n1. Analizza allenamenti, feeling e dati fisiologici\n'+
     '2. Obiettivo PRIMARIO come driver principale\n'+
     '3. Suggerisci 3-4 workout specifici (dalla lista workout_disponibili)\n'+
+    '   Nel campo "workout" scrivi il nome esattamente come nella lista, con giorno o numero quando serve (es. "30 Days KB · Day 5", "Giorno B (HIIT)").\n'+
     '4. Per ogni workout: giorno consigliato, intensità, motivo\n'+
     '5. Aggiungi consiglio su recupero e progressione\n'+
     '6. Rispondi SOLO con JSON nel formato esatto:\n\n'+
@@ -11320,8 +11364,14 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v106";
+var APP_VERSION = "v107";
 var APP_CHANGELOG = [
+  {v:"v107", data:"27/09/2026", items:[
+    "Piano della settimana: le sedute di 30 Days KB aprono il giorno giusto (prima partiva il Giorno A)",
+    "Giorno A, B e C del piano avviano ciascuno il proprio giorno (prima partiva sempre il prossimo della rotazione)",
+    "Riconosciuti anche Bodyweight, Limitless, LeoMoves, Respiro, singoli Complex e sessioni Extra",
+    "Il piano AI riceve l'elenco completo dei workout, con i nomi esatti da usare",
+  ]},
   {v:"v106", data:"27/09/2026", items:[
     "Due temi: Notte (scuro, blu e lime) e Sabbia (chiaro, avorio e terracotta)",
     "Scelta in Set → Aspetto: Scuro, Chiaro o Automatico (segue il telefono)",
@@ -12339,7 +12389,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v106';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v107';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
