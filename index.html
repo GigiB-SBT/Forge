@@ -1288,7 +1288,7 @@ function mcWeekTypes(goal, secondary, blockIdx, daysJs){
 function mcSessionType(e){
   if(!e) return null;
   if(e._morning||e._evening||e._wimhof) return null;
-  if(e._flow||e._axe||e._manual) return "aerobico";
+  if(e._flow||e._axe||e._manual||e._walk) return "aerobico";
   if(e._kdp||e._dpu||e._core7) return "forza";
   var d=e.day; if(!d) return null;
   if(d==="A"||d==="B"||d==="C") return "intervalli";
@@ -1309,6 +1309,7 @@ function mcCandidates(type){
   function ex(id){ var w=getExtraById(id); if(w) C.push({key:"x:"+id,title:w.label+(w.title?" · "+w.title:""),min:w.totalMin||20,action:"openExtraDetail('"+id+"')"}); }
   if(type==="aerobico"){
     C.push({key:"axe",title:"AXE Protocol",min:40,action:"forgeAxe()"});
+    C.push({key:"walk",title:"Camminata a passo svelto",min:40,action:"walkStart(40)"});
     (typeof FLOWS!=="undefined"?FLOWS:[]).forEach(function(f){ C.push({key:"flow:"+f.id,title:"Flow "+f.id+" · "+f.nome,min:Math.round((f.durataRound*f.roundsMin+f.rest*(f.roundsMin-1))/60)||15,action:"openFlowDetail('"+f.id+"')"}); });
   }
   if(type==="intervalli"){
@@ -1339,6 +1340,7 @@ function mcLastDone(key, hist){
   (hist.history||[]).forEach(function(h){ var k=(h.day==="A"||h.day==="B"||h.day==="C")?"day:"+h.day:"x:"+String(h.day).replace("extra_",""); if(k===key) best=Math.max(best,d(h.date)); });
   (hist.external||[]).forEach(function(h){ if((key==="kdp"&&h._kdp)||(h._flow&&key==="flow:"+String(h.type||"").replace("KB Flow_",""))) best=Math.max(best,d(h.date)); });
   if(key==="axe") (hist.axe||[]).forEach(function(h){ best=Math.max(best,d(h.date)); });
+  if(key==="walk") (hist.external||[]).forEach(function(h){ if(h._walk) best=Math.max(best,d(h.date)); });
   return best;
 }
 // Sceglie il workout: prima la continuità di 30 Days, poi il meno recente; mai due volte nella stessa settimana
@@ -1521,6 +1523,73 @@ function renderPlanView(){
 }
 
 // ══════════════════════════════════════════════════════════════════
+// CAMMINATA — tempo trascorso, obiettivo, campane a metà e all'obiettivo
+// ══════════════════════════════════════════════════════════════════
+var WALK={target:1800,elapsed:0,running:false,tid:null,half:false,done:false};
+var WALK_C='#a3be6b';
+function walkFmt(s){ var m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
+function walkStart(min){
+  unlockAudio(); requestWakeLock();
+  if(WALK.tid) clearInterval(WALK.tid);
+  WALK={target:(min||30)*60,elapsed:0,running:true,tid:null,half:false,done:false};
+  state.tab='walk'; render();
+  WALK.tid=setInterval(function(){
+    if(state.tab!=='walk'){ clearInterval(WALK.tid); WALK.tid=null; return; }
+    if(!WALK.running) return;
+    WALK.elapsed++;
+    if(!WALK.half&&WALK.elapsed>=Math.floor(WALK.target/2)){ WALK.half=true; bsBell(660,1.2,0.2); if(navigator.vibrate) navigator.vibrate([60,60,60]); }
+    if(!WALK.done&&WALK.elapsed>=WALK.target){ WALK.done=true; bsBell(523,2.0,0.22); setTimeout(function(){ bsBell(784,2.2,0.2); },220); if(navigator.vibrate) navigator.vibrate([150,80,150]); render(); return; }
+    var el=document.getElementById('walk-time'); if(el) el.textContent=walkFmt(WALK.elapsed);
+    var ar=document.getElementById('walk-arc'); if(ar){ var C=2*Math.PI*46; ar.setAttribute('stroke-dashoffset',(C*(1-Math.min(1,WALK.elapsed/WALK.target))).toFixed(1)); }
+  },1000);
+}
+function walkToggle(){ WALK.running=!WALK.running; render(); }
+function walkFinish(){
+  if(WALK.elapsed<60){ if(!confirm('Meno di un minuto: esci senza salvare?')) return; }
+  else {
+    state.externalHistory.unshift({type:'Camminata',date:homeDMY(new Date()),duration:Math.round(WALK.elapsed/60),
+      notes:'Obiettivo '+Math.round(WALK.target/60)+' min'+(WALK.done?' · raggiunto':''),_src:'ext',_walk:true});
+    saveExternalHistory();
+  }
+  if(WALK.tid) clearInterval(WALK.tid); WALK.tid=null; WALK.running=false;
+  releaseWakeLock(); state.tab='home'; render();
+}
+function renderWalk(){
+  var C=2*Math.PI*46, pct=Math.min(1,WALK.elapsed/WALK.target), tgt=Math.round(WALK.target/60);
+  return '<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">'+
+    '<div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">'+
+      '<button onclick="walkFinish()" class="flex items-center justify-center" style="width:44px;height:44px"><span class="material-symbols-outlined text-gray-500">close</span></button>'+
+      '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+WALK_C+'">Camminata</p><div style="width:44px"></div></div>'+
+    '<div class="flex-1 flex flex-col items-center justify-center px-6">'+
+      '<div class="relative flex items-center justify-center" style="width:250px;height:250px">'+
+        '<svg viewBox="0 0 100 100" width="250" height="250" style="transform:rotate(-90deg)"><circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="4"/>'+
+          '<circle id="walk-arc" cx="50" cy="50" r="46" fill="none" stroke="'+WALK_C+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+(C*(1-pct)).toFixed(1)+'" style="transition:stroke-dashoffset 1s linear"/></svg>'+
+        '<div class="absolute text-center">'+
+          '<span class="material-symbols-outlined" style="font-size:30px;color:'+WALK_C+';font-variation-settings:\'FILL\' 1">directions_walk</span>'+
+          '<p id="walk-time" class="font-headline leading-none mt-1" style="font-size:52px;color:#e1e2e7">'+walkFmt(WALK.elapsed)+'</p>'+
+          '<p class="font-label text-[12px] mt-1" style="color:'+WALK_C+'">'+(WALK.done?'✓ obiettivo raggiunto':'obiettivo '+tgt+' min')+'</p>'+
+        '</div></div>'+
+      '<p class="font-label text-[13px] text-gray-400 text-center leading-relaxed mt-6 max-w-xs">'+
+        (WALK.done?'Puoi continuare quanto vuoi: il tempo resta registrato. Tocca Fine quando rientri.':'Passo svelto: riesci a parlare, non a cantare. Spalle rilassate, respira dal naso se ci riesci.')+'</p>'+
+      (!WALK.running?'<p class="font-label text-[12px] mt-3" style="color:#e9c176">In pausa</p>':'')+
+    '</div>'+
+    '<div class="flex-shrink-0 px-5 pb-8 pt-3 flex gap-2">'+
+      '<button onclick="walkToggle()" class="flex-1 font-headline text-lg active:scale-95" style="min-height:56px;border:1px solid '+WALK_C+'77;color:'+WALK_C+'">'+(WALK.running?'Pausa':'Riprendi')+'</button>'+
+      '<button onclick="walkFinish()" class="flex-1 font-headline text-lg active:scale-95" style="min-height:56px;background:linear-gradient(135deg,'+WALK_C+','+WALK_C+'bb);color:#000">Fine e salva</button>'+
+    '</div></div>';
+}
+// Avvio diretto: dal piano si entra nell'allenamento, senza la scheda di dettaglio
+function forgeKdpStart(){ state.trainSubTab='kdp'; state.tab='train'; try{ kdpStartWorkout(); }catch(e){ render(); } }
+function forgeStartDirect(action){
+  if(!action) return action; var m;
+  if((m=String(action).match(/^openExtraDetail\('([^']+)'\);?$/))) return "startExtraWorkout('"+m[1]+"')";
+  if((m=String(action).match(/^openLmDetail\('([^']+)'\);?$/))) return "startLmWorkout('"+m[1]+"')";
+  if((m=String(action).match(/^openFlowDetail\('([^']+)'\);?$/))) return "state.flowDetailId='"+m[1]+"';flowStart()";
+  if(/^forgeKdp\(\);?$/.test(action)) return "forgeKdpStart()";
+  return action;
+}
+
+// ══════════════════════════════════════════════════════════════════
 // HOME "OGGI" — la giornata: mattino, allenamento, sera
 // ══════════════════════════════════════════════════════════════════
 function homeDMY(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
@@ -1532,7 +1601,7 @@ function homeWeek(){
   var days={}, n=0, mins=0;
   function add(dateStr,dur){ var d=homeParse(dateStr); if(!d) return; var i=Math.round((d-mon)/86400000); if(i<0||i>6) return; days[i]=(days[i]||0)+1; n++; mins+=(+dur||0); }
   (state.history||[]).forEach(function(h){ if(!h.partial) add(h.date,h.duration); });
-  (state.externalHistory||[]).forEach(function(h){ if(h._morning||h._evening||h._wimhof||h._axe) return; add(h.date,h.duration); });
+  (state.externalHistory||[]).forEach(function(h){ if(h._morning||h._evening||h._wimhof||h._axe) return; if(h._walk){ var dw=homeParse(h.date); if(dw){ var iw=Math.round((dw-mon)/86400000); if(iw>=0&&iw<=6) mins+=(+h.duration||0);} return; } add(h.date,h.duration); });
   (state.axeHistory||[]).forEach(function(h){ add(h.date,h.duration); });
   var planned=(FORGE_PROFILE.trainingDays||[]).length||4;
   return {n:n,mins:Math.round(mins),days:days,planned:planned,todayIdx:dow};
@@ -1541,7 +1610,7 @@ function homeWeek(){
 function homeTrainingToday(){
   var today=homeDMY(new Date()), last=null;
   (state.history||[]).forEach(function(h){ if(h.date===today&&!h.partial) last={day:h.day,dur:h.duration}; });
-  (state.externalHistory||[]).forEach(function(h){ if(h.date===today&&!h._morning&&!h._evening&&!h._wimhof) last={type:h.type,dur:h.duration}; });
+  (state.externalHistory||[]).forEach(function(h){ if(h.date===today&&!h._morning&&!h._evening&&!h._wimhof&&!h._walk) last={type:h.type,dur:h.duration}; });
   (state.axeHistory||[]).forEach(function(h){ if(h.date===today) last={type:'AXE Protocol',dur:h.duration}; });
   if(!last) return null;
   var label=last.type||'';
@@ -1599,11 +1668,12 @@ function renderHome(){
   var pct=Math.min(1,wk.n/wk.planned), C=2*Math.PI*42;
   var dots=['L','M','M','G','V','S','D'].map(function(l,i){
     var js=(i+1)%7, planned=(FORGE_PROFILE.trainingDays||[]).indexOf(js)>=0, done=!!wk.days[i], today=i===wk.todayIdx;
-    var inner=done?'<span class="material-symbols-outlined" style="font-size:13px;'+FILL+'">check</span>':'';
+    var rest=!planned&&!done&&i<=wk.todayIdx;
+    var inner=done?'<span class="material-symbols-outlined" style="font-size:13px;'+FILL+'">check</span>':rest?'<span class="material-symbols-outlined" style="font-size:13px;color:#7a9a3a">check</span>':'';
     return '<div class="flex flex-col items-center gap-1" style="flex:1">'+
       '<span class="font-label text-[11px]" style="color:'+(today?P:'#9aa3b2')+';font-weight:'+(today?700:500)+'">'+l+'</span>'+
       '<span class="flex items-center justify-center rounded-full" style="width:22px;height:22px;'+
-        (done?'background:'+P+';color:#000':planned?'border:1.5px solid '+P+'77':'border:1px solid rgba(255,255,255,0.1)')+'">'+inner+'</span></div>';
+        (done?'background:'+P+';color:#000':rest?'border:1.5px solid #7a9a3a99':planned?'border:1.5px solid '+P+'77':'border:1px solid rgba(255,255,255,0.1)')+'">'+inner+'</span></div>';
   }).join('');
   var weekCard='<div class="bg-surface-container p-4 mb-5" style="border:1px solid rgba(255,255,255,0.06)">'+
     '<div class="flex items-center gap-4">'+
@@ -1657,8 +1727,13 @@ function renderHome(){
           '<span class="flex items-center gap-1 font-label text-[12px]" style="color:#7A9A3A"><span class="material-symbols-outlined" style="font-size:18px;'+FILL+'">check_circle</span>previsto dal piano</span></div>'+
         '<p class="font-headline text-xl leading-tight mt-1">Oggi recupero</p>'+
         '<p class="font-label text-[12px] text-gray-400 mt-0.5">'+(usePlan?'Oggi riposo nel piano.':sug._fromAI?'Nessuna seduta nel piano di oggi.':'Oggi non è un tuo giorno di allenamento.')+' Muoviti leggero, se ti va.</p>'+
+        (function(){ var wm=(state.externalHistory||[]).filter(function(e){return e._walk&&e.date===todayDMY;}).reduce(function(a,e){return a+(+e.duration||0);},0);
+          return '<div class="flex items-center gap-3 mt-3 px-3 py-2" style="background:rgba(255,255,255,0.04)">'+
+            '<span class="material-symbols-outlined" style="color:'+WALK_C+';'+FILL+'">directions_walk</span>'+
+            '<div class="flex-1"><p class="font-headline text-base leading-tight">Camminata</p><p class="font-label text-[12px] text-gray-400">'+(wm?'fatta oggi · '+wm+' min':'30 minuti a passo svelto')+'</p></div>'+
+            (wm?'<span class="material-symbols-outlined" style="color:'+WALK_C+';'+FILL+'">check_circle</span>':'<button onclick="walkStart(30)" class="px-3 font-label text-[13px] active:scale-95" style="min-height:44px;color:'+WALK_C+'">Inizia</button>')+'</div>'; })()+
         (usePlan?'<button onclick="state.trainSubTab=null;state.trainView=\'plan\';switchTab(\'train\')" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:#7A9A3A">Vedi la settimana ›</button>':
-         sug.action?'<button onclick="'+sug.action+'" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:#7A9A3A">Vuoi allenarti lo stesso? '+sug.title+' ›</button>':'')+
+         sug.action?'<button onclick="'+forgeStartDirect(sug.action)+'" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:#7A9A3A">Vuoi allenarti lo stesso? '+sug.title+' ›</button>':'')+
       '</div></div>';
   } else {
     training='<div class="relative mb-5">'+node('now',tCol)+
@@ -1671,7 +1746,7 @@ function renderHome(){
         (planKind?'<p class="font-label text-[12px] mt-2 leading-snug flex gap-1.5" style="color:#e9c176"><span class="material-symbols-outlined" style="font-size:16px">trending_down</span><span>'+planKind+'</span></p>':'')+
         (note?'<p class="font-label text-[12px] mt-2 leading-snug flex gap-1.5" style="color:#e9c176"><span class="material-symbols-outlined" style="font-size:16px">info</span><span>'+note+'</span></p>':'')+
         '<div class="flex gap-2 mt-3">'+
-          '<button onclick="'+sug.action+'" class="flex-1 flex items-center justify-center gap-1.5 font-headline text-lg active:scale-95" style="min-height:48px;background:linear-gradient(135deg,'+tCol+','+tCol+'bb);color:#000">'+
+          '<button onclick="'+forgeStartDirect(sug.action)+'" class="flex-1 flex items-center justify-center gap-1.5 font-headline text-lg active:scale-95" style="min-height:48px;background:linear-gradient(135deg,'+tCol+','+tCol+'bb);color:#000">'+
             '<span class="material-symbols-outlined" style="'+FILL+'">play_arrow</span>Inizia</button>'+
           '<button onclick="'+(sug._fromPlan?'macroSwapToday()':'state.trainSubTab=null;switchTab(\'train\')')+'" class="flex items-center justify-center gap-1 px-4 font-label text-[13px] active:scale-95" style="min-height:48px;border:1px solid '+tCol+'77;color:'+tCol+'">'+
             '<span class="material-symbols-outlined" style="font-size:18px">swap_horiz</span>Cambia</button>'+
@@ -8487,6 +8562,7 @@ function renderTrain(){
     {id:"lm",      cat:"bw",   icon:"🎥",name:"LeoMoves",  desc:"Allenamenti video a corpo libero"},
     {id:"wf",      cat:"sport",icon:"🏄",name:"Wing Foil", desc:"Equilibrio, core e potenza d'anca"},
     {id:"daily",   cat:"daily",icon:"🌗",name:"Daily routine",desc:"Risveglio, Mobilità serale, Respiro e Wim Hof",go:"goMorning()"},
+    {id:"walk",    cat:"daily",icon:"🚶",name:"Camminata",desc:"Passo svelto, con obiettivo di tempo",go:"walkStart(30)"},
   ];
   function dParse(s){ try{var p=String(s).split('/');return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):null;}catch(e){return null;} }
   function lastOf(id){
@@ -8499,6 +8575,7 @@ function renderTrain(){
     if(id==="kdp")  X.forEach(function(e){ if(e._kdp) cand.push(e.date); });
     if(id==="axe")  (state.axeHistory||[]).forEach(function(e){ if(e.date) cand.push(e.date); });
     if(id==="daily") X.forEach(function(e){ if(e._morning||e._evening||e._wimhof) cand.push(e.date); });
+    if(id==="walk") X.forEach(function(e){ if(e._walk) cand.push(e.date); });
     var best=null; cand.forEach(function(c){ var d=dParse(c); if(d&&!isNaN(d)&&(!best||d>best)) best=d; });
     return best?String(best.getDate()).padStart(2,'0')+'/'+String(best.getMonth()+1).padStart(2,'0'):null;
   }
@@ -8512,6 +8589,7 @@ function renderTrain(){
     if(id==="lm") return LM_WORKOUTS.length+" video";
     if(id==="wf") return EXTRA_WORKOUTS.filter(function(w){return /^WF/.test(w.id);}).length+" sessioni";
     if(id==="daily") return "4 pratiche";
+    if(id==="walk") return "20–60 min";
     return "";
   }
   function progCard(p){
@@ -9114,6 +9192,18 @@ function renderMorning(){
       '<p class="font-label text-xs text-gray-500 mb-4">3 round · Tecnica di respirazione profonda</p>'+
       (lastWH?'<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: '+lastWH.date+'</p>':'')+
       '<button onclick="whStart()" class="w-full py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">INIZIA</button>'+
+    '</div>'+
+    // Giorno — Camminata
+    '<p class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:'+WALK_C+'">Giorno</p>'+
+    '<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:'+WALK_C+'">'+
+      '<div class="flex items-center gap-2 mb-1"><span class="material-symbols-outlined text-lg" style="color:'+WALK_C+';font-variation-settings:\'FILL\' 1">directions_walk</span>'+
+        '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:'+WALK_C+'">CAMMINATA</p></div>'+
+      '<h2 class="font-headline text-3xl mb-1">Camminata</h2>'+
+      '<p class="font-label text-xs text-gray-500 mb-4">Passo svelto · tempo e obiettivo · campana a metà e all\'arrivo</p>'+
+      (function(){ var lw=(state.externalHistory||[]).filter(function(e){return e._walk;})[0]; return lw?'<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: '+lw.date+' · '+lw.duration+' min</p>':''; })()+
+      '<div class="grid grid-cols-4 gap-2">'+[20,30,45,60].map(function(mn){
+        return '<button onclick="walkStart('+mn+')" class="py-3 font-headline text-lg active:scale-95" style="'+(mn===30?'background:linear-gradient(135deg,'+WALK_C+','+WALK_C+'bb);color:#000':'border:1px solid '+WALK_C+'77;color:'+WALK_C)+'">'+mn+'\'</button>'; }).join('')+
+      '</div>'+
     '</div>'+
     // Sera — Mobilità serale
     '<p class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:'+EC+'">Sera</p>'+
@@ -10165,6 +10255,8 @@ function aiWorkoutToAction(workoutName){
   function has(id){ try{ return !!getExtraById(id); }catch(e){ return false; } }
   // Riposo per primo: "Riposo / recupero attivo" non deve avviare nulla
   if(/\b(riposo|rest day|giorno di recupero)\b/.test(n)) return {action:null,icon:'😴',color:'#64748b'};
+  // Camminata: "Camminata 45'", "Walk 30 min"
+  if(/camminat|\bwalk/.test(n)){ var wmn=n.match(/(\d{2})\s*(?:'|min|minuti)/); return {action:'walkStart('+(wmn?+wmn[1]:30)+')',icon:'🚶',color:'#a3be6b'}; }
   // 30 Days KB: "KB Day 5", "30 Days KB · Day 5", "Day 5", "K30 D5"
   if(/30\s*days?|\bk30\b|\bkb\s*day\b|\bday\s*\d{1,2}\b/.test(n)){
     m=n.match(/\bday\s*(\d{1,2})\b|\bk30[\s\-·]*d?\s*(\d{1,2})\b|\bd(\d{1,2})\b/);
@@ -10469,7 +10561,7 @@ function renderMorningSuggestion(){
   h+='<span class="font-headline text-2xl leading-none">'+sug.title.toUpperCase()+'</span></div>';
   h+='<p class="font-label text-xs text-gray-400 mb-4">'+sug.reason+'</p>';
   if(sug.action){
-    h+='<button onclick="'+sug.action+'" class="w-full py-3.5 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform" style="background:linear-gradient(135deg,'+sug.color+','+sug.color+'bb);color:#000">';
+    h+='<button onclick="'+forgeStartDirect(sug.action)+'" class="w-full py-3.5 font-headline text-xl tracking-widest flex justify-between items-center px-5 active:scale-95 transition-transform" style="background:linear-gradient(135deg,'+sug.color+','+sug.color+'bb);color:#000">';
     h+='VAI <span class="material-symbols-outlined" style="'+FILL+'">bolt</span></button>';
   }
   h+='</div>';
@@ -10831,6 +10923,8 @@ function renderAIPlan(){
       h+='<span class="font-label text-[8px] uppercase tracking-widest px-2 py-1 mt-1" style="background:'+ic+'22;color:'+ic+'">'+w.intensita+'</span>';
       h+='</div>';
       if(w.motivo) h+='<p class="font-label text-xs text-gray-400 leading-relaxed">'+w.motivo+'</p>';
+      var mp=aiWorkoutToAction(w.workout);
+      if(mp&&mp.action) h+='<button onclick="'+forgeStartDirect(mp.action)+'" class="mt-3 w-full flex items-center justify-center gap-1.5 font-headline text-base active:scale-95" style="min-height:46px;background:'+ic+'1f;border:1px solid '+ic+'77;color:'+ic+'"><span class="material-symbols-outlined" style="font-size:20px;font-variation-settings:\'FILL\' 1">play_arrow</span>Inizia</button>';
       h+='</div>';
     }
     h+='</div>';
@@ -11851,8 +11945,16 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v114";
+var APP_VERSION = "v115";
 var APP_CHANGELOG = [
+  {v:"v115", data:"28/09/2026", items:[
+    "Nuova attività Camminata: tempo, obiettivo (20-60 min), campana a metà e all'arrivo",
+    "Camminata in Daily routine, nel catalogo, nella card Riposo di Oggi e nel piano AI",
+    "Nel macrociclo la camminata vale come seduta aerobica; a riposo è recupero attivo",
+    "Dal piano AI si entra direttamente nell'allenamento: bottone Inizia su ogni giorno",
+    "In Oggi, Inizia avvia direttamente la sessione, senza la scheda di dettaglio",
+    "Nella settimana di Oggi i giorni di riposo già arrivati hanno la spunta",
+  ]},
   {v:"v114", data:"28/09/2026", items:[
     "Giorni di riposo: in Oggi il blocco Allenamento risulta già fatto, con la spunta",
     "Il riposo previsto conta nel totale della giornata (es. 3 di 3 fatti)",
@@ -12155,6 +12257,7 @@ function render(){
   else if(state.tab==="lm-detail")  app.innerHTML=renderLmDetail();
   else if(state.tab==="lm-workout")  app.innerHTML=renderLmWorkout();
   else if(state.tab==="k30-chipper")  app.innerHTML=renderK30Chipper();
+  else if(state.tab==="walk")  app.innerHTML=renderWalk();
   else if(state.tab==="train")       app.innerHTML=renderTrain();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
   else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
@@ -12185,7 +12288,7 @@ function render(){
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
 // ── WAKE LOCK ─────────────────────────────────────────────────────────────────
 let wakeLock=null;
-const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','k30-chipper','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
+const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','k30-chipper','walk','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
 async function requestWakeLock(){
   try{
     if('wakeLock' in navigator){
@@ -12924,7 +13027,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v114';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v115';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
