@@ -1634,7 +1634,7 @@ function renderHome(){
   }
   var BC='#7dd3fc';
   var mattino='<div class="flex items-center justify-between mb-2"><p class="font-label text-[11px] uppercase tracking-widest" style="color:'+(morningDone?'#9aa3b2':BC)+'">Mattino</p>'+
-      '<button onclick="goMorning()" class="font-label text-[12px] text-gray-400 active:scale-95" style="min-height:32px">Tutto il mattino ›</button></div>'+
+      '<button onclick="goMorning()" class="font-label text-[12px] text-gray-400 active:scale-95" style="min-height:32px">Daily routine ›</button></div>'+
     item('spa',BC,'Respiro',breathDone?('fatto oggi'+(boltToday?' · BOLT '+boltToday.bolt_seconds+'"':'')):'15 minuti · naso e lentezza',breathDone?'':'Inizia','breathStartRoutine()',breathDone)+
     item('wb_sunny','#e9c176','Routine di risveglio',mrDone?'fatta oggi':'8 minuti · facoltativa',mrDone?'':'Inizia','mrStart(60)',mrDone)+
     item('air','#50dad1','Wim Hof',whDone?'fatto oggi':'3 round · facoltativo',whDone?'':'Inizia','whStart()',whDone);
@@ -8471,7 +8471,7 @@ function renderTrain(){
   }
 
   // ── CATALOGO ────────────────────────────────────────────────────
-  var CATS={kb:{label:"Kettlebell",color:"#ffb693"},bw:{label:"Corpo libero",color:"#43A047"},sport:{label:"Sport",color:"#38bdf8"}};
+  var CATS={kb:{label:"Kettlebell",color:"#ffb693"},bw:{label:"Corpo libero",color:"#43A047"},sport:{label:"Sport",color:"#38bdf8"},daily:{label:"Daily routine",color:"#8b9cf6"}};
   var PROGS=[
     {id:"base",    cat:"kb",   icon:"🔔",name:"KB A·B·C",  desc:"La rotazione base: EMOM, HIIT e Ladder"},
     {id:"k30",     cat:"kb",   icon:"📅",name:"30 Days KB",desc:"4 settimane con un solo kettlebell"},
@@ -8483,6 +8483,7 @@ function renderTrain(){
     {id:"bw",      cat:"bw",   icon:"🤸",name:"Bodyweight",desc:"Bodyweight Jacked e Limitless, a round"},
     {id:"lm",      cat:"bw",   icon:"🎥",name:"LeoMoves",  desc:"Allenamenti video a corpo libero"},
     {id:"wf",      cat:"sport",icon:"🏄",name:"Wing Foil", desc:"Equilibrio, core e potenza d'anca"},
+    {id:"daily",   cat:"daily",icon:"🌗",name:"Daily routine",desc:"Risveglio, Mobilità serale, Respiro e Wim Hof",go:"goMorning()"},
   ];
   function dParse(s){ try{var p=String(s).split('/');return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):null;}catch(e){return null;} }
   function lastOf(id){
@@ -8494,6 +8495,7 @@ function renderTrain(){
     if(id==="flow") X.forEach(function(e){ if(e._flow) cand.push(e.date); });
     if(id==="kdp")  X.forEach(function(e){ if(e._kdp) cand.push(e.date); });
     if(id==="axe")  (state.axeHistory||[]).forEach(function(e){ if(e.date) cand.push(e.date); });
+    if(id==="daily") X.forEach(function(e){ if(e._morning||e._evening||e._wimhof) cand.push(e.date); });
     var best=null; cand.forEach(function(c){ var d=dParse(c); if(d&&!isNaN(d)&&(!best||d>best)) best=d; });
     return best?String(best.getDate()).padStart(2,'0')+'/'+String(best.getMonth()+1).padStart(2,'0'):null;
   }
@@ -8506,11 +8508,12 @@ function renderTrain(){
     if(id==="bw") return EXTRA_WORKOUTS.filter(function(w){return /^(BWJ|LTL)-/.test(w.id);}).length+" circuiti";
     if(id==="lm") return LM_WORKOUTS.length+" video";
     if(id==="wf") return EXTRA_WORKOUTS.filter(function(w){return /^WF/.test(w.id);}).length+" sessioni";
+    if(id==="daily") return "4 pratiche";
     return "";
   }
   function progCard(p){
     var c=CATS[p.cat].color, last=lastOf(p.id);
-    return '<button onclick="state.trainSubTab=\''+p.id+'\';render();window.scrollTo(0,0)" class="w-full flex items-center gap-3 px-4 py-3.5 mb-2 text-left bg-surface-container active:scale-[0.99] transition-transform" style="border-left:3px solid '+c+';min-height:72px">'+
+    return '<button onclick="'+(p.go?p.go:'state.trainSubTab=\''+p.id+'\';render();window.scrollTo(0,0)')+'" class="w-full flex items-center gap-3 px-4 py-3.5 mb-2 text-left bg-surface-container active:scale-[0.99] transition-transform" style="border-left:3px solid '+c+';min-height:72px">'+
       '<span class="text-2xl w-9 text-center flex-shrink-0">'+p.icon+'</span>'+
       '<div class="flex-1 min-w-0"><p class="font-headline text-lg leading-tight" style="color:#e1e2e7">'+p.name+'</p>'+
         '<p class="font-label text-[12px] text-gray-400 mt-0.5 leading-snug">'+p.desc+'</p></div>'+
@@ -8528,7 +8531,7 @@ function renderTrain(){
   }
   function catalogHTML(noTitle){
     var f=state.trainFilter||"all";
-    var chips=[["all","Tutti"],["kb","Kettlebell"],["bw","Corpo libero"],["sport","Sport"]].map(function(o){
+    var chips=[["all","Tutti"],["kb","Kettlebell"],["bw","Corpo libero"],["sport","Sport"],["daily","Daily routine"]].map(function(o){
       var on=f===o[0], c=o[0]==="all"?"#ffb693":CATS[o[0]].color;
       return '<button onclick="state.trainFilter=\''+o[0]+'\';render()" class="flex-shrink-0 px-4 font-label text-[13px] active:scale-95" style="min-height:44px;border:1px solid '+(on?c:'rgba(255,255,255,0.12)')+';color:'+(on?c:'#9aa3b2')+';background:'+(on?c+'1a':'transparent')+'">'+o[1]+'</button>';
     }).join('');
@@ -9040,7 +9043,10 @@ function renderMorning(){
   // TAB ROUTINE
   // ══════════════════════════════════════════════════════════════
   var routineContent = '';
+  var evLogs=(state.externalHistory||[]).filter(function(e){return e._evening;}), lastEV=evLogs[0];
+  var ER=EVENING_ROUTINE, EC='#8b9cf6';
   routineContent +=
+    '<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:#e9c176">Mattino</p>'+
     '<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:#e9c176">'+
       '<div class="flex items-center gap-2 mb-1">'+
         '<span class="material-symbols-outlined text-lg" style="color:#e9c176;font-variation-settings:\'FILL\' 1">wb_sunny</span>'+
@@ -9105,6 +9111,33 @@ function renderMorning(){
       '<p class="font-label text-xs text-gray-500 mb-4">3 round · Tecnica di respirazione profonda</p>'+
       (lastWH?'<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: '+lastWH.date+'</p>':'')+
       '<button onclick="whStart()" class="w-full py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">INIZIA</button>'+
+    '</div>'+
+    // Sera — Mobilità serale
+    '<p class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:'+EC+'">Sera</p>'+
+    '<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:'+EC+'">'+
+      '<div class="flex items-center gap-2 mb-1">'+
+        '<span class="material-symbols-outlined text-lg" style="color:'+EC+';font-variation-settings:\'FILL\' 1">bedtime</span>'+
+        '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:'+EC+'">MOBILITÀ SERALE</p>'+
+      '</div>'+
+      '<h2 class="font-headline text-3xl mb-1">'+ER.label+'</h2>'+
+      '<p class="font-label text-xs text-gray-500 mb-4">'+ER.exercises.length+' esercizi · '+ER.duration+' min · A terra, senza attrezzi</p>'+
+      '<div class="space-y-1 mb-5">'+
+        ER.exercises.map(function(e,i){
+          return '<div class="flex items-center gap-3 py-1.5 border-b border-white/5">'+
+            '<span class="font-headline text-base w-5 flex-shrink-0" style="color:'+EC+'">'+(i+1)+'</span>'+
+            '<div class="flex-1">'+
+              '<span class="font-headline text-lg leading-none">'+e.name+'</span>'+
+              '<span class="font-label text-[10px] text-gray-600 ml-2">'+e.sub+'</span>'+
+            '</div>'+
+            '<span class="font-label text-[10px] text-gray-600">'+e.duration+'s</span>'+
+          '</div>';
+        }).join('')+
+      '</div>'+
+      (lastEV?'<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: '+lastEV.date+'</p>':'')+
+      '<div class="flex gap-2">'+
+        '<button onclick="mrStart(60,\'evening\')" class="flex-1 py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,'+EC+',#6d7fe0);color:#000">FULL 60"</button>'+
+        '<button onclick="mrStart(30,\'evening\')" class="flex-1 py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#6d7fe0,#5063c4);color:#000">EXPRESS 30"</button>'+
+      '</div>'+
     '</div>';
 
   // ══════════════════════════════════════════════════════════════
@@ -9170,7 +9203,7 @@ function renderMorning(){
   return '<div class="screen bg-background" style="display:flex;flex-direction:column;height:100vh;">'+
     '<div class="flex-shrink-0" style="padding-top:calc(env(safe-area-inset-top,0px) + 12px)">'+
       '<div class="px-5 pt-5 pb-0">'+
-        '<h1 class="font-headline text-3xl leading-none mb-4">Morning</h1>'+
+        '<h1 class="font-headline text-3xl leading-none mb-4">Daily routine</h1>'+
         tabBar+
       '</div>'+
     '</div>'+
@@ -11815,8 +11848,13 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v112";
+var APP_VERSION = "v113";
 var APP_CHANGELOG = [
+  {v:"v113", data:"28/09/2026", items:[
+    "Nuova pagina Daily routine: Mattino (Risveglio, Respiro, Wim Hof) e Sera (Mobilità serale)",
+    "Mobilità serale sempre disponibile, in versione FULL 60\" o EXPRESS 30\"",
+    "Daily routine raggiungibile da Oggi e dal catalogo di Train (nuovo filtro)",
+  ]},
   {v:"v112", data:"27/09/2026", items:[
     "Mobilità serale: figura animata per ogni esercizio, che mostra il movimento",
     "Link \"Guarda un video\" sotto le istruzioni di ogni esercizio",
@@ -12878,7 +12916,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v112';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v113';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
