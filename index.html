@@ -1483,7 +1483,9 @@ function renderPlanView(){
   var planned={}; t.items.forEach(function(x){ planned[x.js]=x; });
   var rows=[1,2,3,4,5,6,0].map(function(js){
     var it=planned[js], d=macroDayDate(m,w,js), ds=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
-    if(!it) return '<div class="flex items-center gap-3 px-3.5 py-2.5" style="border-bottom:1px solid rgba(255,255,255,0.05)"><span class="font-label text-[12px] text-gray-500 flex-shrink-0 whitespace-nowrap" style="width:66px">'+GIORNI[js]+' '+ds+'</span><span class="font-label text-[13px] text-gray-500">Riposo</span></div>';
+    if(!it){ var restOk=d<=new Date(new Date().toDateString())&&!(m.created&&d<mcFromIso(m.created));
+      return '<div class="flex items-center gap-3 px-3.5 py-2.5" style="border-bottom:1px solid rgba(255,255,255,0.05)"><span class="font-label text-[12px] text-gray-500 flex-shrink-0 whitespace-nowrap" style="width:66px">'+GIORNI[js]+' '+ds+'</span><span class="font-label text-[13px] text-gray-500 flex-1">Riposo</span>'+
+        (restOk?'<span class="material-symbols-outlined" style="font-size:20px;color:#7a9a3a;'+FILL+'">check_circle</span>':'')+'</div>'; }
     var T=MC_TYPES[it.type], st=macroItemStatus(m,w,it);
     var right=st==='fatto'?'<span class="material-symbols-outlined" style="color:'+T.color+';'+FILL+'">check_circle</span>':
       st==='altro'?'<span class="font-label text-[11px] text-gray-400">fatto altro</span>':
@@ -1589,7 +1591,7 @@ function renderHome(){
   var isTrainingDay=(FORGE_PROFILE.trainingDays||[]).indexOf(now.getDay())>=0;
   var isRest=!trained&&(usePlan?mt.rest:(!sug.action||(!sug._fromAI&&!isTrainingDay)));
   var morningDone=breathDone||mrDone||whDone;
-  var doneCount=(morningDone?1:0)+(trained?1:0)+(eveDone?1:0);
+  var doneCount=(morningDone?1:0)+((trained||isRest)?1:0)+(eveDone?1:0);
   var note=homeReadinessNote();
   var P='#ffb693', FILL="font-variation-settings:'FILL' 1";
 
@@ -1649,9 +1651,10 @@ function renderHome(){
         '<button onclick="state.trainSubTab=null;switchTab(\'train\')" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:'+P+'">Allenarti ancora? Apri il catalogo ›</button>'+
       '</div></div>';
   } else if(isRest){
-    training='<div class="relative mb-5">'+node('now','#7A9A3A')+
+    training='<div class="relative mb-5">'+node('done','#7A9A3A')+
       '<div class="bg-surface-container p-4" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid #7A9A3A">'+
-        '<p class="font-label text-[11px] uppercase tracking-widest" style="color:#7A9A3A">Riposo</p>'+
+        '<div class="flex items-center justify-between"><p class="font-label text-[11px] uppercase tracking-widest" style="color:#7A9A3A">Riposo</p>'+
+          '<span class="flex items-center gap-1 font-label text-[12px]" style="color:#7A9A3A"><span class="material-symbols-outlined" style="font-size:18px;'+FILL+'">check_circle</span>previsto dal piano</span></div>'+
         '<p class="font-headline text-xl leading-tight mt-1">Oggi recupero</p>'+
         '<p class="font-label text-[12px] text-gray-400 mt-0.5">'+(usePlan?'Oggi riposo nel piano.':sug._fromAI?'Nessuna seduta nel piano di oggi.':'Oggi non è un tuo giorno di allenamento.')+' Muoviti leggero, se ti va.</p>'+
         (usePlan?'<button onclick="state.trainSubTab=null;state.trainView=\'plan\';switchTab(\'train\')" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:#7A9A3A">Vedi la settimana ›</button>':
@@ -1675,7 +1678,7 @@ function renderHome(){
         '</div>'+
       '</div></div>';
   }
-  var allenamento='<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:'+(trained?'#9aa3b2':tCol)+'">Allenamento</p>'+training;
+  var allenamento='<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:'+((trained||isRest)?'#9aa3b2':tCol)+'">Allenamento</p>'+training;
 
   var sera='<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:'+(eveDone?'#9aa3b2':'#8b9cf6')+'">Sera</p>'+
     item('self_improvement','#8b9cf6','Mobilità serale',eveDone?'fatta oggi':'8 minuti · a terra, senza attrezzi',eveDone?'':'Inizia',"mrStart(60,'evening')",eveDone);
@@ -11848,8 +11851,13 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v113";
+var APP_VERSION = "v114";
 var APP_CHANGELOG = [
+  {v:"v114", data:"28/09/2026", items:[
+    "Giorni di riposo: in Oggi il blocco Allenamento risulta già fatto, con la spunta",
+    "Il riposo previsto conta nel totale della giornata (es. 3 di 3 fatti)",
+    "Nel Piano, i giorni di riposo già arrivati hanno la spunta",
+  ]},
   {v:"v113", data:"28/09/2026", items:[
     "Nuova pagina Daily routine: Mattino (Risveglio, Respiro, Wim Hof) e Sera (Mobilità serale)",
     "Mobilità serale sempre disponibile, in versione FULL 60\" o EXPRESS 30\"",
@@ -12916,7 +12924,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v113';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v114';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
