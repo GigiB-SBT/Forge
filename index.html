@@ -1070,7 +1070,7 @@ function navTo(t){
   switchTab(t);
 }
 function navHTML(active){
-  var parent={axe:'train',extra:'train',plan:'train',programs:'train',health:'log',morning:'home','ai-plan':'home'};
+  var parent={axe:'train',extra:'train',plan:'train',programs:'train',health:'log',morning:'home','ai-plan':'home',awards:'home',challenge:'home'};
   active=parent[active]||active;
   const tabs=[
     {id:"home",     icon:"today",          label:"Oggi"},
@@ -1287,7 +1287,7 @@ function mcWeekTypes(goal, secondary, blockIdx, daysJs){
 // Tipo di una sessione registrata
 function mcSessionType(e){
   if(!e) return null;
-  if(e._morning||e._evening||e._wimhof) return null;
+  if(e._morning||e._evening||e._wimhof||e._breath) return null;
   if(e._flow||e._axe||e._manual||e._walk) return "aerobico";
   if(e._kdp||e._dpu||e._core7) return "forza";
   var d=e.day; if(!d) return null;
@@ -1590,6 +1590,343 @@ function forgeStartDirect(action){
 }
 
 // ══════════════════════════════════════════════════════════════════
+// CICLI DI RESPIRO — inspira · pausa · espira · pausa, a durata scelta
+// ══════════════════════════════════════════════════════════════════
+var BREATH_CYCLES=[
+  {id:"risveglio",name:"Risveglio",pattern:[6,0,4,0],color:"#e9c176",when:"Mattino",
+   desc:"Inspira più lunga dell'espira: attiva e sveglia.",cue:"Inspira profondo dal naso, espira più breve senza forzare."},
+  {id:"coerente",name:"Coerente",pattern:[5.5,0,5.5,0],color:"#7dd3fc",when:"Quando vuoi",
+   desc:"Inspira ed espira uguali, circa 5,5 respiri al minuto: equilibrio.",cue:"Respiro morbido e continuo, senza pause, sempre dal naso."},
+  {id:"box",name:"Box",pattern:[4,4,4,4],color:"#50dad1",when:"Prima dell'allenamento",
+   desc:"Quattro tempi uguali: concentrazione e controllo.",cue:"Nelle pause resta fermo senza chiudere la gola, spalle basse."},
+  {id:"recupero",name:"Recupero",pattern:[3,0,6,0],color:"#a3be6b",when:"Dopo l'allenamento",
+   desc:"Espira lunga il doppio dell'inspira: abbassa il ritmo dopo lo sforzo.",cue:"Espira lenta, come per appannare un vetro, a bocca socchiusa se serve."},
+  {id:"478",name:"4-7-8",pattern:[4,7,8,0],color:"#8b9cf6",when:"Sera",
+   desc:"Pausa lunga a polmoni pieni ed espira lenta: verso il sonno.",cue:"Se la pausa diventa scomoda, accorciala e torna a respirare normalmente."}
+];
+var CY_STEPS=["inhale","holdIn","exhale","holdOut"];
+function cyGet(id){ return BREATH_CYCLES.filter(function(c){return c.id===id;})[0]||BREATH_CYCLES[1]; }
+function cyInit(id,minutes){ return {id:id,total:minutes*60000,ms:0,step:0,stepMs:0,cycles:0,finishing:false,done:false}; }
+function cyStepDur(c,i){ return cyGet(c.id).pattern[i]*1000; }
+function cyFirstStep(c,from){ for(var k=0;k<4;k++){ var i=(from+k)%4; if(cyStepDur(c,i)>0) return i; } return 0; }
+// Avanza di dt ms; a fine durata completa il ciclo in corso, poi si ferma
+function cyAdvance(c,dt){
+  if(c.done) return c;
+  c.ms+=dt; c.stepMs+=dt;
+  if(c.ms>=c.total) c.finishing=true;
+  var guard=0;
+  while(c.stepMs>=cyStepDur(c,c.step) && guard++<10){
+    c.stepMs-=cyStepDur(c,c.step);
+    var nxt=cyFirstStep(c,c.step+1);
+    if(nxt<=c.step){ c.cycles++; if(c.finishing){ c.done=true; c.stepMs=0; break; } }
+    c.step=nxt;
+  }
+  return c;
+}
+function cyEase(x){ x=Math.max(0,Math.min(1,x)); return x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2; }
+function cyView(c){
+  var s=CY_STEPS[c.step], d=cyStepDur(c,c.step), t=d?c.stepMs/d:0, left=Math.max(1,Math.ceil((d-c.stepMs)/1000));
+  if(c.done) return {scale:0.5,label:"Fatto",sub:"",step:"done"};
+  if(s==="inhale") return {scale:0.35+0.65*cyEase(t),label:"Inspira",sub:left+"\"",step:s};
+  if(s==="holdIn") return {scale:1+0.012*Math.sin(c.stepMs/500),label:"Trattieni",sub:left+"\"",step:s};
+  if(s==="exhale") return {scale:1-0.65*cyEase(t),label:"Espira",sub:left+"\"",step:s};
+  return {scale:0.35,label:"Pausa",sub:left+"\"",step:s};
+}
+
+function cycleOpen(id){ state.cycSel=id; state.cycMin=state.cycMin||5; state.tab='cycle-setup'; render(); }
+function cyFmt(ms){ var s=Math.max(0,Math.ceil(ms/1000)), m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
+var cyRAF=null, cyLast=0;
+function cycleStart(id,min){
+  unlockAudio(); requestWakeLock();
+  state.cyc=cyInit(id,min||5); state.cyc.running=true; state.cyc.saved=false;
+  state.tab='cycle'; render();
+  if(cyRAF) cancelAnimationFrame(cyRAF);
+  cyLast=performance.now(); cyRAF=requestAnimationFrame(cyFrame);
+  bsInhale();
+}
+function cyFrame(now){
+  var c=state.cyc;
+  if(state.tab!=='cycle'||!c||c.done){ cyRAF=null; return; }
+  var dt=Math.min(1000,now-cyLast); cyLast=now; if(!c.running) dt=0;
+  var prevStep=c.step, prevSec=Math.floor(c.stepMs/1000);
+  cyAdvance(c,dt);
+  if(c.done){ cyRAF=null; releaseWakeLock(); bsEnd(); cycleSave(); render(); return; }
+  if(c.step!==prevStep){ var s=CY_STEPS[c.step]; if(s==='inhale') bsInhale(); else if(s==='exhale') bsExhale(); else bsHold(); }
+  else if(dt>0&&Math.floor(c.stepMs/1000)>prevSec) bsTick();
+  var v=cyView(c), el=document.querySelector('[data-cy-bubble]');
+  if(el) el.style.transform='scale('+v.scale.toFixed(3)+')';
+  var l=document.querySelector('[data-cy-label]'); if(l&&l.textContent!==v.label) l.textContent=v.label;
+  var s2=document.querySelector('[data-cy-sub]'); if(s2&&s2.textContent!==v.sub) s2.textContent=v.sub;
+  var t=document.querySelector('[data-cy-time]'); if(t) t.textContent=c.finishing?'ultimo ciclo':cyFmt(c.total-c.ms);
+  var n=document.querySelector('[data-cy-count]'); if(n) n.textContent=c.cycles;
+  cyRAF=requestAnimationFrame(cyFrame);
+}
+function cycleSave(){
+  var c=state.cyc; if(!c||c.saved) return; c.saved=true;
+  var cy=cyGet(c.id);
+  state.externalHistory.unshift({type:'Respiro · '+cy.name,date:homeDMY(new Date()),duration:Math.max(1,Math.round(c.ms/60000)),
+    notes:c.cycles+' cicli · '+cy.pattern.join('·'),_src:'ext',_breath:true,_cycle:c.id});
+  saveExternalHistory();
+}
+function cycleToggle(){ if(state.cyc){ state.cyc.running=!state.cyc.running; render(); } }
+function cycleStop(){
+  var c=state.cyc; if(cyRAF){ cancelAnimationFrame(cyRAF); cyRAF=null; } releaseWakeLock();
+  if(c&&!c.done&&c.ms>=60000) cycleSave();
+  state.cyc=null; state.tab='home'; render();
+}
+function renderCycleSetup(){
+  var cy=cyGet(state.cycSel), P=cy.pattern, tot=P.reduce(function(a,b){return a+b;},0);
+  var names=['Inspira','Trattieni','Espira','Pausa'];
+  var bars=P.map(function(v,i){ if(!v) return ''; return '<div style="flex:'+v+'" class="text-center"><div style="height:'+(i===0||i===2?34:12)+'px;background:'+cy.color+(i===0||i===2?'':'55')+';margin:0 1px"></div>'+
+    '<p class="font-label text-[11px] text-gray-400 mt-1">'+names[i]+'</p><p class="font-headline text-lg leading-none">'+String(v).replace('.',',')+'"</p></div>'; }).join('');
+  var mins=[3,5,10], sel=state.cycMin||5;
+  return '<div class="screen bg-background page-pad"><main class="px-5 pt-3">'+
+    '<button onclick="goMorning()" class="flex items-center gap-1 -ml-1 mb-1 active:scale-95" style="min-height:44px;color:#9aa3b2"><span class="material-symbols-outlined">chevron_left</span><span class="font-label text-sm">Daily routine</span></button>'+
+    '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+cy.color+'">Ciclo di respiro · '+cy.when+'</p>'+
+    '<h1 class="font-headline text-4xl leading-none mt-1 mb-2">'+cy.name+'</h1>'+
+    '<p class="font-label text-[13px] text-gray-300 leading-snug mb-5">'+cy.desc+'</p>'+
+    '<div class="bg-surface-container p-4 mb-4" style="border:1px solid rgba(255,255,255,0.06)"><p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-3">Un ciclo · '+String(tot).replace('.',',')+' secondi</p>'+
+      '<div class="flex items-end">'+bars+'</div></div>'+
+    '<p class="font-label text-[12px] text-gray-400 leading-snug mb-5 flex gap-1.5"><span class="material-symbols-outlined" style="font-size:16px;color:'+cy.color+'">info</span><span>'+cy.cue+'</span></p>'+
+    '<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-2">Durata</p>'+
+    '<div class="grid grid-cols-3 gap-2 mb-4">'+mins.map(function(m){ var on=sel===m;
+      return '<button onclick="state.cycMin='+m+';render()" class="font-headline text-lg active:scale-95" style="min-height:48px;border:1px solid '+(on?cy.color:'rgba(255,255,255,0.12)')+';color:'+(on?cy.color:'#9aa3b2')+';background:'+(on?cy.color+'1a':'transparent')+'">'+m+' min</button>'; }).join('')+'</div>'+
+    '<button onclick="cycleStart(\''+cy.id+'\','+sel+')" class="w-full flex items-center justify-center gap-2 font-headline text-xl active:scale-95" style="min-height:56px;background:linear-gradient(135deg,'+cy.color+','+cy.color+'bb);color:#000">'+
+      '<span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1">play_arrow</span>Inizia · '+sel+' min</button>'+
+    '<p class="font-label text-[11px] text-gray-500 mt-3">A fine durata l\'app completa il ciclo in corso, poi si ferma.</p>'+
+  '</main>'+navHTML('morning')+'</div>';
+}
+function renderCycle(){
+  var c=state.cyc; if(!c) return renderHome();
+  var cy=cyGet(c.id), v=cyView(c), col=cy.color;
+  if(c.done) return '<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;">'+
+    '<span class="material-symbols-outlined" style="font-size:44px;color:'+col+';font-variation-settings:\'FILL\' 1">check_circle</span>'+
+    '<p class="font-label text-[11px] uppercase tracking-widest mt-3" style="color:'+col+'">Ciclo completato</p>'+
+    '<h1 class="font-headline text-4xl mt-1">'+cy.name+'</h1>'+
+    '<p class="font-label text-[14px] text-gray-300 mt-2">'+c.cycles+' cicli · '+Math.max(1,Math.round(c.ms/60000))+' minuti</p>'+
+    '<p class="font-label text-[12px] text-gray-500 mt-1">Salvato nel LOG</p>'+
+    '<button onclick="cycleStop()" class="mt-8 px-10 font-headline text-lg active:scale-95" style="min-height:52px;background:linear-gradient(135deg,'+col+','+col+'bb);color:#000">Fine</button></div>';
+  return '<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">'+
+    '<div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">'+
+      '<button onclick="cycleStop()" class="flex items-center justify-center" style="width:44px;height:44px"><span class="material-symbols-outlined text-gray-500">close</span></button>'+
+      '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+col+'">'+cy.name+' · '+cy.pattern.map(function(x){return String(x).replace('.',',');}).join('·')+'</p>'+
+      '<button onclick="bsToggle()" class="flex items-center justify-center active:scale-95" style="width:44px;height:44px;color:'+(bsOn()?col:'#8a94a4')+'"><span class="material-symbols-outlined">'+(bsOn()?'volume_up':'volume_off')+'</span></button></div>'+
+    '<div class="flex-1 flex flex-col items-center justify-center px-6">'+
+      '<p data-cy-time class="font-headline mb-4" style="font-size:28px;color:'+col+'99">'+(c.finishing?'ultimo ciclo':cyFmt(c.total-c.ms))+'</p>'+
+      '<div class="relative flex items-center justify-center" style="width:240px;height:240px">'+
+        '<div class="absolute inset-0 rounded-full" style="border:1px solid '+col+'33"></div>'+
+        '<div data-cy-bubble class="absolute inset-0 rounded-full" style="transform:scale('+v.scale.toFixed(3)+');background:radial-gradient(circle at 50% 40%,'+col+'66,'+col+'22 60%,'+col+'0a 75%);box-shadow:0 0 44px '+col+'33;will-change:transform"></div>'+
+        '<div class="relative z-10 text-center pointer-events-none"><p data-cy-label class="font-headline text-3xl" style="color:#e1e2e7">'+v.label+'</p>'+
+          '<p data-cy-sub class="font-headline text-2xl mt-1" style="color:'+col+'">'+v.sub+'</p></div></div>'+
+      '<p class="font-label text-[12px] text-gray-400 mt-5">cicli <span data-cy-count>'+c.cycles+'</span></p>'+
+      '<p class="font-label text-[12px] text-gray-500 text-center leading-snug mt-2 max-w-xs">'+cy.cue+'</p>'+
+      (!c.running?'<p class="font-label text-[12px] mt-2" style="color:#e9c176">In pausa</p>':'')+
+    '</div>'+
+    '<div class="flex-shrink-0 px-5 pb-8 pt-3 flex gap-2">'+
+      '<button onclick="cycleToggle()" class="flex-1 font-headline text-lg active:scale-95" style="min-height:56px;border:1px solid '+col+'77;color:'+col+'">'+(c.running?'Pausa':'Riprendi')+'</button>'+
+      '<button onclick="cycleStop()" class="flex-1 font-headline text-lg active:scale-95" style="min-height:56px;border:1px solid rgba(255,255,255,0.12);color:#9aa3b2">Termina</button></div></div>';
+}
+function cycleDoneToday(id){ var t=homeDMY(new Date()); return (state.externalHistory||[]).some(function(e){return e._cycle===id&&e.date===t;}); }
+
+// ══════════════════════════════════════════════════════════════════
+// TRAGUARDI — badge che si sbloccano dai dati, sfide a tempo
+// ══════════════════════════════════════════════════════════════════
+function awIso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function awDmyToIso(s){ var p=String(s||'').split('/'); return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:null; }
+function awAddDays(iso,n){ var p=iso.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()+n); return awIso(d); }
+function awDiff(a,b){ var pa=a.split('-'),pb=b.split('-'); return Math.round((new Date(+pb[0],+pb[1]-1,+pb[2])-new Date(+pa[0],+pa[1]-1,+pa[2]))/86400000); }
+
+// Riassunto dei dati: tutto in date ISO
+function awCollect(S){
+  var D={train:[],breath:{},morning:[],evening:[],walk:[],wim:[],apneaMax:0,bolt:[],k30Done:0,k30Bench:false,macroDone:false,planned:S.planned||4};
+  (S.history||[]).forEach(function(h){ if(h.partial) return; var d=awDmyToIso(h.date); if(!d) return; D.train.push(d);
+    if(h.day==='extra_K30-D30') D.k30Bench=true; });
+  (S.external||[]).forEach(function(e){ var d=awDmyToIso(e.date); if(!d) return;
+    if(e._morning) D.morning.push(d); else if(e._evening) D.evening.push(d);
+    else if(e._wimhof){ D.wim.push(d); (e.retentionLog||[]).forEach(function(r){ D.apneaMax=Math.max(D.apneaMax,+r.sec||0); }); }
+    else if(e._breath) D.breath[d]=1;
+    else if(e._walk) D.walk.push(d);
+    else if(!e._axe) D.train.push(d); });
+  (S.axe||[]).forEach(function(a){ var d=awDmyToIso(a.date); if(d) D.train.push(d); });
+  (S.breathHist||[]).forEach(function(b){ if(b.date) D.breath[b.date]=1; });
+  D.bolt=(S.bolt||[]).map(function(b){return +b.bolt_seconds||0;});
+  D.k30Done=S.k30Done||0; D.macroDone=!!S.macroDone;
+  return D;
+}
+function awLongestStreak(set){
+  var days=Object.keys(set).sort(), best=0, cur=0, prev=null;
+  days.forEach(function(d){ cur=(prev&&awDiff(prev,d)===1)?cur+1:1; best=Math.max(best,cur); prev=d; });
+  return best;
+}
+function awFullWeek(D){
+  var w={}; D.train.forEach(function(d){ var p=d.split('-'), x=new Date(+p[0],+p[1]-1,+p[2]); x.setDate(x.getDate()-((x.getDay()+6)%7)); var k=awIso(x); w[k]=(w[k]||0)+1; });
+  return Object.keys(w).some(function(k){ return w[k]>=D.planned; })?1:0;
+}
+function awUniq(a){ var o={}; a.forEach(function(x){o[x]=1;}); return Object.keys(o).length; }
+
+var AW_BADGES=[
+  {id:'primo',   group:'Allenamento', name:'Primo passo',     icon:'directions_run',   color:'#ffb693', target:1,  desc:'La prima sessione di allenamento',          val:function(D){return D.train.length;}},
+  {id:'dieci',   group:'Allenamento', name:'In ritmo',        icon:'trending_up',      color:'#ffb693', target:10, desc:'10 sessioni di allenamento',                val:function(D){return D.train.length;}},
+  {id:'cinquanta',group:'Allenamento',name:'Costanza',        icon:'workspace_premium',color:'#ffb693', target:50, desc:'50 sessioni di allenamento',                val:function(D){return D.train.length;}},
+  {id:'piena',   group:'Allenamento', name:'Settimana piena', icon:'event_available',  color:'#e9c176', target:1,  desc:'Tutte le sedute previste in una settimana',  val:awFullWeek},
+  {id:'k30',     group:'Allenamento', name:'Trenta giorni di ferro',icon:'fitness_center',color:'#facc15',target:24,desc:'Tutte le 24 sessioni di 30 Days KB',     val:function(D){return D.k30Done;}},
+  {id:'bench',   group:'Allenamento', name:'Benchmark',       icon:'flag',             color:'#facc15', target:1,  desc:'Il Day 30 di 30 Days KB',                   val:function(D){return D.k30Bench?1:0;}},
+  {id:'respiro1',group:'Respiro',     name:'Primo respiro',   icon:'spa',              color:'#7dd3fc', target:1,  desc:'La prima pratica di respiro',               val:function(D){return Object.keys(D.breath).length;}},
+  {id:'serie7',  group:'Respiro',     name:'Sette giorni',    icon:'local_fire_department',color:'#7dd3fc',target:7,desc:'Respiro per 7 giorni di fila',            val:function(D){return awLongestStreak(D.breath);}},
+  {id:'serie30', group:'Respiro',     name:'Trenta giorni',   icon:'whatshot',         color:'#7dd3fc', target:30, desc:'Respiro per 30 giorni di fila',             val:function(D){return awLongestStreak(D.breath);}},
+  {id:'bolt5',   group:'Respiro',     name:'Fiato lungo',     icon:'air',              color:'#50dad1', target:5,  desc:'BOLT migliorato di 5 secondi dal primo',     val:function(D){ return D.bolt.length?Math.max(0,Math.max.apply(null,D.bolt)-D.bolt[0]):0; }},
+  {id:'apnea60', group:'Respiro',     name:'Un minuto',       icon:'timer',            color:'#50dad1', target:60, desc:'Apnea di un minuto nel Wim Hof',            val:function(D){return D.apneaMax;}},
+  {id:'mattino', group:'Routine',     name:'Mattiniero',      icon:'wb_sunny',         color:'#e9c176', target:10, desc:'10 Routine di risveglio',                   val:function(D){return D.morning.length;}},
+  {id:'sera',    group:'Routine',     name:'Sera tranquilla', icon:'bedtime',          color:'#8b9cf6', target:10, desc:'10 Mobilità serali',                        val:function(D){return D.evening.length;}},
+  {id:'passi',   group:'Routine',     name:'Camminatore',     icon:'directions_walk',  color:'#a3be6b', target:10, desc:'10 camminate',                              val:function(D){return D.walk.length;}},
+  {id:'macro',   group:'Routine',     name:'Ciclo chiuso',    icon:'emoji_events',     color:'#ffb693', target:1,  desc:'Un macrociclo di 12 settimane completato',  val:function(D){return D.macroDone?1:0;}}
+];
+function awBadgeState(D){ return AW_BADGES.map(function(b){ var v=b.val(D); return {id:b.id,value:Math.min(v,b.target),target:b.target,done:v>=b.target}; }); }
+
+var AW_CHALLENGES=[
+  {id:'respiro7', name:'Sette respiri',     icon:'spa',             color:'#7dd3fc', days:7,  target:7,  consecutive:true,
+   desc:'Una pratica di respiro al giorno, per 7 giorni di fila.', rule:'Vale la routine del Respiro o un ciclo. Se salti un giorno, la sfida si interrompe.', days_of:function(D){return Object.keys(D.breath);}},
+  {id:'passi5',   name:'Settimana a piedi', icon:'directions_walk', color:'#a3be6b', days:7,  target:5,
+   desc:'5 camminate in 7 giorni.', rule:'Conta un giorno per volta: due camminate nello stesso giorno valgono una.', days_of:function(D){return D.walk;}},
+  {id:'sera10',   name:'Dieci sere',        icon:'bedtime',         color:'#8b9cf6', days:14, target:10,
+   desc:'10 Mobilità serali in 14 giorni.', rule:'Basta una sessione per sera, anche in versione Express.', days_of:function(D){return D.evening;}},
+  {id:'mattino10',name:'Risveglio costante',icon:'wb_sunny',        color:'#e9c176', days:14, target:10,
+   desc:'10 Routine di risveglio in 14 giorni.', rule:'Una routine per mattina, Full o Express.', days_of:function(D){return D.morning;}},
+  {id:'allena8',  name:'Due settimane piene',icon:'fitness_center', color:'#ffb693', days:14, target:8,
+   desc:'8 giorni di allenamento in 14 giorni.', rule:'Vale qualsiasi allenamento registrato: KB, corpo libero, sport.', days_of:function(D){return D.train;}},
+  {id:'wim5',     name:'Aria fredda',       icon:'air',             color:'#50dad1', days:10, target:5,
+   desc:'5 sessioni di Wim Hof in 10 giorni.', rule:'Seduto o sdraiato, mai in acqua o alla guida.', days_of:function(D){return D.wim;}}
+];
+// Stato di una sfida iniziata: in corso, riuscita o fallita
+function awChallengeState(ch,startIso,D,todayIso){
+  var end=awAddDays(startIso,ch.days-1), set={};
+  ch.days_of(D).forEach(function(d){ if(d>=startIso&&d<=end) set[d]=1; });
+  var n=Object.keys(set).length, dayIdx=Math.min(ch.days,awDiff(startIso,todayIso)+1);
+  var marks=[]; for(var i=0;i<ch.days;i++){ var d=awAddDays(startIso,i); marks.push(set[d]?'ok':(d<todayIso?'miss':(d===todayIso?'today':'next'))); }
+  var status='active';
+  if(n>=ch.target) status='done';
+  else if(ch.consecutive&&marks.indexOf('miss')>=0) status='failed';
+  else if(todayIso>end) status='failed';
+  else if(n+(ch.days-dayIdx+(set[todayIso]?0:1))<ch.target) status='failed';   // non più raggiungibile
+  return {count:Math.min(n,ch.target),target:ch.target,status:status,day:Math.max(1,dayIdx),days:ch.days,marks:marks,end:end};
+}
+
+// ── Stato salvato, sincronizzazione e avvisi ───────────────────────────
+function awLoad(k,def){ try{ return JSON.parse(localStorage.getItem(k)||'null')||def; }catch(e){ return def; } }
+function awSave(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function awData(){
+  var k30=0; try{ k30=k30Progress(state.history).nDone; }catch(e){}
+  var md=false; try{ var mt=macroToday(); md=!!(mt&&mt.finished); }catch(e){}
+  return awCollect({history:state.history,external:state.externalHistory,axe:state.axeHistory,breathHist:state.breathHistory,bolt:state.boltHistory,
+    k30Done:k30,macroDone:md,planned:(FORGE_PROFILE.trainingDays||[]).length||4});
+}
+function awSync(){
+  var D=awData(), today=awIso(new Date()), msgs=[], chMsgs=[];
+  var first=localStorage.getItem('kb-badges')===null, got=awLoad('kb-badges',{});
+  awBadgeState(D).forEach(function(b){ if(b.done&&!got[b.id]){ got[b.id]=first?'prima':today; if(!first) msgs.push(AW_BADGES.filter(function(x){return x.id===b.id;})[0].name); } });
+  awSave('kb-badges',got);
+  var C=awLoad('kb-challenges',{active:{},past:[]});
+  Object.keys(C.active).forEach(function(id){
+    var ch=AW_CHALLENGES.filter(function(x){return x.id===id;})[0]; if(!ch) return;
+    var s=awChallengeState(ch,C.active[id],D,today);
+    if(s.status!=='active'){ C.past.unshift({id:id,start:C.active[id],status:s.status,end:today}); delete C.active[id];
+      chMsgs.push(s.status==='done'?'Sfida riuscita: '+ch.name:'Sfida interrotta: '+ch.name); }
+  });
+  awSave('kb-challenges',C);
+  // l'esito di una sfida viene sempre nominato per primo; le altre novità si sommano come conteggio
+  var all=chMsgs.concat(msgs);
+  if(all.length) setTimeout(function(){ showToast('🏅 '+all[0]+(all.length>1?' · +'+(all.length-1)+(all.length===2?' novità':' novità'):''),'#e9c176',3800); },400);
+  return {D:D,got:got,C:C,today:today};
+}
+function awStart(id){ var C=awLoad('kb-challenges',{active:{},past:[]}); C.active[id]=awIso(new Date()); awSave('kb-challenges',C); render(); }
+function awQuit(id){ if(!confirm('Abbandonare la sfida?')) return; var C=awLoad('kb-challenges',{active:{},past:[]}); delete C.active[id]; awSave('kb-challenges',C); render(); }
+function awOpen(){ state.tab='awards'; render(); window.scrollTo(0,0); }
+function awOpenChallenge(id){ state.awCh=id; state.tab='challenge'; render(); window.scrollTo(0,0); }
+
+// Intestazione illustrata delle card: disegno originale a cerchi concentrici con l'icona della sfida
+function awArt(ch,h){
+  return '<div class="relative overflow-hidden flex items-center justify-center" style="height:'+h+'px;background:radial-gradient(circle at 70% 30%,'+ch.color+'40,'+ch.color+'10 55%,transparent 80%),linear-gradient(160deg,'+ch.color+'18,transparent)">'+
+    [1,2,3].map(function(i){ return '<div class="absolute rounded-full" style="width:'+(i*56)+'px;height:'+(i*56)+'px;border:1px solid '+ch.color+(i===1?'55':i===2?'33':'1f')+'"></div>'; }).join('')+
+    '<div class="absolute" style="left:-20px;bottom:-24px;width:90px;height:90px;border-radius:50%;background:'+ch.color+'14"></div>'+
+    '<span class="material-symbols-outlined relative" style="font-size:'+Math.round(h*0.42)+'px;color:'+ch.color+';font-variation-settings:\'FILL\' 1">'+ch.icon+'</span></div>';
+}
+function awChallengeCard(ch,A){
+  var start=A.C.active[ch.id], s=start?awChallengeState(ch,start,A.D,A.today):null;
+  var wins=A.C.past.filter(function(p){return p.id===ch.id&&p.status==='done';}).length;
+  var foot=s?('<div class="h-1.5 mt-2" style="background:rgba(255,255,255,0.08)"><div style="height:100%;width:'+Math.round(s.count/s.target*100)+'%;background:'+ch.color+'"></div></div>'+
+      '<p class="font-label text-[11px] text-gray-400 mt-1">'+s.count+' su '+s.target+' · giorno '+s.day+' di '+s.days+'</p>'):
+    ('<div class="flex items-center justify-between mt-1"><p class="font-label text-[11px] text-gray-400">'+(wins?'✓ riuscita '+(wins===1?'1 volta':wins+' volte'):'da iniziare')+'</p>'+
+      '<span class="material-symbols-outlined" style="color:'+ch.color+';font-size:26px">play_arrow</span></div>');
+  return '<button onclick="awOpenChallenge(\''+ch.id+'\')" class="text-left bg-surface-container overflow-hidden active:scale-[0.98] transition-transform" style="border:1px solid '+(s?ch.color+'77':'rgba(255,255,255,0.06)')+'">'+
+    awArt(ch,92)+'<div class="px-3 pt-2 pb-3"><p class="font-headline text-[17px] leading-tight">'+ch.name+'</p>'+
+    '<p class="font-label text-[11px] mt-0.5" style="color:'+ch.color+'">'+(ch.consecutive?ch.days+' giorni di fila':ch.target+' in '+ch.days+' giorni')+'</p>'+foot+'</div></button>';
+}
+function awMedal(b,st,got){
+  var pct=st.value/st.target, C=2*Math.PI*27, on=st.done;
+  var when=got[b.id]&&got[b.id]!=='prima'?got[b.id].split('-').reverse().slice(0,2).join('/'):'';
+  return '<div class="flex flex-col items-center text-center">'+
+    '<div class="relative flex items-center justify-center" style="width:64px;height:64px">'+
+      '<svg viewBox="0 0 64 64" width="64" height="64" class="absolute" style="transform:rotate(-90deg)"><circle cx="32" cy="32" r="27" fill="'+(on?b.color+'26':'none')+'" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>'+
+        '<circle cx="32" cy="32" r="27" fill="none" stroke="'+(on?b.color:b.color+'99')+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+(C*(1-pct)).toFixed(1)+'"/></svg>'+
+      '<span class="material-symbols-outlined relative" style="font-size:26px;color:'+(on?b.color:'#6f7a8a')+';'+(on?"font-variation-settings:'FILL' 1":'')+'">'+(on?b.icon:'lock')+'</span></div>'+
+    '<p class="font-headline text-[13px] leading-tight mt-1.5" style="color:'+(on?'#e1e2e7':'#9aa3b2')+'">'+b.name+'</p>'+
+    '<p class="font-label text-[11px] text-gray-500 leading-tight mt-0.5">'+(on?(when?'dal '+when:'conquistato'):st.value+' / '+st.target)+'</p></div>';
+}
+function renderAwards(){
+  var A=awSync(), bs=awBadgeState(A.D), map={}; bs.forEach(function(s){map[s.id]=s;});
+  var nB=bs.filter(function(s){return s.done;}).length, nC=A.C.past.filter(function(p){return p.status==='done';}).length;
+  var groups=['Allenamento','Respiro','Routine'];
+  return '<div class="screen bg-background page-pad"><main class="px-5 pt-3">'+
+    '<button onclick="switchTab(\'home\')" class="flex items-center gap-1 -ml-1 mb-1 active:scale-95" style="min-height:44px;color:#9aa3b2"><span class="material-symbols-outlined">chevron_left</span><span class="font-label text-sm">Oggi</span></button>'+
+    '<h1 class="font-headline text-3xl leading-none">Traguardi</h1>'+
+    '<p class="font-label text-[13px] text-gray-400 mt-1 mb-5">'+nB+' badge su '+AW_BADGES.length+' · '+nC+(nC===1?' sfida riuscita':' sfide riuscite')+'</p>'+
+    '<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-2">Sfide</p>'+
+    '<div class="grid grid-cols-2 gap-3 mb-7">'+AW_CHALLENGES.map(function(ch){return awChallengeCard(ch,A);}).join('')+'</div>'+
+    groups.map(function(g){ return '<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-3">Badge · '+g+'</p>'+
+      '<div class="grid grid-cols-3 gap-y-5 gap-x-2 mb-7">'+AW_BADGES.filter(function(b){return b.group===g;}).map(function(b){return awMedal(b,map[b.id],A.got);}).join('')+'</div>'; }).join('')+
+  '</main>'+navHTML('home')+'</div>';
+}
+function renderChallenge(){
+  var A=awSync(), ch=AW_CHALLENGES.filter(function(x){return x.id===state.awCh;})[0]; if(!ch) return renderAwards();
+  var start=A.C.active[ch.id], s=start?awChallengeState(ch,start,A.D,A.today):null;
+  var past=A.C.past.filter(function(p){return p.id===ch.id;}).slice(0,5);
+  var dots=s?'<div class="flex flex-wrap gap-1.5 mt-3">'+s.marks.map(function(m,i){
+      var st=m==='ok'?'background:'+ch.color+';color:#000':m==='miss'?'border:1px solid rgba(255,255,255,0.12);color:#6f7a8a':m==='today'?'border:1.5px solid '+ch.color+';color:'+ch.color:'border:1px solid rgba(255,255,255,0.08);color:#6f7a8a';
+      return '<span class="flex items-center justify-center font-label text-[12px]" style="width:36px;height:36px;'+st+'">'+(m==='ok'?'✓':(i+1))+'</span>'; }).join('')+'</div>':'';
+  return '<div class="screen bg-background page-pad"><main class="px-5 pt-3">'+
+    '<button onclick="awOpen()" class="flex items-center gap-1 -ml-1 mb-2 active:scale-95" style="min-height:44px;color:#9aa3b2"><span class="material-symbols-outlined">chevron_left</span><span class="font-label text-sm">Traguardi</span></button>'+
+    '<div class="bg-surface-container overflow-hidden" style="border:1px solid rgba(255,255,255,0.06)">'+awArt(ch,150)+
+      '<div class="p-4"><p class="font-label text-[11px] uppercase tracking-widest" style="color:'+ch.color+'">Sfida · '+(ch.consecutive?ch.days+' giorni di fila':ch.target+' in '+ch.days+' giorni')+'</p>'+
+      '<h1 class="font-headline text-3xl leading-tight mt-1">'+ch.name+'</h1>'+
+      '<p class="font-label text-[14px] text-gray-300 mt-2 leading-snug">'+ch.desc+'</p>'+
+      '<p class="font-label text-[12px] text-gray-400 mt-2 leading-snug flex gap-1.5"><span class="material-symbols-outlined" style="font-size:16px;color:'+ch.color+'">info</span><span>'+ch.rule+'</span></p>'+
+      (s?'<div class="mt-4"><div class="flex items-baseline justify-between"><p class="font-headline text-2xl">'+s.count+' <span class="text-gray-500 text-lg">su '+s.target+'</span></p>'+
+          '<p class="font-label text-[12px] text-gray-400">giorno '+s.day+' di '+s.days+' · fino al '+s.end.split('-').reverse().slice(0,2).join('/')+'</p></div>'+dots+'</div>'+
+        '<button onclick="awQuit(\''+ch.id+'\')" class="w-full mt-5 font-label text-[13px] active:scale-95" style="min-height:44px;border:1px solid rgba(255,255,255,0.12);color:#9aa3b2">Abbandona la sfida</button>':
+        '<button onclick="awStart(\''+ch.id+'\')" class="w-full mt-5 flex items-center justify-center gap-2 font-headline text-lg active:scale-95" style="min-height:54px;background:linear-gradient(135deg,'+ch.color+','+ch.color+'bb);color:#000">'+
+          '<span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1">flag</span>Inizia la sfida da oggi</button>')+
+      '</div></div>'+
+    (past.length?'<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mt-6 mb-2">Tentativi</p>'+past.map(function(p){
+        return '<div class="flex items-center justify-between py-2.5" style="border-bottom:1px solid rgba(255,255,255,0.05)"><span class="font-label text-[13px] text-gray-300">dal '+p.start.split('-').reverse().slice(0,2).join('/')+'</span>'+
+          '<span class="font-label text-[12px]" style="color:'+(p.status==='done'?ch.color:'#9aa3b2')+'">'+(p.status==='done'?'✓ riuscita':'interrotta')+'</span></div>'; }).join(''):'')+
+  '</main>'+navHTML('home')+'</div>';
+}
+// Striscia in Oggi: sfide in corso e accesso ai Traguardi
+function awHomeStrip(){
+  var A=awSync(), ids=Object.keys(A.C.active), nB=Object.keys(A.got).length;
+  var rows=ids.map(function(id){ var ch=AW_CHALLENGES.filter(function(x){return x.id===id;})[0]; if(!ch) return ''; var s=awChallengeState(ch,A.C.active[id],A.D,A.today);
+    return '<button onclick="awOpenChallenge(\''+id+'\')" class="w-full flex items-center gap-3 px-3.5 py-2.5 text-left bg-surface-container active:scale-[0.99]" style="border:1px solid '+ch.color+'55;min-height:56px">'+
+      '<span class="material-symbols-outlined" style="color:'+ch.color+';font-variation-settings:\'FILL\' 1">'+ch.icon+'</span>'+
+      '<div class="flex-1 min-w-0"><div class="flex justify-between"><p class="font-headline text-[15px] leading-tight">'+ch.name+'</p><p class="font-label text-[12px]" style="color:'+ch.color+'">'+s.count+'/'+s.target+'</p></div>'+
+        '<div class="h-1 mt-1.5" style="background:rgba(255,255,255,0.08)"><div style="height:100%;width:'+Math.round(s.count/s.target*100)+'%;background:'+ch.color+'"></div></div></div></button>'; }).join('');
+  return '<div class="mb-6 space-y-2">'+rows+
+    '<button onclick="awOpen()" class="w-full flex items-center gap-2 px-3.5 active:scale-[0.99]" style="min-height:44px;border:1px dashed rgba(255,255,255,0.12)">'+
+      '<span class="material-symbols-outlined" style="color:#e9c176;font-variation-settings:\'FILL\' 1">emoji_events</span>'+
+      '<span class="font-label text-[13px] text-gray-300 flex-1 text-left">Traguardi · '+nB+' badge'+(ids.length?'':' · inizia una sfida')+'</span>'+
+      '<span class="material-symbols-outlined text-gray-500">chevron_right</span></button></div>';
+}
+
+// ══════════════════════════════════════════════════════════════════
 // HOME "OGGI" — la giornata: mattino, allenamento, sera
 // ══════════════════════════════════════════════════════════════════
 function homeDMY(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
@@ -1601,7 +1938,7 @@ function homeWeek(){
   var days={}, n=0, mins=0;
   function add(dateStr,dur){ var d=homeParse(dateStr); if(!d) return; var i=Math.round((d-mon)/86400000); if(i<0||i>6) return; days[i]=(days[i]||0)+1; n++; mins+=(+dur||0); }
   (state.history||[]).forEach(function(h){ if(!h.partial) add(h.date,h.duration); });
-  (state.externalHistory||[]).forEach(function(h){ if(h._morning||h._evening||h._wimhof||h._axe) return; if(h._walk){ var dw=homeParse(h.date); if(dw){ var iw=Math.round((dw-mon)/86400000); if(iw>=0&&iw<=6) mins+=(+h.duration||0);} return; } add(h.date,h.duration); });
+  (state.externalHistory||[]).forEach(function(h){ if(h._morning||h._evening||h._wimhof||h._axe||h._breath) return; if(h._walk){ var dw=homeParse(h.date); if(dw){ var iw=Math.round((dw-mon)/86400000); if(iw>=0&&iw<=6) mins+=(+h.duration||0);} return; } add(h.date,h.duration); });
   (state.axeHistory||[]).forEach(function(h){ add(h.date,h.duration); });
   var planned=(FORGE_PROFILE.trainingDays||[]).length||4;
   return {n:n,mins:Math.round(mins),days:days,planned:planned,todayIdx:dow};
@@ -1610,7 +1947,7 @@ function homeWeek(){
 function homeTrainingToday(){
   var today=homeDMY(new Date()), last=null;
   (state.history||[]).forEach(function(h){ if(h.date===today&&!h.partial) last={day:h.day,dur:h.duration}; });
-  (state.externalHistory||[]).forEach(function(h){ if(h.date===today&&!h._morning&&!h._evening&&!h._wimhof&&!h._walk) last={type:h.type,dur:h.duration}; });
+  (state.externalHistory||[]).forEach(function(h){ if(h.date===today&&!h._morning&&!h._evening&&!h._wimhof&&!h._walk&&!h._breath) last={type:h.type,dur:h.duration}; });
   (state.axeHistory||[]).forEach(function(h){ if(h.date===today) last={type:'AXE Protocol',dur:h.duration}; });
   if(!last) return null;
   var label=last.type||'';
@@ -1642,7 +1979,7 @@ function renderHome(){
   var now=new Date(), todayDMY=homeDMY(now);
   var GG=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
   var MM=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-  var wk=homeWeek(), streak=breathStreak(state.breathHistory||[]);
+  var wk=homeWeek(), streak=breathStreak((state.breathHistory||[]).concat((state.externalHistory||[]).filter(function(e){return e._breath;}).map(function(e){var p=String(e.date).split('/');return {date:p[2]+'-'+p[1]+'-'+p[0]};})));
   var breathDone=(state.breathHistory||[]).some(function(e){return e.date===isoToday();});
   var boltToday=(state.boltHistory||[]).filter(function(e){return e.date===isoToday();}).slice(-1)[0];
   var mrDone=(state.externalHistory||[]).some(function(e){return e._morning&&e.date===todayDMY;});
@@ -1718,7 +2055,9 @@ function renderHome(){
         '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+P+'">Fatto</p>'+
         '<p class="font-headline text-xl leading-tight mt-1">'+trained.label+'</p>'+
         '<p class="font-label text-[12px] text-gray-400 mt-0.5">'+(trained.dur?trained.dur+' minuti':'')+'</p>'+
-        '<button onclick="state.trainSubTab=null;switchTab(\'train\')" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:'+P+'">Allenarti ancora? Apri il catalogo ›</button>'+
+        (cycleDoneToday('recupero')?'<p class="font-label text-[12px] mt-2" style="color:#a3be6b">✓ Respiro di recupero fatto</p>':
+          '<button onclick="cycleStart(\'recupero\',3)" class="flex items-center gap-1.5 font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:#a3be6b"><span class="material-symbols-outlined" style="font-size:18px">air</span>Respiro di recupero · 3 min ›</button>')+
+        '<button onclick="state.trainSubTab=null;switchTab(\'train\')" class="block font-label text-[13px] active:scale-95" style="min-height:40px;color:'+P+'">Allenarti ancora? Apri il catalogo ›</button>'+
       '</div></div>';
   } else if(isRest){
     training='<div class="relative mb-5">'+node('done','#7A9A3A')+
@@ -1757,7 +2096,8 @@ function renderHome(){
   var allenamento='<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:'+((trained||isRest)?'#9aa3b2':tCol)+'">Allenamento</p>'+training;
 
   var sera='<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:'+(eveDone?'#9aa3b2':'#8b9cf6')+'">Sera</p>'+
-    item('self_improvement','#8b9cf6','Mobilità serale',eveDone?'fatta oggi':'8 minuti · a terra, senza attrezzi',eveDone?'':'Inizia',"mrStart(60,'evening')",eveDone);
+    item('self_improvement','#8b9cf6','Mobilità serale',eveDone?'fatta oggi':'8 minuti · a terra, senza attrezzi',eveDone?'':'Inizia',"mrStart(60,'evening')",eveDone)+
+    (function(){ var d=cycleDoneToday('478'); return item('bedtime','#8b9cf6','Respiro 4-7-8',d?'fatto oggi':'3 minuti · verso il sonno · facoltativo',d?'':'Inizia',"cycleStart('478',3)",d); })();
 
   // Scorciatoie a un tocco, sotto la settimana: le funzioni che altrimenti stanno a 2-3 tocchi o in fondo alla pagina
   var SC=[
@@ -1785,6 +2125,7 @@ function renderHome(){
         '<span class="material-symbols-outlined" style="font-size:16px">flag</span>Settimana '+mt.week+' di 12 · '+mt.block.name+(mt.info.kind==='scarico'?' · scarico':mt.info.kind==='test'?' · test':'')+'</button>':'')+
       weekCard+
       shortcuts+
+      awHomeStrip()+
       '<div class="relative" style="padding-left:27px">'+
         '<div class="absolute" style="left:8px;top:30px;bottom:30px;width:2px;background:rgba(255,255,255,0.08)"></div>'+
         mattino+'<div class="mb-4"></div>'+allenamento+sera+
@@ -2194,7 +2535,7 @@ function renderLog(){
         const isAxeEntry=isExt&&h._axe;
         const isFlowEntry=isExt&&h._flow;
         const col=isExt
-          ?(isFlowEntry?"#50dad1":isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(EXT_C[h.type]||"#64748b"))
+          ?(isFlowEntry?"#50dad1":isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(h._breath?"#7dd3fc":(EXT_C[h.type]||"#64748b")))
           :(isWF?"#38bdf8":isBP?"#ffb4ab":isLTL?"#f97316":isBWJ?"#43A047":isLM?"#22c55e":isK30?"#facc15":(KPhex[h.day]||"#ffb693"));
         const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
         const bpW=(rawId.startsWith("BP")||rawId.indexOf("BWJ-")===0||rawId.indexOf("LTL-")===0||rawId.indexOf("K30-")===0)?getExtraById(rawId):null;
@@ -9205,6 +9546,18 @@ function renderMorning(){
       (lastWH?'<p class="font-label text-[9px] text-gray-600 mb-3">Ultima: '+lastWH.date+'</p>':'')+
       '<button onclick="whStart()" class="w-full py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">INIZIA</button>'+
     '</div>'+
+    // Cicli di respiro
+    '<p class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:#7dd3fc">Cicli di respiro</p>'+
+    '<div class="bg-surface-container ghost-border border-l-2" style="border-color:#7dd3fc">'+
+      BREATH_CYCLES.map(function(c,i){
+        var last=(state.externalHistory||[]).filter(function(e){return e._cycle===c.id;})[0];
+        return '<button onclick="cycleOpen(\''+c.id+'\')" class="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-surface-container-high" style="min-height:62px;'+(i?'border-top:1px solid rgba(255,255,255,0.05)':'')+'">'+
+          '<span class="w-2 h-2 rounded-full flex-shrink-0" style="background:'+c.color+'"></span>'+
+          '<div class="flex-1 min-w-0"><p class="font-headline text-lg leading-tight">'+c.name+' <span class="font-label text-[12px]" style="color:'+c.color+'">'+c.pattern.map(function(x){return String(x).replace('.',',');}).join('·')+'</span></p>'+
+            '<p class="font-label text-[12px] text-gray-400">'+c.when+(last?' · ultima '+last.date.slice(0,5):'')+'</p></div>'+
+          '<span class="material-symbols-outlined text-gray-500">chevron_right</span></button>';
+      }).join('')+
+    '</div>'+
     // Giorno — Camminata
     '<p class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:'+WALK_C+'">Giorno</p>'+
     '<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:'+WALK_C+'">'+
@@ -10320,6 +10673,10 @@ function aiWorkoutToAction(workoutName){
   if(/bellplex|\bcomplex\b/.test(n)) return {action:'forgeBellplex();',icon:'🔴',color:'#ffb4ab'};
   if(/core\s*(&|e)?\s*forza|\bcore\s*7|\bcore7\b/.test(n)) return {action:'forgeCore7();',icon:'💥',color:'#ffb693'};
   if(/deep push|\bdpu\b|push-?up emom/.test(n)) return {action:'forgeDpu();',icon:'💪',color:'#50dad1'};
+  // Cicli di respiro: "Box breathing 5 min", "4-7-8", "Respiro coerente"
+  var cyM=n.match(/4-7-8|\bbox\b|coerente|coherent|risveglio respiro/);
+  if(cyM){ var cid=/4-7-8/.test(n)?'478':/box/.test(n)?'box':/coerente|coherent/.test(n)?'coerente':'risveglio'; var cmn=n.match(/(\d{1,2})\s*(?:'|min)/);
+    return {action:"cycleStart('"+cid+"',"+(cmn?Math.min(10,+cmn[1]):5)+");",icon:'🫁',color:'#7dd3fc'}; }
   if(/respiro|breath|\bbolt\b/.test(n)) return {action:"breathStartRoutine();",icon:'🫁',color:'#7dd3fc'};
   if(/mattutina|morning|risveglio/.test(n)) return {action:'mrStart(60);',icon:'🌅',color:'#e9c176'};
   if(/wim\s*hof|\bwim\b/.test(n)) return {action:'whStart();',icon:'🫁',color:'#50dad1'};
@@ -11961,8 +12318,22 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v117";
+var APP_VERSION = "v119";
 var APP_CHANGELOG = [
+  {v:"v119", data:"30/09/2026", items:[
+    "Nuova pagina Traguardi: 15 badge che si sbloccano dai tuoi dati",
+    "6 sfide a tempo da iniziare quando vuoi, con avanzamento giorno per giorno",
+    "Sfide in corso visibili in Oggi, con barra di avanzamento",
+    "Avviso quando conquisti un badge o riesci una sfida",
+    "I badge già maturati nello storico vengono registrati senza avvisi alla prima apertura",
+  ]},
+  {v:"v118", data:"28/09/2026", items:[
+    "Cicli di respiro in Daily routine: Risveglio, Coerente, Box, Recupero, 4-7-8",
+    "Ogni ciclo: schema dei tempi, a cosa serve, durata 3/5/10 min, bolla e suoni",
+    "A fine durata completa il ciclo in corso, poi salva nel LOG",
+    "Oggi: 4-7-8 la sera e Respiro di recupero dopo l'allenamento",
+    "I cicli contano nella serie del Respiro, non come sedute di allenamento",
+  ]},
   {v:"v117", data:"28/09/2026", items:[
     "Oggi: 8 scorciatoie a un tocco sotto la settimana, visibili senza scorrere",
     "Registra, Camminata, BOLT, Salute, Piano, Piano AI, Finisher, Stats",
@@ -12286,6 +12657,10 @@ function render(){
   else if(state.tab==="lm-workout")  app.innerHTML=renderLmWorkout();
   else if(state.tab==="k30-chipper")  app.innerHTML=renderK30Chipper();
   else if(state.tab==="walk")  app.innerHTML=renderWalk();
+  else if(state.tab==="cycle-setup")  app.innerHTML=renderCycleSetup();
+  else if(state.tab==="cycle")  app.innerHTML=renderCycle();
+  else if(state.tab==="awards")  app.innerHTML=renderAwards();
+  else if(state.tab==="challenge")  app.innerHTML=renderChallenge();
   else if(state.tab==="train")       app.innerHTML=renderTrain();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
   else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
@@ -12316,7 +12691,7 @@ function render(){
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
 // ── WAKE LOCK ─────────────────────────────────────────────────────────────────
 let wakeLock=null;
-const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','k30-chipper','walk','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
+const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','k30-chipper','walk','cycle','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
 async function requestWakeLock(){
   try{
     if('wakeLock' in navigator){
@@ -13056,7 +13431,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v117';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v119';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
