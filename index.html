@@ -1288,8 +1288,10 @@ function mcWeekTypes(goal, secondary, blockIdx, daysJs){
 function mcSessionType(e){
   if(!e) return null;
   if(e._morning||e._evening||e._wimhof||e._breath) return null;
+  if(e._rope) return "intervalli";
   if(e._flow||e._axe||e._manual||e._walk) return "aerobico";
   if(e._kdp||e._dpu||e._core7) return "forza";
+  if(e._pushup) return "corpolibero";
   var d=e.day; if(!d) return null;
   if(d==="A"||d==="B"||d==="C") return "intervalli";
   var id=String(d).replace("extra_","");
@@ -1363,7 +1365,7 @@ function mcBuildWeek(macro, w, daysJs, hist, k30NextId){
   return mcWeekTypes(macro.goal, macro.secondary, info.block, daysJs).map(function(s){
     var tp=(info.kind==="test"&&!tested[s.type])?mcTestPick(s.type):null;
     if(tp) tested[s.type]=1;
-    var p=tp||mcPick(s.type,used,hist,s.type===mcK30Type(k30NextId)?k30NextId:null);
+    var p=tp||(typeof mcRopePick==='function'&&mcRopePick(s,used))||mcPick(s.type,used,hist,s.type===mcK30Type(k30NextId)?k30NextId:null);
     if(p) used[p.key]=1;
     return {js:s.js,type:s.type,key:p?p.key:null,title:p?p.title:MC_TYPES[s.type].label,min:p?p.min:null,action:p?p.action:null,note:p&&p.note||null};
   });
@@ -1745,12 +1747,13 @@ function awCollect(S){
     if(e._morning) D.morning.push(d); else if(e._evening) D.evening.push(d);
     else if(e._wimhof){ D.wim.push(d); (e.retentionLog||[]).forEach(function(r){ D.apneaMax=Math.max(D.apneaMax,+r.sec||0); }); }
     else if(e._breath) D.breath[d]=1;
+    else if(e._rope){ D.rope=(D.rope||0)+1; D.train.push(d); }
     else if(e._walk) D.walk.push(d);
     else if(!e._axe) D.train.push(d); });
   (S.axe||[]).forEach(function(a){ var d=awDmyToIso(a.date); if(d) D.train.push(d); });
   (S.breathHist||[]).forEach(function(b){ if(b.date) D.breath[b.date]=1; });
   D.bolt=(S.bolt||[]).map(function(b){return +b.bolt_seconds||0;});
-  D.k30Done=S.k30Done||0; D.macroDone=!!S.macroDone;
+  D.k30Done=S.k30Done||0; D.macroDone=!!S.macroDone; D.puMax=S.puMax||0;
   return D;
 }
 function awLongestStreak(set){
@@ -1770,6 +1773,7 @@ var AW_BADGES=[
   {id:'cinquanta',group:'Allenamento',name:'Costanza',        icon:'workspace_premium',color:'#ffb693', target:50, desc:'50 sessioni di allenamento',                val:function(D){return D.train.length;}},
   {id:'piena',   group:'Allenamento', name:'Settimana piena', icon:'event_available',  color:'#e9c176', target:1,  desc:'Tutte le sedute previste in una settimana',  val:awFullWeek},
   {id:'k30',     group:'Allenamento', name:'Trenta giorni di ferro',icon:'fitness_center',color:'#facc15',target:24,desc:'Tutte le 24 sessioni di 30 Days KB',     val:function(D){return D.k30Done;}},
+  {id:'pu50',    group:'Allenamento', name:'Cinquanta',       icon:'military_tech',    color:'#43A047', target:50, desc:'50 piegamenti di fila in un test',          val:function(D){return D.puMax||0;}},
   {id:'bench',   group:'Allenamento', name:'Benchmark',       icon:'flag',             color:'#facc15', target:1,  desc:'Il Day 30 di 30 Days KB',                   val:function(D){return D.k30Bench?1:0;}},
   {id:'respiro1',group:'Respiro',     name:'Primo respiro',   icon:'spa',              color:'#7dd3fc', target:1,  desc:'La prima pratica di respiro',               val:function(D){return Object.keys(D.breath).length;}},
   {id:'serie7',  group:'Respiro',     name:'Sette giorni',    icon:'local_fire_department',color:'#7dd3fc',target:7,desc:'Respiro per 7 giorni di fila',            val:function(D){return awLongestStreak(D.breath);}},
@@ -1778,6 +1782,7 @@ var AW_BADGES=[
   {id:'apnea60', group:'Respiro',     name:'Un minuto',       icon:'timer',            color:'#50dad1', target:60, desc:'Apnea di un minuto nel Wim Hof',            val:function(D){return D.apneaMax;}},
   {id:'mattino', group:'Routine',     name:'Mattiniero',      icon:'wb_sunny',         color:'#e9c176', target:10, desc:'10 Routine di risveglio',                   val:function(D){return D.morning.length;}},
   {id:'sera',    group:'Routine',     name:'Sera tranquilla', icon:'bedtime',          color:'#8b9cf6', target:10, desc:'10 Mobilità serali',                        val:function(D){return D.evening.length;}},
+  {id:'corda',   group:'Routine',     name:'Saltatore',       icon:'sports_gymnastics',color:'#f472b6', target:10, desc:'10 sedute di salto della corda',            val:function(D){return D.rope||0;}},
   {id:'passi',   group:'Routine',     name:'Camminatore',     icon:'directions_walk',  color:'#a3be6b', target:10, desc:'10 camminate',                              val:function(D){return D.walk.length;}},
   {id:'macro',   group:'Routine',     name:'Ciclo chiuso',    icon:'emoji_events',     color:'#ffb693', target:1,  desc:'Un macrociclo di 12 settimane completato',  val:function(D){return D.macroDone?1:0;}}
 ];
@@ -1818,7 +1823,8 @@ function awData(){
   var k30=0; try{ k30=k30Progress(state.history).nDone; }catch(e){}
   var md=false; try{ var mt=macroToday(); md=!!(mt&&mt.finished); }catch(e){}
   return awCollect({history:state.history,external:state.externalHistory,axe:state.axeHistory,breathHist:state.breathHistory,bolt:state.boltHistory,
-    k30Done:k30,macroDone:md,planned:(FORGE_PROFILE.trainingDays||[]).length||4});
+    k30Done:k30,macroDone:md,planned:(FORGE_PROFILE.trainingDays||[]).length||4,
+    puMax:(function(){ var q=puLoad(); return q&&q.tests&&q.tests.length?Math.max.apply(null,q.tests.map(function(t){return t.max;})):0; })()});
 }
 function awSync(){
   var D=awData(), today=awIso(new Date()), msgs=[], chMsgs=[];
@@ -1927,6 +1933,423 @@ function awHomeStrip(){
 }
 
 // ══════════════════════════════════════════════════════════════════
+// 50 PIEGAMENTI — 4 settimane, 3 test, serie sotto il massimo, scala, richiami
+// ══════════════════════════════════════════════════════════════════
+// Calendario relativo (giorno 1..28): tipo di giornata e parametri
+var PU_CAL={
+  1:{k:'test'}, 2:{k:'riposo'},
+  3:{k:'serie',n:5,p:0.60,r:90}, 4:{k:'rich',w:1}, 5:{k:'serie',n:5,p:0.60,r:90}, 6:{k:'rich',w:1}, 7:{k:'serie',n:5,p:0.60,r:90,w1last:true},
+  8:{k:'serie',n:6,p:0.65,r:90,w2:true}, 9:{k:'rich',w:2}, 10:{k:'scala'}, 11:{k:'rich',w:2}, 12:{k:'serie',n:6,p:0.65,r:90,w2:true}, 13:{k:'riposo',totale:true}, 14:{k:'test',mid:true},
+  15:{k:'serie',n:4,p:0.70,r:120}, 16:{k:'serie',n:6,p:0.60,r:60,corto:true}, 17:{k:'rich',w:3}, 18:{k:'scala'}, 19:{k:'rich',w:3}, 20:{k:'serie',n:4,p:0.70,r:120}, 21:{k:'rich',w:3},
+  22:{k:'serie',n:3,p:0.60,r:90}, 23:{k:'rich',w:4}, 24:{k:'serie',n:3,p:0.60,r:90}, 25:{k:'rich',w:4}, 26:{k:'nulla'}, 27:{k:'nulla'}, 28:{k:'test',fine:true}
+};
+function puIsoAdd(iso,n){ var p=iso.split('-'), d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function puDayOf(pu,iso){ var a=pu.start.split('-'), b=iso.split('-'); return Math.round((new Date(+b[0],+b[1]-1,+b[2])-new Date(+a[0],+a[1]-1,+a[2]))/86400000)+1; }
+// Massimo di riferimento: l'ultimo test fatto prima di quel giorno
+function puBase(pu,day){ var t=(pu.tests||[]).filter(function(x){return x.day<day;}).sort(function(a,b){return a.day-b.day;}); return t.length?t[t.length-1].max:null; }
+function puMidTrend(pu){ var t1=(pu.tests||[]).filter(function(x){return x.day===1;})[0], t2=(pu.tests||[]).filter(function(x){return x.day===14;})[0];
+  if(!t1||!t2) return null; return t2.max>t1.max?'su':t2.max===t1.max?'uguale':'giu'; }
+function puLadder(max){ var step=max>=20?2:1, half=Math.floor(max/2), top=half-(half%step), up=[]; for(var r=step;r<=top;r+=step) up.push(r);
+  return up.concat(up.slice(0,-1).reverse()); }
+function puDay(pu,day){
+  var c=PU_CAL[day]; if(!c) return null;
+  var out={day:day,date:puIsoAdd(pu.start,day-1),kind:c.k,mid:!!c.mid,fine:!!c.fine,totale:!!c.totale};
+  var base=puBase(pu,day); out.base=base;
+  if(!base||c.k==='test'||c.k==='riposo'||c.k==='nulla') return out;
+  var work=pu.incline&&base<10&&pu.inclineMax?pu.inclineMax:base; out.incline=work!==base;
+  if(c.k==='serie'){
+    var p=c.p; if(c.w2&&pu.hardW1) p=0.60;
+    out.sets=c.n; out.pct=p; out.reps=Math.max(1,Math.floor(work*p)); out.rest=c.r; out.corto=!!c.corto;
+  }
+  if(c.k==='scala'){ out.rungs=puLadder(work); out.total=out.rungs.reduce(function(a,b){return a+b;},0); }
+  if(c.k==='rich'){
+    var lo=c.w===2||c.w===3?[4,5]:c.w===4?[2,3]:[3,4];
+    if(c.w===3&&puMidTrend(pu)==='giu') lo=[2,3];     // test intermedio sceso: richiami dimezzati
+    out.richN=lo; out.richReps=Math.max(1,Math.floor(base*(c.w===2||c.w===3?0.28:0.25)));
+  }
+  return out;
+}
+function puPlan(pu){ var a=[]; for(var d=1;d<=28;d++) a.push(puDay(pu,d)); return a; }
+
+// ── Stato salvato ──────────────────────────────────────────────────────
+function puLoad(){ try{ return JSON.parse(localStorage.getItem('kb-pu50')||'null'); }catch(e){ return null; } }
+function puSave(p){ try{ localStorage.setItem('kb-pu50',JSON.stringify(p)); }catch(e){} }
+function puTodayIso(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function puFmt(iso){ var p=iso.split('-'); return p[2]+'/'+p[1]; }
+var PU_C='#43A047';
+var PU_KIND={test:['Test','flag'],serie:['Serie','fitness_center'],scala:['Scala','stairs'],rich:['Richiami','bolt'],riposo:['Riposo','bedtime'],nulla:['Niente piegamenti','do_not_disturb_on']};
+function puSetStart(){ var el=document.getElementById('pu-start'); var v=el&&el.value; if(!v) return;
+  puSave({start:v,tests:[],done:{},rich:{},hardW1:false,incline:false,inclineMax:null}); render(); }
+function puQuit(){ if(!confirm('Chiudere il programma 50 piegamenti? I test e le sedute restano nel LOG.')) return; try{ localStorage.removeItem('kb-pu50'); }catch(e){} render(); }
+function puLog(type,notes,dur){ state.externalHistory.unshift({type:'50 piegamenti · '+type,date:homeDMY(new Date()),duration:dur||10,notes:notes,_src:'ext',_pushup:true}); saveExternalHistory(); }
+
+// ── Richiami ───────────────────────────────────────────────────────────
+function puRichAdd(){
+  var p=puLoad(); if(!p) return; var t=puTodayIso(); p.rich=p.rich||{}; var a=p.rich[t]||[], now=Date.now();
+  if(a.length&&now-a[a.length-1]<3600000&&!confirm('Dall\'ultimo richiamo è passata meno di un\'ora. Registrarlo comunque?')) return;
+  a.push(now); p.rich[t]=a; puSave(p); if(navigator.vibrate) navigator.vibrate(40); render();
+}
+function puRichBox(p,d){
+  var a=(p.rich||{})[d.date]||[], last=a.length?new Date(a[a.length-1]):null;
+  var wait=last?Math.max(0,60-Math.round((Date.now()-last)/60000)):0, ok=a.length>=d.richN[0];
+  return '<div class="flex items-center gap-3">'+
+    '<div class="flex-1"><p class="font-headline text-lg leading-tight">'+a.length+' di '+d.richN[0]+'-'+d.richN[1]+' richiami</p>'+
+      '<p class="font-label text-[12px] text-gray-400">da '+d.richReps+' piegamenti, ad almeno un\'ora di distanza'+(wait?' · prossimo tra '+wait+' min':'')+'</p></div>'+
+    (a.length>=d.richN[1]?'<span class="material-symbols-outlined" style="color:'+PU_C+';font-variation-settings:\'FILL\' 1">check_circle</span>':
+      '<button onclick="puRichAdd()" class="px-4 font-headline text-base active:scale-95" style="min-height:48px;'+(ok?'border:1px solid '+PU_C+'77;color:'+PU_C:'background:linear-gradient(135deg,'+PU_C+','+PU_C+'bb);color:#000')+'">+1</button>')+'</div>';
+}
+
+// ── Card del giorno (usata in Train e in Oggi) ──────────────────────────
+function puTodayCard(p,compact){
+  var today=puTodayIso(), n=puDayOf(p,today);
+  if(n<1) return '<p class="font-label text-[13px] text-gray-300">Parte il <b>'+puFmt(p.start)+'</b>, con il test del massimo.</p>';
+  if(n>28) return '<p class="font-label text-[13px] text-gray-300">Programma concluso. Il risultato finale è nel grafico dei test.</p>';
+  var d=puDay(p,n), K=PU_KIND[d.kind], done=p.done&&p.done[n];
+  var head='<div class="flex items-center justify-between mb-2"><p class="font-label text-[11px] uppercase tracking-widest" style="color:'+PU_C+'">Giorno '+n+' di 28 · '+K[0]+'</p>'+
+    (compact?'<button onclick="state.trainSubTab=\'pu50\';switchTab(\'train\')" class="font-label text-[12px] text-gray-400" style="min-height:32px">Programma ›</button>':'')+'</div>';
+  if(d.kind==='test'){
+    var t=(p.tests||[]).filter(function(x){return x.day===n;})[0];
+    return head+(t?'<p class="font-headline text-xl">Fatto: '+t.max+' piegamenti</p>':
+      '<p class="font-headline text-xl leading-tight">'+(n===1?'Test del massimo':d.fine?'Test finale':'Test intermedio')+'</p><p class="font-label text-[12px] text-gray-400 mt-0.5">Riscaldamento, poi una sola serie fino alla prima ripetizione non valida.</p>'+
+      '<button onclick="puTestStart('+n+')" class="w-full mt-3 flex items-center justify-center gap-2 font-headline text-lg active:scale-95" style="min-height:52px;background:linear-gradient(135deg,'+PU_C+','+PU_C+'bb);color:#000"><span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1">flag</span>Inizia il test</button>');
+  }
+  if(!d.base) return head+'<p class="font-label text-[13px] text-gray-300">Prima serve il test del massimo del giorno 1.</p><button onclick="puTestStart(1)" class="mt-2 font-label text-[13px]" style="min-height:40px;color:'+PU_C+'">Fai il test ora ›</button>';
+  if(d.kind==='serie'||d.kind==='scala'){
+    var desc=d.kind==='serie'?d.sets+' serie da '+d.reps+' · recupero '+(d.rest>=120?'2\'':d.rest===60?'1\'':'1\'30"'):'scala fino a '+Math.max.apply(null,d.rungs)+' · '+d.total+' piegamenti in tutto';
+    return head+'<p class="font-headline text-xl leading-tight">'+desc+'</p>'+(d.incline?'<p class="font-label text-[12px] mt-0.5" style="color:#e9c176">mani sul bordo del tavolo</p>':'')+
+      (done?'<p class="font-label text-[13px] mt-2" style="color:'+PU_C+'">✓ Seduta fatta</p>':
+      '<button onclick="puSessionStart('+n+')" class="w-full mt-3 flex items-center justify-center gap-2 font-headline text-lg active:scale-95" style="min-height:52px;background:linear-gradient(135deg,'+PU_C+','+PU_C+'bb);color:#000"><span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1">play_arrow</span>Inizia</button>');
+  }
+  if(d.kind==='rich') return head+puRichBox(p,d);
+  return head+'<p class="font-headline text-xl">'+(d.kind==='riposo'?(d.totale?'Riposo completo, anche dai richiami':'Riposo'):'Niente piegamenti: domani c\'è il test finale')+'</p>';
+}
+
+// ── Pagina del programma (Train → 50 piegamenti) ────────────────────────
+function tabPu50(){
+  var p=puLoad(), FILL="font-variation-settings:'FILL' 1";
+  var crit='<div class="bg-surface-container p-4 mt-4" style="border:1px solid rgba(255,255,255,0.06)"><p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-2">Piegamento valido</p>'+
+    ['Corpo rigido come un\'asse, da testa a talloni: glutei stretti, bacino che non cede e non sale.','In basso il petto arriva a un pugno da terra: all\'inizio aiutati con un asciugamano arrotolato sotto lo sterno.','In alto braccia completamente distese prima di scendere di nuovo.','Mani poco più larghe delle spalle, gomiti indietro a formare una freccia, non aperti a T.','Discesa di circa 2 secondi, risalita senza fermarti in basso.','Polsi che danno fastidio: appoggio sui pugni o sulle maniglie, ma sempre lo stesso anche nei test.']
+    .map(function(t){return '<p class="font-label text-[13px] text-gray-300 leading-snug flex gap-2 mb-1.5"><span style="color:'+PU_C+'">•</span><span>'+t+'</span></p>';}).join('')+'</div>';
+  if(!p){
+    var tm=new Date(); tm.setDate(tm.getDate()+1); var def=tm.getFullYear()+'-'+String(tm.getMonth()+1).padStart(2,'0')+'-'+String(tm.getDate()).padStart(2,'0');
+    return '<div class="bg-surface-container p-4" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid '+PU_C+'">'+
+      '<p class="font-headline text-xl leading-tight">Quattro settimane per arrivare a 50 di fila</p>'+
+      '<p class="font-label text-[13px] text-gray-300 leading-snug mt-2">Un test del massimo all\'inizio, a metà e alla fine. In mezzo, serie sempre sotto il massimo (60-70%), una seduta a scala a settimana e piccoli richiami nei giorni liberi. Pensato per chi oggi ne fa tra 20 e 30; si adatta anche sotto.</p>'+
+      '<label class="font-label text-[11px] uppercase tracking-widest text-gray-500 block mt-4 mb-1">Data di partenza (giorno del primo test)</label>'+
+      '<input id="pu-start" type="date" value="'+def+'" class="log-input w-full" style="min-height:48px">'+
+      '<button onclick="puSetStart()" class="w-full mt-3 font-headline text-lg active:scale-95" style="min-height:52px;background:linear-gradient(135deg,'+PU_C+','+PU_C+'bb);color:#000">Imposta la partenza</button></div>'+crit;
+  }
+  var today=puTodayIso(), n=puDayOf(p,today), plan=puPlan(p);
+  var LET={test:'T',serie:'S',scala:'L',rich:'r',riposo:'·',nulla:'–'};
+  var cal='<div class="grid grid-cols-7 gap-1">'+plan.map(function(d){
+    var past=d.date<today, isT=d.date===today, dn=p.done&&p.done[d.day], tst=(p.tests||[]).filter(function(x){return x.day===d.day;})[0];
+    var rc=((p.rich||{})[d.date]||[]).length, ok=dn||tst||(d.kind==='rich'&&d.richN&&rc>=d.richN[0]);
+    var miss=past&&!ok&&(d.kind==='serie'||d.kind==='scala'||d.kind==='test');
+    var st=ok?'background:'+PU_C+';color:#000':isT?'border:1.5px solid '+PU_C+';color:'+PU_C:miss?'border:1px dashed rgba(255,255,255,0.18);color:#838d9c':'border:1px solid rgba(255,255,255,0.08);color:#9aa3b2';
+    return '<div class="flex flex-col items-center justify-center" style="height:44px;'+st+'"><span class="font-label text-[10px] leading-none">'+d.day+'</span><span class="font-headline text-[13px] leading-none mt-0.5">'+(tst?tst.max:LET[d.kind])+'</span></div>';
+  }).join('')+'</div><p class="font-label text-[11px] text-gray-500 mt-1.5">T test · S serie · L scala · r richiami · · riposo</p>';
+  var tests=[1,14,28].map(function(dd){ var t=(p.tests||[]).filter(function(x){return x.day===dd;})[0]; return {dd:dd,v:t?t.max:null}; });
+  var mx=Math.max(50,Math.max.apply(null,tests.map(function(t){return t.v||0;})));
+  var BH=90, goal=Math.round(50/mx*BH);
+  var chart='<div class="relative mt-3" style="height:'+(BH+44)+'px">'+
+    '<div class="absolute left-0 right-0" style="bottom:'+(22+goal)+'px;border-top:1px dashed #e9c176aa"></div>'+
+    '<div class="absolute inset-0 flex items-end gap-4">'+tests.map(function(t){
+      return '<div class="flex-1 flex flex-col items-center justify-end h-full"><span class="font-headline text-lg leading-none mb-1">'+(t.v||'—')+'</span>'+
+        '<div style="width:100%;height:'+(t.v?Math.max(3,Math.round(t.v/mx*BH)):3)+'px;background:'+(t.v?PU_C:'rgba(255,255,255,0.08)')+'"></div>'+
+        '<span class="font-label text-[11px] text-gray-400 leading-none" style="height:22px;padding-top:6px">'+(t.dd===1?'inizio':t.dd===14?'metà':'fine')+'</span></div>'; }).join('')+
+    '</div></div>';
+  var trend=puMidTrend(p), tnote=trend==='su'?'Test intermedio salito: da qui i numeri si ricalcolano sul nuovo massimo.':trend==='uguale'?'Test intermedio uguale: i numeri restano quelli della prima metà.':trend==='giu'?'Test intermedio sceso: il carico era troppo, nella terza settimana i richiami si dimezzano.':'';
+  var base=puBase(p,Math.max(2,Math.min(28,n)));
+  var incline=base&&base<10?'<div class="bg-surface-container p-4 mt-4" style="border:1px solid #e9c17655"><p class="font-headline text-lg">Mani sul tavolo</p><p class="font-label text-[12px] text-gray-400 mt-1">Con meno di 10 a terra, serie e scala si fanno con le mani sul bordo di un tavolo stabile. Fai un test anche così e scrivi qui il massimo: test e richiami restano a terra.</p>'+
+    '<div class="flex gap-2 mt-2"><input id="pu-incl" type="number" inputmode="numeric" placeholder="massimo inclinato" value="'+(p.inclineMax||'')+'" class="log-input flex-1" style="min-height:44px"><button onclick="(function(){var v=+document.getElementById(\'pu-incl\').value;var q=puLoad();q.incline=v>0;q.inclineMax=v||null;puSave(q);render();})()" class="px-4 font-label text-[13px]" style="min-height:44px;border:1px solid #e9c17677;color:#e9c176">Salva</button></div></div>':'';
+  return '<div class="bg-surface-container p-4" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid '+PU_C+'">'+puTodayCard(p,false)+'</div>'+
+    (tnote?'<p class="font-label text-[12px] mt-3 flex gap-1.5" style="color:#e9c176"><span class="material-symbols-outlined" style="font-size:16px">info</span><span>'+tnote+'</span></p>':'')+
+    '<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mt-5 mb-2">Calendario · dal '+puFmt(p.start)+'</p>'+cal+
+    '<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mt-5">Test <span class="normal-case tracking-normal" style="color:#e9c176">· tratteggio = obiettivo 50</span></p>'+chart+incline+crit+
+    '<button onclick="puQuit()" class="w-full mt-5 font-label text-[13px] active:scale-95" style="min-height:44px;border:1px solid rgba(255,255,255,0.12);color:#9aa3b2">Chiudi il programma</button>';
+}
+
+// ── Test del massimo ───────────────────────────────────────────────────
+function puTestStart(day){ state.put={day:day,count:0,how:null,warm:true}; state.tab='pu-test'; render(); requestWakeLock(); unlockAudio(); }
+function puTap(d){ if(!state.put) return; state.put.count=Math.max(0,state.put.count+d); if(d>0&&navigator.vibrate) navigator.vibrate(25); var el=document.getElementById('pu-count'); if(el) el.textContent=state.put.count; }
+function puTestSave(){
+  var t=state.put, p=puLoad(); if(!t||!p) return;
+  if(t.count<1&&!confirm('Salvare un test da 0?')) return;
+  p.tests=(p.tests||[]).filter(function(x){return x.day!==t.day;}); p.tests.push({day:t.day,max:t.count,date:puTodayIso(),how:t.how||''});
+  puSave(p); puLog(t.day===1?'Test iniziale':t.day===14?'Test intermedio':'Test finale','Massimo '+t.count+(t.how?' · '+t.how:''),8);
+  releaseWakeLock(); var msg=t.day===14?puMidTrend(p):null; state.put=null; state.trainSubTab='pu50'; state.tab='train'; render();
+  showToast(t.day===28?'Test finale: '+t.count+' piegamenti':msg==='su'?'Massimo salito: numeri ricalcolati':msg==='giu'?'Massimo sceso: richiami dimezzati nella terza settimana':'Massimo salvato: '+t.count,'#43A047',3200);
+}
+function renderPuTest(){
+  var t=state.put; if(!t) return renderHome();
+  if(t.warm) return '<div class="screen bg-background" style="min-height:100vh;padding:28px 22px">'+
+    '<button onclick="state.put=null;state.trainSubTab=\'pu50\';switchTab(\'train\')" class="flex items-center justify-center mb-2" style="width:44px;height:44px"><span class="material-symbols-outlined text-gray-500">close</span></button>'+
+    '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+PU_C+'">Test · giorno '+t.day+'</p><h1 class="font-headline text-3xl mt-1 mb-4">Prima scaldati</h1>'+
+    ['Cerchi con le braccia, in avanti e indietro','2 serie da 5 piegamenti con le mani sul bordo di un tavolo','2 minuti di pausa, poi a terra'].map(function(s,i){
+      return '<div class="flex items-center gap-3 py-3" style="border-bottom:1px solid rgba(255,255,255,0.06)"><span class="font-headline text-xl" style="color:'+PU_C+'">'+(i+1)+'</span><p class="font-label text-[14px] text-gray-300">'+s+'</p></div>'; }).join('')+
+    '<p class="font-label text-[13px] text-gray-400 leading-snug mt-4">Una sola serie. Si chiude alla prima ripetizione non valida, non all\'ultima che riesci a strappare. Puoi riprendere fiato in alto a braccia distese; se ginocchia o bacino toccano terra, la serie è finita. Se puoi, filmati di lato all\'altezza del pavimento.</p>'+
+    '<button onclick="state.put.warm=false;render()" class="w-full mt-6 font-headline text-lg active:scale-95" style="min-height:54px;background:linear-gradient(135deg,'+PU_C+','+PU_C+'bb);color:#000">Sono pronto</button></div>';
+  var hows=['Ha ceduto il bacino','Braccia non più distese','Profondità persa','Altro'];
+  return '<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden">'+
+    '<div class="flex-shrink-0 flex items-center justify-between px-5 pt-5"><button onclick="state.put.warm=true;render()" class="flex items-center justify-center" style="width:44px;height:44px"><span class="material-symbols-outlined text-gray-500">arrow_back</span></button>'+
+      '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+PU_C+'">Test · tocca a ogni piegamento</p><div style="width:44px"></div></div>'+
+    '<button onclick="puTap(1)" class="flex-1 mx-5 my-3 flex flex-col items-center justify-center active:scale-[0.99]" style="border:1px solid '+PU_C+'55;background:'+PU_C+'10">'+
+      '<span id="pu-count" class="font-headline leading-none" style="font-size:120px;color:'+PU_C+'">'+t.count+'</span><span class="font-label text-[13px] text-gray-400 mt-2">tocca qui a ogni ripetizione valida</span></button>'+
+    '<div class="flex-shrink-0 px-5 pb-6">'+
+      '<div class="flex gap-2 mb-3"><button onclick="puTap(-1)" class="px-5 font-headline text-lg active:scale-95" style="min-height:48px;border:1px solid rgba(255,255,255,0.12);color:#9aa3b2">−1</button>'+
+        '<input type="number" inputmode="numeric" value="'+t.count+'" onchange="state.put.count=Math.max(0,+this.value||0);render()" class="log-input flex-1 text-center" style="min-height:48px" aria-label="numero"></div>'+
+      '<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-1.5">Come è finita (facoltativo)</p><div class="flex flex-wrap gap-1.5 mb-3">'+hows.map(function(h){var on=t.how===h;
+        return '<button onclick="state.put.how=\''+h.replace(/'/g,"\\'")+'\';render()" class="px-3 font-label text-[12px] active:scale-95" style="min-height:36px;border:1px solid '+(on?PU_C:'rgba(255,255,255,0.12)')+';color:'+(on?PU_C:'#9aa3b2')+'">'+h+'</button>';}).join('')+'</div>'+
+      '<button onclick="puTestSave()" class="w-full font-headline text-lg active:scale-95" style="min-height:54px;background:linear-gradient(135deg,'+PU_C+','+PU_C+'bb);color:#000">Salva il massimo</button></div></div>';
+}
+
+// ── Seduta: serie o scala, con recupero ────────────────────────────────
+var puTID=null;
+function puSessionStart(day){
+  var p=puLoad(), d=puDay(p,day); if(!d||(!d.reps&&!d.rungs)) return;
+  var steps=d.kind==='serie'?Array.apply(null,{length:d.sets}).map(function(){return {reps:d.reps,rest:d.rest};}):
+    d.rungs.map(function(r){ var top=Math.max.apply(null,d.rungs); return {reps:r,rest:Math.round(20+70*r/top)}; });
+  state.pus={day:day,kind:d.kind,steps:steps,i:0,phase:'work',left:0,t0:Date.now(),incline:d.incline};
+  state.tab='pu-session'; render(); requestWakeLock(); unlockAudio();
+}
+function puDone(){
+  var s=state.pus; if(!s) return;
+  if(s.i>=s.steps.length-1){ return puSessionEnd(); }
+  s.phase='rest'; s.left=s.steps[s.i].rest; render();
+  if(puTID) clearInterval(puTID);
+  puTID=setInterval(function(){ var q=state.pus; if(!q||state.tab!=='pu-session'){ clearInterval(puTID); return; }
+    q.left--; var el=document.getElementById('pu-left'); if(el) el.textContent=q.left+'"';
+    if(q.left<=3&&q.left>0) try{ beep(660,0.08,0.2); }catch(e){}
+    if(q.left<=0){ clearInterval(puTID); bsBell(784,1.2,0.22); if(navigator.vibrate) navigator.vibrate([80,60,80]); q.i++; q.phase='work'; render(); } },1000);
+}
+function puSkipRest(){ var s=state.pus; if(!s||s.phase!=='rest') return; clearInterval(puTID); s.i++; s.phase='work'; render(); }
+function puSessionEnd(){
+  var s=state.pus; if(puTID) clearInterval(puTID); releaseWakeLock();
+  var p=puLoad(); p.done=p.done||{}; p.done[s.day]=true;
+  var tot=s.steps.reduce(function(a,b){return a+b.reps;},0);
+  if(s.day===7&&confirm('L\'ultima serie di oggi era vicina al limite? (Se sì, la seconda settimana resta al 60%)')) p.hardW1=true;
+  puSave(p);
+  puLog(s.kind==='serie'?'Serie':'Scala',(s.kind==='serie'?s.steps.length+'×'+s.steps[0].reps:'scala fino a '+Math.max.apply(null,s.steps.map(function(x){return x.reps;})))+' · '+tot+' piegamenti'+(s.incline?' · mani sul tavolo':''),Math.max(5,Math.round((Date.now()-s.t0)/60000)));
+  state.pus=null; state.trainSubTab='pu50'; state.tab='train'; render(); showToast('Seduta salvata: '+tot+' piegamenti','#43A047',3000);
+}
+function puSessionExit(){ if(!confirm('Uscire dalla seduta? Non verrà salvata.')) return; if(puTID) clearInterval(puTID); releaseWakeLock(); state.pus=null; state.trainSubTab='pu50'; switchTab('train'); }
+function renderPuSession(){
+  var s=state.pus; if(!s) return renderHome();
+  var st=s.steps[s.i], last=s.i===s.steps.length-1;
+  var dots='<div class="flex flex-wrap justify-center gap-1 mt-4">'+s.steps.map(function(x,i){ return '<span class="flex items-center justify-center font-label text-[11px]" style="min-width:26px;height:26px;padding:0 4px;'+(i<s.i||(i===s.i&&s.phase==='rest')?'background:'+PU_C+';color:#000':i===s.i?'border:1.5px solid '+PU_C+';color:'+PU_C:'border:1px solid rgba(255,255,255,0.1);color:#8a94a4')+'">'+x.reps+'</span>'; }).join('')+'</div>';
+  var body=s.phase==='work'?
+    '<p class="font-label text-[12px] uppercase tracking-widest text-gray-400">'+(s.kind==='serie'?'Serie '+(s.i+1)+' di '+s.steps.length:'Gradino '+(s.i+1)+' di '+s.steps.length)+'</p>'+
+    '<p class="font-headline leading-none mt-2" style="font-size:110px;color:'+PU_C+'">'+st.reps+'</p><p class="font-label text-[14px] text-gray-300">piegamenti'+(s.incline?' · mani sul tavolo':'')+'</p>'+
+    '<p class="font-label text-[12px] text-gray-500 text-center mt-3 max-w-xs">L\'ultima ripetizione deve somigliare alla prima. Se la successiva costerebbe fatica vera, fermati lì.</p>':
+    '<p class="font-label text-[12px] uppercase tracking-widest text-gray-400">Recupero</p><p id="pu-left" class="font-headline leading-none mt-2" style="font-size:96px;color:#e1e2e7">'+s.left+'"</p>'+
+    '<p class="font-label text-[14px] text-gray-400 mt-2">poi '+(s.kind==='serie'?'serie':'gradino')+' da <b style="color:'+PU_C+'">'+s.steps[s.i+1].reps+'</b></p>';
+  return '<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden">'+
+    '<div class="flex-shrink-0 flex items-center justify-between px-5 pt-5"><button onclick="puSessionExit()" class="flex items-center justify-center" style="width:44px;height:44px"><span class="material-symbols-outlined text-gray-500">close</span></button>'+
+      '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+PU_C+'">50 piegamenti · giorno '+s.day+'</p><div style="width:44px"></div></div>'+
+    '<div class="flex-1 flex flex-col items-center justify-center px-6">'+body+dots+'</div>'+
+    '<div class="flex-shrink-0 px-5 pb-8 pt-3">'+(s.phase==='work'?
+      '<button onclick="puDone()" class="w-full font-headline text-xl active:scale-95" style="min-height:58px;background:linear-gradient(135deg,'+PU_C+','+PU_C+'bb);color:#000">'+(last?'Fatta · fine seduta':'Fatta')+'</button>':
+      '<button onclick="puSkipRest()" class="w-full font-headline text-lg active:scale-95" style="min-height:56px;border:1px solid '+PU_C+'77;color:'+PU_C+'">Salta il recupero</button>')+'</div></div>';
+}
+// ── Card in Oggi ───────────────────────────────────────────────────────
+function puHomeCard(){
+  var p=puLoad(); if(!p) return ''; var n=puDayOf(p,puTodayIso()); if(n<-1||n>28) return '';
+  return '<div class="bg-surface-container p-4 mb-6" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid '+PU_C+'">'+
+    '<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-1">50 piegamenti</p>'+puTodayCard(p,true)+'</div>';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SALTO DELLA CORDA — 6 settimane nel weekend: sabato seduta, domenica tecnica
+// ══════════════════════════════════════════════════════════════════
+var ROPE_C='#f472b6';
+var ROPE_MOVES={
+  base:{name:'Salto base',cue:'Piedi uniti, salti bassi sugli avampiedi, la corda la girano i polsi.'},
+  alt:{name:'Passo alternato',cue:'Un piede alla volta, come una corsa leggera sul posto: più facile per i polpacci.'},
+  ginocchia:{name:'Ginocchia alte',cue:'Passo alternato portando le ginocchia all\'altezza delle anche.'},
+  lat:{name:'Salto laterale',cue:'Piedi uniti, piccolo spostamento a destra e a sinistra a ogni salto.'},
+  avind:{name:'Avanti-indietro',cue:'Piedi uniti, piccolo spostamento avanti e indietro a ogni salto.'},
+  boxer:{name:'Passo del pugile',cue:'Sposta il peso da un piede all\'altro, ritmo morbido e rilassato.'}
+};
+// r=round, w=secondi lavoro, p=secondi pausa, mv=movimenti a rotazione per round
+var ROPE_PLAN=[
+  {w:1,sab:{r:10,w:20,p:40,mv:['base']},                       dom:{r:6,w:20,p:40,mv:['base']}},
+  {w:2,sab:{r:10,w:30,p:30,mv:['base','alt']},                 dom:{r:6,w:30,p:30,mv:['alt']}},
+  {w:3,sab:{r:12,w:30,p:30,mv:['base','alt','base','alt','base','ginocchia','base','alt','base','alt','ginocchia','base']}, dom:{r:6,w:30,p:30,mv:['lat']}},
+  {w:4,sab:{r:10,w:45,p:15,mv:['base','alt']},                 dom:null},
+  {w:5,sab:{r:6,w:60,p:30,mv:['base','alt','boxer']},          dom:{r:6,w:30,p:30,mv:['base','alt','lat','avind']}},
+  {w:6,sab:{r:5,w:120,p:45,mv:['base','alt','boxer'],test:true},dom:null}
+];
+function ropeSlots(){ var a=[]; ROPE_PLAN.forEach(function(x){ a.push({id:x.w+'-sab',w:x.w,day:'sab',s:x.sab}); if(x.dom) a.push({id:x.w+'-dom',w:x.w,day:'dom',s:x.dom}); }); return a; }
+function ropeSlot(id){ return ropeSlots().filter(function(x){return x.id===id;})[0]||null; }
+function ropeMin(s){ return Math.round((s.r*s.w+(s.r-1)*s.p)/60+4); }   // + riscaldamento e allungamento
+function ropeIsoAdd(iso,n){ var p=iso.split('-'), d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// Quale seduta oggi. Sabato: la prossima seduta non fatta.
+// Domenica: se ieri hai fatto la seduta, la tecnica di quella settimana; se il sabato è saltato, il recupero della seduta del sabato.
+function ropeToday(R,js,todayIso){
+  R=R||{done:{}}; var done=R.done||{};
+  var sabs=ROPE_PLAN.map(function(x){return x.w+'-sab';}), next=sabs.filter(function(id){return !done[id];})[0];
+  if(js===6){ if(next) return {slot:ropeSlot(next)}; var last6=sabs[sabs.length-1]; return done[last6]===todayIso?{slot:ropeSlot(last6),done:true,doneToday:true}:{finished:true}; }
+  if(js===0){
+    var lastSab=sabs.filter(function(id){return done[id];}).pop();
+    if(lastSab&&todayIso&&done[lastSab]===todayIso) return {slot:ropeSlot(lastSab),done:true,doneToday:true};
+    var yest=todayIso?ropeIsoAdd(todayIso,-1):null;
+    if(lastSab&&(!todayIso||done[lastSab]===yest)){
+      var w=+lastSab.split('-')[0], dom=ropeSlot(w+'-dom');
+      if(!dom) return {rest:'Settimana '+w+': domenica di riposo per i polpacci.'};
+      return done[dom.id]?{slot:dom,done:true,doneToday:done[dom.id]===todayIso}:{slot:dom};
+    }
+    if(next) return {slot:ropeSlot(next),makeup:true};
+    return lastSab?{finished:true}:{none:'Prima serve la seduta del sabato.'};
+  }
+  return null;
+}
+function ropeSteps(s){
+  var st=[{k:'warm',sec:120,label:'Riscaldamento'}];
+  for(var i=0;i<s.r;i++){ var mv=s.mv[i%s.mv.length]; st.push({k:'work',sec:s.w,mv:mv,round:i+1}); if(i<s.r-1) st.push({k:'rest',sec:s.p,round:i+1,next:s.mv[(i+1)%s.mv.length]}); }
+  if(s.test) st.push({k:'test',sec:0});
+  st.push({k:'cool',sec:120,label:'Allungamento'});
+  return st;
+}
+
+function ropeLoad(){ try{ return JSON.parse(localStorage.getItem('kb-rope')||'null'); }catch(e){ return null; } }
+function ropeSave(r){ try{ localStorage.setItem('kb-rope',JSON.stringify(r)); }catch(e){} }
+function ropeActive(){ var r=ropeLoad(); return !!(r&&r.started); }
+function ropeIso(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function ropeBegin(){ var r=ropeLoad()||{done:{},tests:[]}; r.started=true; ropeSave(r); render(); }
+function ropeQuit(){ if(!confirm('Chiudere il programma del salto della corda? Le sedute restano nel LOG.')) return; try{ localStorage.removeItem('kb-rope'); }catch(e){} render(); }
+function ropeSec(s){ return s>=60?(Math.floor(s/60)+'\''+(s%60?String(s%60).padStart(2,'0')+'"':'')):s+'"'; }
+function ropeDesc(s){ return s.r+' × '+ropeSec(s.w)+' salto / '+ropeSec(s.p)+' pausa'; }
+function ropeStartToday(){
+  var r=ropeLoad(); if(!r||!r.started){ r=r||{done:{},tests:[]}; r.started=true; ropeSave(r); }
+  var t=ropeToday(r,new Date().getDay(),ropeIso());
+  if(t&&t.slot&&!t.done) return ropeRun(t.slot.id);
+  state.trainSubTab='rope'; switchTab('train');
+}
+var ROPE_WARM=['Circonduzioni delle caviglie','Saltelli leggeri senza corda','Sollevamenti lenti sulle punte','Rotazioni dei polsi'];
+var ROPE_COOL=['Polpaccio al muro, gamba tesa: 30" per lato','Polpaccio al muro, ginocchio piegato: 30" per lato'];
+var ropeTID=null;
+function ropeRun(id){
+  var sl=ropeSlot(id); if(!sl) return;
+  state.rp={id:id,slot:sl,steps:ropeSteps(sl.s),i:0,left:120,running:true,t0:Date.now(),test:null};
+  state.tab='rope-run'; render(); requestWakeLock(); unlockAudio(); ropeTick();
+}
+function ropeTick(){
+  if(ropeTID) clearInterval(ropeTID);
+  ropeTID=setInterval(function(){
+    var p=state.rp; if(!p||state.tab!=='rope-run'){ clearInterval(ropeTID); ropeTID=null; return; }
+    if(!p.running) return;
+    var st=p.steps[p.i];
+    if(st.k==='test'){ if(p.test&&p.test.on){ p.test.sec++; var el=document.getElementById('rp-big'); if(el) el.textContent=ropeSec(p.test.sec); } return; }
+    p.left--;
+    var el2=document.getElementById('rp-big'); if(el2) el2.textContent=p.left;
+    if((st.k==='work'||st.k==='rest')&&p.left<=3&&p.left>0) try{ beep(660,0.08,0.2); }catch(e){}
+    if(p.left<=0) ropeNext();
+  },1000);
+}
+function ropeNext(){
+  var p=state.rp; if(!p) return;
+  if(p.i>=p.steps.length-1) return ropeEnd();
+  p.i++; var st=p.steps[p.i]; p.left=st.sec;
+  if(st.k==='work'){ bsBell(880,0.6,0.22); if(navigator.vibrate) navigator.vibrate(120); }
+  else if(st.k==='rest'){ bsBell(523,0.8,0.2); if(navigator.vibrate) navigator.vibrate([60,60,60]); }
+  else if(st.k==='test'){ p.test={on:false,sec:0}; }
+  render();
+}
+function ropeToggle(){ if(state.rp){ state.rp.running=!state.rp.running; render(); } }
+function ropeTestGo(){ var p=state.rp; if(!p||!p.test) return; if(!p.test.on){ p.test.on=true; bsBell(880,0.6,0.22); } else { p.test.on=false; p.test.done=true; bsBell(523,1.2,0.22); } render(); }
+function ropeEnd(){
+  var p=state.rp; if(ropeTID) clearInterval(ropeTID); ropeTID=null; releaseWakeLock();
+  var r=ropeLoad()||{done:{},tests:[]}; r.started=true; r.done=r.done||{}; r.done[p.id]=ropeIso();
+  var tsec=p.test&&p.test.sec?p.test.sec:0; if(tsec){ r.tests=r.tests||[]; r.tests.push({date:ropeIso(),sec:tsec}); }
+  ropeSave(r);
+  state.externalHistory.unshift({type:'Salto della corda',date:homeDMY(new Date()),duration:Math.max(5,Math.round((Date.now()-p.t0)/60000)),
+    notes:'Sett. '+p.slot.w+' · '+(p.slot.day==='sab'?'sabato':'domenica, tecnica')+' · '+p.slot.s.r+'×'+ropeSec(p.slot.s.w)+'/'+ropeSec(p.slot.s.p)+(tsec?' · test '+ropeSec(tsec)+' di fila':''),_src:'ext',_rope:true});
+  saveExternalHistory();
+  state.rp=null; state.trainSubTab='rope'; state.tab='train'; render();
+  showToast('Corda: seduta salvata'+(tsec?' · test '+ropeSec(tsec):''),ROPE_C,3000);
+}
+function ropeExit(){ if(!confirm('Uscire? La seduta non verrà salvata.')) return; if(ropeTID) clearInterval(ropeTID); ropeTID=null; releaseWakeLock(); state.rp=null; state.trainSubTab='rope'; switchTab('train'); }
+function renderRopeRun(){
+  var p=state.rp; if(!p) return renderHome();
+  var st=p.steps[p.i], s=p.slot.s, C=ROPE_C, body='', foot='';
+  var rounds=p.steps.filter(function(x){return x.k==='work';}).length;
+  if(st.k==='warm'||st.k==='cool'){
+    var list=st.k==='warm'?ROPE_WARM.map(function(x){return x+' · 30"';}):ROPE_COOL;
+    body='<p class="font-label text-[12px] uppercase tracking-widest" style="color:'+C+'">'+st.label+'</p>'+
+      '<p id="rp-big" class="font-headline leading-none mt-2" style="font-size:72px;color:#e1e2e7">'+p.left+'</p>'+
+      '<div class="mt-4 w-full" style="max-width:320px">'+list.map(function(x){return '<p class="font-label text-[14px] text-gray-300 py-2" style="border-bottom:1px solid rgba(255,255,255,0.06)">'+x+'</p>';}).join('')+'</div>';
+    foot='<button onclick="ropeNext()" class="w-full font-headline text-lg active:scale-95" style="min-height:56px;border:1px solid '+C+'77;color:'+C+'">'+(st.k==='warm'?'Fatto, si parte':'Fine e salva')+'</button>';
+  } else if(st.k==='test'){
+    var tt=p.test||{sec:0};
+    body='<p class="font-label text-[12px] uppercase tracking-widest" style="color:'+C+'">Test · salta di fila</p>'+
+      '<p id="rp-big" class="font-headline leading-none mt-2" style="font-size:88px;color:'+C+'">'+ropeSec(tt.sec)+'</p>'+
+      '<p class="font-label text-[13px] text-gray-400 text-center mt-3 max-w-xs">Ritmo tranquillo, quello che puoi tenere a lungo. Fermati al primo errore che ti fa perdere il ritmo o se i polpacci tirano.</p>';
+    foot=tt.done?'<button onclick="ropeNext()" class="w-full font-headline text-lg active:scale-95" style="min-height:56px;background:linear-gradient(135deg,'+C+','+C+'bb);color:#000">Avanti: allungamento</button>':
+      '<button onclick="ropeTestGo()" class="w-full font-headline text-xl active:scale-95" style="min-height:58px;background:linear-gradient(135deg,'+C+','+C+'bb);color:#000">'+(tt.on?'Stop':'Via')+'</button>'+
+      (!tt.on?'<button onclick="ropeNext()" class="w-full mt-2 font-label text-[13px]" style="min-height:40px;color:#9aa3b2">Salta il test</button>':'');
+  } else {
+    var mv=ROPE_MOVES[st.k==='work'?st.mv:st.next], work=st.k==='work';
+    body='<p class="font-label text-[12px] uppercase tracking-widest" style="color:'+(work?C:'#9aa3b2')+'">'+(work?'Salta · round '+st.round+' di '+rounds:'Pausa')+'</p>'+
+      '<p id="rp-big" class="font-headline leading-none mt-2" style="font-size:110px;color:'+(work?C:'#e1e2e7')+'">'+p.left+'</p>'+
+      '<p class="font-headline text-2xl mt-3">'+(work?mv.name:'poi: '+mv.name)+'</p>'+
+      '<p class="font-label text-[13px] text-gray-400 text-center mt-1 max-w-xs">'+mv.cue+'</p>'+
+      (!p.running?'<p class="font-label text-[12px] mt-2" style="color:#e9c176">In pausa</p>':'');
+    foot='<div class="flex gap-2"><button onclick="ropeToggle()" class="flex-1 font-headline text-lg active:scale-95" style="min-height:56px;border:1px solid '+C+'77;color:'+C+'">'+(p.running?'Pausa':'Riprendi')+'</button>'+
+      '<button onclick="ropeNext()" class="font-label text-[13px] px-5 active:scale-95" style="min-height:56px;border:1px solid rgba(255,255,255,0.12);color:#9aa3b2">Salta</button></div>';
+  }
+  return '<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden">'+
+    '<div class="flex-shrink-0 flex items-center justify-between px-5 pt-5"><button onclick="ropeExit()" class="flex items-center justify-center" style="width:44px;height:44px"><span class="material-symbols-outlined text-gray-500">close</span></button>'+
+      '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+C+'">Corda · sett. '+p.slot.w+' · '+(p.slot.day==='sab'?'sabato':'domenica')+'</p><div style="width:44px"></div></div>'+
+    '<div class="flex-shrink-0 px-5 mt-2"><div class="h-1" style="background:rgba(255,255,255,0.08)"><div style="height:100%;width:'+Math.round(p.i/(p.steps.length-1)*100)+'%;background:'+C+'"></div></div></div>'+
+    '<div class="flex-1 flex flex-col items-center justify-center px-6">'+body+'</div>'+
+    '<div class="flex-shrink-0 px-5 pb-8 pt-3">'+foot+'</div></div>';
+}
+function ropeTodayCard(r,compact){
+  var js=new Date().getDay(), t=ropeToday(r,js,ropeIso()), C=ROPE_C;
+  var head='<div class="flex items-center justify-between mb-1"><p class="font-label text-[11px] uppercase tracking-widest" style="color:'+C+'">Salto della corda'+(t&&t.slot?' · sett. '+t.slot.w+' · '+(t.makeup?'recupero del sabato':t.slot.day==='sab'?'seduta':'tecnica'):'')+'</p>'+
+    (compact?'<button onclick="state.trainSubTab=\'rope\';switchTab(\'train\')" class="font-label text-[12px] text-gray-400" style="min-height:32px">Programma ›</button>':'')+'</div>';
+  if(!t){ var nx=ropeToday(r,6,ropeIso()); return head+'<p class="font-label text-[13px] text-gray-300">'+(nx&&nx.slot?'Prossima seduta sabato: settimana '+nx.slot.w+', '+ropeDesc(nx.slot.s)+'.':'Programma completato.')+'</p>'; }
+  if(t.finished) return head+'<p class="font-headline text-lg">Programma completato</p>';
+  if(t.none||t.rest) return head+'<p class="font-label text-[13px] text-gray-300">'+(t.none||t.rest)+'</p>';
+  if(t.done) return head+'<p class="font-headline text-lg">'+(t.doneToday?'✓ Fatta oggi':'✓ Già fatta questa settimana')+'</p>';
+  return head+'<p class="font-headline text-xl leading-tight">'+ropeDesc(t.slot.s)+'</p><p class="font-label text-[12px] text-gray-400 mt-0.5">~'+ropeMin(t.slot.s)+' min con riscaldamento e allungamento</p>'+
+    '<button onclick="ropeRun(\''+t.slot.id+'\')" class="w-full mt-3 flex items-center justify-center gap-2 font-headline text-lg active:scale-95" style="min-height:52px;background:linear-gradient(135deg,'+C+','+C+'bb);color:#000"><span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1">play_arrow</span>Inizia</button>';
+}
+function tabRope(){
+  var r=ropeLoad(), C=ROPE_C;
+  var rules='<div class="bg-surface-container p-4 mt-4" style="border:1px solid rgba(255,255,255,0.06)"><p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-2">Prima di saltare</p>'+
+    ['Corda giusta: in piedi al centro della corda, le maniglie arrivano alle ascelle.','Salti bassi, pochi centimetri, sugli avampiedi e con le ginocchia morbide.','Gomiti vicini ai fianchi: la corda la girano i polsi, non le spalle.','Superficie morbida (parquet, gomma, tappetino), mai cemento; scarpe da allenamento ammortizzate.','Polpacci e tendine d\'Achille sono il punto delicato: un dolore che resta il giorno dopo vuol dire fermarsi una settimana.']
+    .map(function(t){return '<p class="font-label text-[13px] text-gray-300 leading-snug flex gap-2 mb-1.5"><span style="color:'+C+'">•</span><span>'+t+'</span></p>';}).join('')+'</div>';
+  if(!r||!r.started) return '<div class="bg-surface-container p-4" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid '+C+'">'+
+      '<p class="font-headline text-xl leading-tight">Sei settimane di corda nel weekend</p>'+
+      '<p class="font-label text-[13px] text-gray-300 leading-snug mt-2">Il sabato la seduta a intervalli, la domenica una breve seduta di tecnica con poco volume. Si parte da 20" di salto e 40" di pausa e si arriva a round da 2 minuti, con un test finale di resistenza. Le settimane 4 e 6 hanno la domenica libera per i polpacci. Si avanza seduta dopo seduta: se salti un weekend, riprendi da dove eri.</p>'+
+      '<button onclick="ropeBegin()" class="w-full mt-4 font-headline text-lg active:scale-95" style="min-height:52px;background:linear-gradient(135deg,'+C+','+C+'bb);color:#000">Inizia il programma</button></div>'+rules;
+  var done=r.done||{};
+  var weeks=ROPE_PLAN.map(function(x){
+    function row(day,s){ var id=x.w+'-'+day, d=done[id];
+      if(!s) return '<div class="flex items-center gap-3 px-3 py-2"><span class="font-label text-[12px] text-gray-500 w-20">Domenica</span><span class="font-label text-[12px] text-gray-500">riposo</span></div>';
+      return '<button onclick="ropeRun(\''+id+'\')" class="w-full flex items-center gap-3 px-3 py-2 text-left active:bg-surface-container-high" style="min-height:48px">'+
+        '<span class="font-label text-[12px] w-20" style="color:'+(day==='sab'?C:'#9aa3b2')+'">'+(day==='sab'?'Sabato':'Domenica')+'</span>'+
+        '<span class="flex-1 font-label text-[13px] text-gray-300">'+ropeDesc(s)+(s.test?' + test':'')+'</span>'+
+        (d?'<span class="material-symbols-outlined" style="color:'+C+';font-variation-settings:\'FILL\' 1">check_circle</span>':'<span class="material-symbols-outlined text-gray-500">play_arrow</span>')+'</button>'; }
+    return '<div class="mb-2" style="border:1px solid rgba(255,255,255,0.06)"><p class="font-label text-[11px] uppercase tracking-widest text-gray-500 px-3 pt-2">Settimana '+x.w+'</p>'+row('sab',x.sab)+row('dom',x.dom)+'</div>';
+  }).join('');
+  var tests=(r.tests||[]); var best=tests.length?Math.max.apply(null,tests.map(function(t){return t.sec;})):0;
+  return '<div class="bg-surface-container p-4" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid '+C+'">'+ropeTodayCard(r,false)+'</div>'+
+    (best?'<p class="font-label text-[13px] mt-3" style="color:'+C+'">Miglior test: '+ropeSec(best)+' di fila</p>':'')+
+    '<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mt-5 mb-2">Le 6 settimane · '+Object.keys(done).length+' sedute su '+ropeSlots().length+'</p>'+weeks+rules+
+    '<button onclick="ropeQuit()" class="w-full mt-5 font-label text-[13px] active:scale-95" style="min-height:44px;border:1px solid rgba(255,255,255,0.12);color:#9aa3b2">Chiudi il programma</button>';
+}
+function ropeHomeCard(){
+  var r=ropeLoad(), js=new Date().getDay(); if(!r||!r.started||(js!==6&&js!==0)) return '';
+  return '<div class="bg-surface-container p-4 mb-6" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid '+ROPE_C+'">'+ropeTodayCard(r,true)+'</div>';
+}
+function mcRopePick(s,used){
+  if(!(s.js===6||s.js===0)||!(s.type==='intervalli'||s.type==='aerobico')||!ropeActive()||used['rope-'+s.js]) return null;
+  return {key:'rope-'+s.js,title:s.js===6?'Salto della corda · seduta':'Salto della corda · tecnica',min:s.js===6?15:8,action:'ropeStartToday()'};
+}
+
+// ══════════════════════════════════════════════════════════════════
 // HOME "OGGI" — la giornata: mattino, allenamento, sera
 // ══════════════════════════════════════════════════════════════════
 function homeDMY(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
@@ -1993,6 +2416,13 @@ function renderHome(){
     var T_=mt.item?MC_TYPES[mt.item.type]:null;
     sug=mt.item?{title:mt.item.title,action:mt.item.action,color:T_.color,reason:(mt.item.min?'~'+mt.item.min+' min':'')+(mt.item.note?(mt.item.min?' · ':'')+mt.item.note:''),_fromPlan:true,typeLabel:T_.label}:{title:'',action:null,_fromPlan:true};
   }
+  // Weekend con il programma della corda attivo e nessun piano: l'allenamento proposto è la corda
+  if(!usePlan&&!sug._fromAI&&typeof ropeActive==='function'&&ropeActive()){
+    var rt=ropeToday(ropeLoad(),now.getDay(),ropeIso());
+    if(rt&&rt.slot&&!rt.done) sug={title:'Salto della corda · '+(rt.makeup?'recupero del sabato':rt.slot.day==='sab'?'seduta':'tecnica'),action:"ropeRun('"+rt.slot.id+"')",color:ROPE_C,
+      reason:'Sett. '+rt.slot.w+' · '+ropeDesc(rt.slot.s)+' · ~'+ropeMin(rt.slot.s)+' min',_rope:true};
+  }
+  var ropeShown=!!(sug._rope||(usePlan&&mt.item&&/^rope/.test(mt.item.key||'')));
   var planKind=usePlan?(mt.info.kind==='scarico'?'Settimana di scarico: circa un terzo di volume in meno, anche con meno round.':mt.info.kind==='test'?'Settimana di test: misura i tuoi progressi.':''):'';
   var isTrainingDay=(FORGE_PROFILE.trainingDays||[]).indexOf(now.getDay())>=0;
   var isRest=!trained&&(usePlan?mt.rest:(sug._rest||!sug.action||(!sug._fromAI&&!isTrainingDay)));
@@ -2126,6 +2556,8 @@ function renderHome(){
       weekCard+
       shortcuts+
       awHomeStrip()+
+      puHomeCard()+
+      (ropeShown?'':ropeHomeCard())+
       '<div class="relative" style="padding-left:27px">'+
         '<div class="absolute" style="left:8px;top:30px;bottom:30px;width:2px;background:rgba(255,255,255,0.08)"></div>'+
         mattino+'<div class="mb-4"></div>'+allenamento+sera+
@@ -2464,7 +2896,7 @@ function renderLog(){
     });
     const visible=filter==="kb"?allSessions.filter(h=>h._src==="kb"):filter==="external"?allSessions.filter(h=>h._src==="ext"):allSessions;
     const KPhex={A:"#ffb693",B:"#e9c176",C:"#50dad1"};
-    const EXT_C={"Camminata":"#a3be6b","Calisthenics":"#50dad1","Corsa":"#ffb693","SUP":"#06b6d4","Wing Foil":"#38bdf8","Yoga":"#8b5cf6","Ciclismo":"#e9c176","Nuoto":"#0891b2","Calcio":"#22c55e","Altro":"#64748b"};
+    const EXT_C={"Camminata":"#a3be6b","Salto della corda":"#f472b6","Calisthenics":"#50dad1","Corsa":"#ffb693","SUP":"#06b6d4","Wing Foil":"#38bdf8","Yoga":"#8b5cf6","Ciclismo":"#e9c176","Nuoto":"#0891b2","Calcio":"#22c55e","Altro":"#64748b"};
 
     const filterBar=`<div class="flex flex-wrap gap-2 mb-5">
       ${[{id:"all",l:"Tutti"},{id:"kb",l:"KB"},{id:"external",l:"Altri"}].map(f=>`<button onclick="setStatsFilter('${f.id}')"
@@ -2483,7 +2915,7 @@ function renderLog(){
     </div>`;
 
     const ef=state.logExtForm;
-    const extTypes=["Camminata","Calisthenics","Corsa","SUP","Wing Foil","Yoga","Ciclismo","Nuoto","Calcio","Altro"];
+    const extTypes=["Camminata","Salto della corda","Calisthenics","Corsa","SUP","Wing Foil","Yoga","Ciclismo","Nuoto","Calcio","Altro"];
     const feelOpts=[{v:"😫",l:"Pesante"},{v:"😐",l:"Normale"},{v:"💪",l:"Bene"},{v:"🔥",l:"Ottimo"}];
     const extForm=state.showExtForm?`<div class="bg-surface-container ghost-border p-5 border-l-2 border-l-tertiary mb-4 space-y-4">
       <p class="font-label text-[9px] uppercase tracking-widest text-tertiary">Tipo attività</p>
@@ -2535,7 +2967,7 @@ function renderLog(){
         const isAxeEntry=isExt&&h._axe;
         const isFlowEntry=isExt&&h._flow;
         const col=isExt
-          ?(isFlowEntry?"#50dad1":isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(h._breath?"#7dd3fc":(EXT_C[h.type]||"#64748b")))
+          ?(isFlowEntry?"#50dad1":isAxeEntry?"#8b5cf6":isKDP?"#7A9A3A":isFinisher?"#e9c176":(h._breath?"#7dd3fc":h._pushup?"#43A047":(EXT_C[h.type]||"#64748b")))
           :(isWF?"#38bdf8":isBP?"#ffb4ab":isLTL?"#f97316":isBWJ?"#43A047":isLM?"#22c55e":isK30?"#facc15":(KPhex[h.day]||"#ffb693"));
         const rawId=h.day&&h.day.startsWith("extra_")?h.day.replace("extra_",""):"";
         const bpW=(rawId.startsWith("BP")||rawId.indexOf("BWJ-")===0||rawId.indexOf("LTL-")===0||rawId.indexOf("K30-")===0)?getExtraById(rawId):null;
@@ -8913,7 +9345,9 @@ function renderTrain(){
     {id:"axe",     cat:"kb",   icon:"🫀",name:"AXE",       desc:"Aerobico anti-glicolitico"},
     {id:"bw",      cat:"bw",   icon:"🤸",name:"Bodyweight",desc:"Bodyweight Jacked e Limitless, a round"},
     {id:"lm",      cat:"bw",   icon:"🎥",name:"LeoMoves",  desc:"Allenamenti video a corpo libero"},
+    {id:"pu50",    cat:"bw",   icon:"💪",name:"50 piegamenti",desc:"4 settimane: test, serie sotto il massimo, richiami"},
     {id:"wf",      cat:"sport",icon:"🏄",name:"Wing Foil", desc:"Equilibrio, core e potenza d'anca"},
+    {id:"rope",    cat:"sport",icon:"🪢",name:"Salto della corda",desc:"6 settimane nel weekend: sabato seduta, domenica tecnica"},
     {id:"daily",   cat:"daily",icon:"🌗",name:"Daily routine",desc:"Risveglio, Mobilità serale, Respiro e Wim Hof",go:"goMorning()"},
     {id:"walk",    cat:"daily",icon:"🚶",name:"Camminata",desc:"Passo svelto, con obiettivo di tempo",go:"walkStart(30)"},
   ];
@@ -8929,6 +9363,8 @@ function renderTrain(){
     if(id==="axe")  (state.axeHistory||[]).forEach(function(e){ if(e.date) cand.push(e.date); });
     if(id==="daily") X.forEach(function(e){ if(e._morning||e._evening||e._wimhof) cand.push(e.date); });
     if(id==="walk") X.forEach(function(e){ if(e._walk) cand.push(e.date); });
+    if(id==="pu50") X.forEach(function(e){ if(e._pushup) cand.push(e.date); });
+    if(id==="rope") X.forEach(function(e){ if(e._rope) cand.push(e.date); });
     var best=null; cand.forEach(function(c){ var d=dParse(c); if(d&&!isNaN(d)&&(!best||d>best)) best=d; });
     return best?String(best.getDate()).padStart(2,'0')+'/'+String(best.getMonth()+1).padStart(2,'0'):null;
   }
@@ -8940,6 +9376,8 @@ function renderTrain(){
     if(id==="flow") return FLOWS.length+" flow";
     if(id==="bw") return EXTRA_WORKOUTS.filter(function(w){return /^(BWJ|LTL)-/.test(w.id);}).length+" circuiti";
     if(id==="lm") return LM_WORKOUTS.length+" video";
+    if(id==="rope"){ var rq=ropeLoad(); if(!rq||!rq.started) return "6 settimane"; return Object.keys(rq.done||{}).length+" / "+ropeSlots().length+" sedute"; }
+    if(id==="pu50"){ var pq=puLoad(); if(!pq) return "28 giorni"; var nd=puDayOf(pq,puTodayIso()); return nd<1?"parte il "+puFmt(pq.start):nd>28?"concluso":"giorno "+nd+" di 28"; }
     if(id==="wf") return EXTRA_WORKOUTS.filter(function(w){return /^WF/.test(w.id);}).length+" sessioni";
     if(id==="daily") return "4 pratiche";
     if(id==="walk") return "20–60 min";
@@ -8990,7 +9428,7 @@ function renderTrain(){
     '<main class="px-5 pt-3">'+
       (!sub ? trainRootHTML() :
         programHeader()+
-        (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():sub==="lm"?tabLeoMoves():sub==="k30"?tabK30():tabKdp()))+
+        (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():sub==="lm"?tabLeoMoves():sub==="k30"?tabK30():sub==="pu50"?tabPu50():sub==="rope"?tabRope():tabKdp()))+
     '</main>'+
     navHTML("train")+
   '</div>';
@@ -10620,6 +11058,7 @@ function aiWorkoutToAction(workoutName){
   function has(id){ try{ return !!getExtraById(id); }catch(e){ return false; } }
   // Riposo per primo: "Riposo / recupero attivo" non deve avviare nulla
   if(/\b(riposo|rest day|giorno di recupero)\b/.test(n)) return {action:null,icon:'😴',color:'#64748b'};
+  if(/salto della corda|\bcorda\b|jump ?rope|skipping/.test(n)) return {action:'ropeStartToday();',icon:'🪢',color:'#f472b6'};
   // Camminata: "Camminata 45'", "Walk 30 min"
   if(/camminat|\bwalk/.test(n)){ var wmn=n.match(/(\d{2})\s*(?:'|min|minuti)/); return {action:'walkStart('+(wmn?+wmn[1]:30)+')',icon:'🚶',color:'#a3be6b'}; }
   // 30 Days KB: "KB Day 5", "30 Days KB · Day 5", "Day 5", "K30 D5"
@@ -11027,6 +11466,7 @@ function manualLogSave(){
     _kdp: isKdp||false,
     _manual: true,
     _walk: MANUAL_FORM.type==='Camminata',
+    _rope: MANUAL_FORM.type==='Salto della corda',
   });
   saveExternalHistory();
   MANUAL_FORM.open = false;
@@ -11036,7 +11476,7 @@ function manualLogSave(){
 function renderManualLogForm(){
   var FILL = "font-variation-settings:'FILL' 1";
   var TYPES = ['AXE — Snatch','AXE — Swing','KDP-26','Complex','Giorno A','Giorno B','Giorno C',
-    'Deep Push-Up','Wim Hof','Camminata','Corsa','SUP','Wing Foil','Calisthenics','Yoga','Ciclismo','Nuoto','Altro'];
+    'Deep Push-Up','Wim Hof','Camminata','Salto della corda','Corsa','SUP','Wing Foil','Calisthenics','Yoga','Ciclismo','Nuoto','Altro'];
   var FEELINGS = ['😫','😐','💪','🔥'];
   // Chip giorni rapidi
   var GG=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
@@ -12318,8 +12758,24 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v119";
+var APP_VERSION = "v121";
 var APP_CHANGELOG = [
+  {v:"v121", data:"30/09/2026", items:[
+    "Salto della corda nel LOG (Manuale e + Sport), con il suo colore",
+    "Nuovo programma di 6 settimane nel weekend: sabato seduta a intervalli, domenica tecnica leggera",
+    "Runner a intervalli con riscaldamento, tipo di salto per round, segnali sonori, test e allungamento",
+    "Si avanza seduta dopo seduta: un weekend saltato non fa saltare avanti",
+    "Nel weekend la corda compare in Oggi e nel macrociclo prende il posto di Intervalli e Aerobico",
+    "Badge Saltatore; il piano AI riconosce la corda",
+  ]},
+  {v:"v120", data:"30/09/2026", items:[
+    "Nuovo programma 50 piegamenti: 4 settimane con partenza a scelta",
+    "Test del massimo guidato (riscaldamento e contatore), a inizio, metà e fine",
+    "Serie e scala calcolate sul tuo massimo, con recuperi temporizzati",
+    "Test intermedio: ricalcolo automatico o richiami dimezzati se il massimo scende",
+    "Richiami da spuntare in Oggi, con l'avviso se non è passata un'ora",
+    "Badge Cinquanta; le sedute contano come Corpo libero nel macrociclo",
+  ]},
   {v:"v119", data:"30/09/2026", items:[
     "Nuova pagina Traguardi: 15 badge che si sbloccano dai tuoi dati",
     "6 sfide a tempo da iniziare quando vuoi, con avanzamento giorno per giorno",
@@ -12661,6 +13117,9 @@ function render(){
   else if(state.tab==="cycle")  app.innerHTML=renderCycle();
   else if(state.tab==="awards")  app.innerHTML=renderAwards();
   else if(state.tab==="challenge")  app.innerHTML=renderChallenge();
+  else if(state.tab==="pu-test")  app.innerHTML=renderPuTest();
+  else if(state.tab==="pu-session")  app.innerHTML=renderPuSession();
+  else if(state.tab==="rope-run")  app.innerHTML=renderRopeRun();
   else if(state.tab==="train")       app.innerHTML=renderTrain();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
   else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
@@ -12691,7 +13150,7 @@ function render(){
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
 // ── WAKE LOCK ─────────────────────────────────────────────────────────────────
 let wakeLock=null;
-const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','k30-chipper','walk','cycle','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
+const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','k30-chipper','walk','cycle','pu-test','pu-session','rope-run','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
 async function requestWakeLock(){
   try{
     if('wakeLock' in navigator){
@@ -13229,6 +13688,7 @@ function saveExternalSession(){
     notes:ef.notes||"",
   };
   if(entry.type==="Camminata") entry._walk=true;
+  if(entry.type==="Salto della corda") entry._rope=true;
   state.externalHistory.push(entry);
   saveExternalHistory();
   state.logExtForm={type:"Calisthenics",duration:"",hrAvg:"",hrMax:"",feeling:null,notes:""};
@@ -13431,7 +13891,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v119';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v121';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
