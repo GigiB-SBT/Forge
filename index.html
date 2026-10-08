@@ -1289,6 +1289,7 @@ function mcSessionType(e){
   if(!e) return null;
   if(e._morning||e._evening||e._wimhof||e._breath) return null;
   if(e._rope) return "intervalli";
+  if(e._yoga||e.type==="Yoga") return "mobilita";
   if(e._flow||e._axe||e._manual||e._walk) return "aerobico";
   if(e._kdp||e._dpu||e._core7) return "forza";
   if(e._pushup) return "corpolibero";
@@ -1331,6 +1332,7 @@ function mcCandidates(type){
     (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ C.push({key:"x:"+l.id,title:l.label,min:20,action:"openLmDetail('"+l.id+"')"}); });
   }
   if(type==="mobilita"){
+    (function(){ var yq=yogaLoad(), gid=yq.goal||'mobilita', ss=yogaSession(gid,yogaCount(yq,gid)%YOGA_TOTAL); C.push({key:"yoga",title:"Yoga · "+yogaGoal(gid).name,min:ss.min,action:"yogaStartToday()"}); })();
     (typeof K30_WORKOUTS!=="undefined"?K30_WORKOUTS:[]).forEach(function(w){ if(mcSessionType({day:"extra_"+w.id})==="mobilita") ex(w.id); });
     ex("WFB");
   }
@@ -1343,6 +1345,7 @@ function mcLastDone(key, hist){
   (hist.external||[]).forEach(function(h){ if((key==="kdp"&&h._kdp)||(h._flow&&key==="flow:"+String(h.type||"").replace("KB Flow_",""))) best=Math.max(best,d(h.date)); });
   if(key==="axe") (hist.axe||[]).forEach(function(h){ best=Math.max(best,d(h.date)); });
   if(key==="walk") (hist.external||[]).forEach(function(h){ if(h._walk) best=Math.max(best,d(h.date)); });
+  if(key==="yoga") (hist.external||[]).forEach(function(h){ if(h._yoga||h.type==="Yoga") best=Math.max(best,d(h.date)); });
   return best;
 }
 // Sceglie il workout: prima la continuità di 30 Days, poi il meno recente; mai due volte nella stessa settimana
@@ -1527,37 +1530,93 @@ function renderPlanView(){
 // ══════════════════════════════════════════════════════════════════
 // CAMMINATA — tempo trascorso, obiettivo, campane a metà e all'obiettivo
 // ══════════════════════════════════════════════════════════════════
-var WALK={target:1800,elapsed:0,running:false,tid:null,half:false,done:false};
+var WALK={target:1800,start:0,pausedMs:0,pauseAt:0,running:false,tid:null,half:false,done:false,audio:null};
 var WALK_C='#a3be6b';
 function walkFmt(s){ var m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
-function walkStart(min){
-  unlockAudio(); requestWakeLock();
-  if(WALK.tid) clearInterval(WALK.tid);
-  WALK={target:(min||30)*60,elapsed:0,running:true,tid:null,half:false,done:false};
-  state.tab='walk'; render();
-  WALK.tid=setInterval(function(){
-    if(state.tab!=='walk'){ clearInterval(WALK.tid); WALK.tid=null; return; }
-    if(!WALK.running) return;
-    WALK.elapsed++;
-    if(!WALK.half&&WALK.elapsed>=Math.floor(WALK.target/2)){ WALK.half=true; bsBell(660,1.2,0.2); if(navigator.vibrate) navigator.vibrate([60,60,60]); }
-    if(!WALK.done&&WALK.elapsed>=WALK.target){ WALK.done=true; bsBell(523,2.0,0.22); setTimeout(function(){ bsBell(784,2.2,0.2); },220); if(navigator.vibrate) navigator.vibrate([150,80,150]); render(); return; }
-    var el=document.getElementById('walk-time'); if(el) el.textContent=walkFmt(WALK.elapsed);
-    var ar=document.getElementById('walk-arc'); if(ar){ var C=2*Math.PI*46; ar.setAttribute('stroke-dashoffset',(C*(1-Math.min(1,WALK.elapsed/WALK.target))).toFixed(1)); }
-  },1000);
+// Il tempo si calcola dagli orari, non dai tic: resta giusto anche se il telefono sospende la pagina
+function walkElapsed(){ if(!WALK.start) return 0; var now=Date.now(); return Math.max(0,Math.floor((now-WALK.start-WALK.pausedMs-(WALK.pauseAt?now-WALK.pauseAt:0))/1000)); }
+function walkPersist(){ try{ if(WALK.start) localStorage.setItem('kb-walk',JSON.stringify({target:WALK.target,start:WALK.start,pausedMs:WALK.pausedMs,pauseAt:WALK.pauseAt,half:WALK.half,done:WALK.done})); else localStorage.removeItem('kb-walk'); }catch(e){} }
+// Audio quasi silenzioso in loop: tiene viva la pagina a schermo spento e mostra i comandi sulla schermata di blocco
+function walkKeepAliveSrc(){
+  var sr=8000, n=sr*2, buf=new ArrayBuffer(44+n*2), v=new DataView(buf);
+  function str(o,s){ for(var i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); }
+  str(0,'RIFF'); v.setUint32(4,36+n*2,true); str(8,'WAVE'); str(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true); str(36,'data'); v.setUint32(40,n*2,true);
+  for(var i=0;i<n;i++) v.setInt16(44+i*2,(i%2?2:-2),true);
+  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
 }
-function walkToggle(){ WALK.running=!WALK.running; render(); }
+function walkAudioOn(){
+  try{
+    if(!WALK.audio){ var a=new Audio(walkKeepAliveSrc()); a.loop=true; a.volume=0.05; a.setAttribute('playsinline',''); WALK.audio=a; }
+    var p=WALK.audio.play(); if(p&&p.catch) p.catch(function(){ WALK.audioBlocked=true; render(); });
+    WALK.audioBlocked=false;
+  }catch(e){}
+  walkMedia();
+}
+function walkAudioOff(stop){ try{ if(WALK.audio){ WALK.audio.pause(); if(stop){ WALK.audio.src=''; WALK.audio=null; } } }catch(e){} try{ if('mediaSession' in navigator) navigator.mediaSession.playbackState=stop?'none':'paused'; }catch(e){} }
+function walkMedia(){
+  if(!('mediaSession' in navigator)) return;
+  try{
+    var e=walkElapsed();
+    navigator.mediaSession.metadata=new MediaMetadata({title:'Camminata · '+walkFmt(e)+(WALK.pauseAt?' (pausa)':''),artist:'FORGE · obiettivo '+Math.round(WALK.target/60)+' min'+(WALK.done?' ✓':''),album:'FORGE'});
+    navigator.mediaSession.playbackState=WALK.pauseAt?'paused':'playing';
+    if(navigator.mediaSession.setPositionState) navigator.mediaSession.setPositionState({duration:Math.max(WALK.target,e+1),position:Math.min(e,Math.max(WALK.target,e+1)),playbackRate:WALK.pauseAt?1:1});
+    navigator.mediaSession.setActionHandler('pause',function(){ if(!WALK.pauseAt) walkToggle(); });
+    navigator.mediaSession.setActionHandler('play',function(){ if(WALK.pauseAt) walkToggle(); });
+  }catch(e){}
+}
+function walkLoop(){
+  if(WALK.tid) clearInterval(WALK.tid);
+  WALK.tid=setInterval(walkTick,1000); walkTick();
+}
+function walkTick(){
+  if(!WALK.start){ clearInterval(WALK.tid); WALK.tid=null; return; }
+  var e=walkElapsed(), halfNow=!WALK.half&&e>=Math.floor(WALK.target/2), doneNow=!WALK.done&&e>=WALK.target;
+  if(halfNow) WALK.half=true;
+  if(doneNow){ WALK.done=true; bsBell(523,2.0,0.22); setTimeout(function(){ bsBell(784,2.2,0.2); },220); if(navigator.vibrate) navigator.vibrate([150,80,150]); }
+  else if(halfNow){ bsBell(660,1.2,0.2); if(navigator.vibrate) navigator.vibrate([60,60,60]); }
+  if(halfNow||doneNow){ walkPersist(); walkMedia(); if(state.tab==='walk') render(); }
+  if(e%10===0) walkMedia();
+  var el=document.getElementById('walk-time'); if(el) el.textContent=walkFmt(e);
+  var ar=document.getElementById('walk-arc'); if(ar){ var C=2*Math.PI*46; ar.setAttribute('stroke-dashoffset',(C*(1-Math.min(1,e/WALK.target))).toFixed(1)); }
+}
+function walkStart(min){
+  unlockAudio();
+  if(WALK.start&&!confirm('C\'è già una camminata in corso. Ricominciare da zero?')){ state.tab='walk'; render(); return; }
+  WALK.target=(min||30)*60; WALK.start=Date.now(); WALK.pausedMs=0; WALK.pauseAt=0; WALK.half=false; WALK.done=false; WALK.running=true;
+  walkPersist(); state.tab='walk'; render(); walkLoop(); walkAudioOn();
+}
+function walkToggle(){
+  if(!WALK.start) return;
+  if(WALK.pauseAt){ WALK.pausedMs+=Date.now()-WALK.pauseAt; WALK.pauseAt=0; WALK.running=true; walkAudioOn(); }
+  else { WALK.pauseAt=Date.now(); WALK.running=false; walkAudioOff(false); walkMedia(); }
+  walkPersist(); render();
+}
 function walkFinish(){
-  if(WALK.elapsed<60){ if(!confirm('Meno di un minuto: esci senza salvare?')) return; }
+  var e=walkElapsed();
+  if(e<60){ if(!confirm('Meno di un minuto: esci senza salvare?')) return; }
   else {
-    state.externalHistory.unshift({type:'Camminata',date:homeDMY(new Date()),duration:Math.round(WALK.elapsed/60),
+    state.externalHistory.unshift({type:'Camminata',date:homeDMY(new Date(WALK.start)),duration:Math.round(e/60),
       notes:'Obiettivo '+Math.round(WALK.target/60)+' min'+(WALK.done?' · raggiunto':''),_src:'ext',_walk:true});
     saveExternalHistory();
   }
-  if(WALK.tid) clearInterval(WALK.tid); WALK.tid=null; WALK.running=false;
-  releaseWakeLock(); state.tab='home'; render();
+  if(WALK.tid) clearInterval(WALK.tid); WALK.tid=null; WALK.start=0; WALK.running=false; WALK.pauseAt=0;
+  walkPersist(); walkAudioOff(true); state.tab='home'; render();
 }
+// Riapertura dell'app (o pagina chiusa dal telefono): la camminata riprende col tempo giusto
+function walkRestore(){
+  if(WALK.start) return;
+  var s=null; try{ s=JSON.parse(localStorage.getItem('kb-walk')||'null'); }catch(e){}
+  if(!s||!s.start) return;
+  if(Date.now()-s.start>12*3600000){ try{ localStorage.removeItem('kb-walk'); }catch(e){} return; }
+  WALK.target=s.target; WALK.start=s.start; WALK.pausedMs=s.pausedMs||0; WALK.pauseAt=s.pauseAt||0; WALK.half=!!s.half; WALK.done=!!s.done; WALK.running=!WALK.pauseAt;
+  state.tab='walk'; render(); walkLoop(); if(WALK.running) walkAudioOn();
+}
+window.addEventListener('load',function(){ setTimeout(walkRestore,300); });
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&WALK.start){ walkTick(); if(state.tab!=='walk'&&state.tab==='home') render(); } });
+function walkReactivate(){ unlockAudio(); walkAudioOn(); render(); }
 function renderWalk(){
-  var C=2*Math.PI*46, pct=Math.min(1,WALK.elapsed/WALK.target), tgt=Math.round(WALK.target/60);
+  var C=2*Math.PI*46, pct=Math.min(1,walkElapsed()/WALK.target), tgt=Math.round(WALK.target/60);
   return '<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;">'+
     '<div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">'+
       '<button onclick="walkFinish()" class="flex items-center justify-center" style="width:44px;height:44px"><span class="material-symbols-outlined text-gray-500">close</span></button>'+
@@ -1568,12 +1627,14 @@ function renderWalk(){
           '<circle id="walk-arc" cx="50" cy="50" r="46" fill="none" stroke="'+WALK_C+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+(C*(1-pct)).toFixed(1)+'" style="transition:stroke-dashoffset 1s linear"/></svg>'+
         '<div class="absolute text-center">'+
           '<span class="material-symbols-outlined" style="font-size:30px;color:'+WALK_C+';font-variation-settings:\'FILL\' 1">directions_walk</span>'+
-          '<p id="walk-time" class="font-headline leading-none mt-1" style="font-size:52px;color:#e1e2e7">'+walkFmt(WALK.elapsed)+'</p>'+
+          '<p id="walk-time" class="font-headline leading-none mt-1" style="font-size:52px;color:#e1e2e7">'+walkFmt(walkElapsed())+'</p>'+
           '<p class="font-label text-[12px] mt-1" style="color:'+WALK_C+'">'+(WALK.done?'✓ obiettivo raggiunto':'obiettivo '+tgt+' min')+'</p>'+
         '</div></div>'+
       '<p class="font-label text-[13px] text-gray-400 text-center leading-relaxed mt-6 max-w-xs">'+
         (WALK.done?'Puoi continuare quanto vuoi: il tempo resta registrato. Tocca Fine quando rientri.':'Passo svelto: riesci a parlare, non a cantare. Spalle rilassate, respira dal naso se ci riesci.')+'</p>'+
       (!WALK.running?'<p class="font-label text-[12px] mt-3" style="color:#e9c176">In pausa</p>':'')+
+      (WALK.audioBlocked&&WALK.running?'<button onclick="walkReactivate()" class="mt-3 px-4 font-label text-[13px] active:scale-95" style="min-height:44px;border:1px solid #e9c17677;color:#e9c176">Tocca per riattivare i suoni a schermo spento</button>':
+        '<p class="font-label text-[12px] text-gray-500 text-center mt-3 flex items-center gap-1.5"><span class="material-symbols-outlined" style="font-size:16px">screen_lock_portrait</span>Puoi spegnere lo schermo: il tempo continua</p>')+
     '</div>'+
     '<div class="flex-shrink-0 px-5 pb-8 pt-3 flex gap-2">'+
       '<button onclick="walkToggle()" class="flex-1 font-headline text-lg active:scale-95" style="min-height:56px;border:1px solid '+WALK_C+'77;color:'+WALK_C+'">'+(WALK.running?'Pausa':'Riprendi')+'</button>'+
@@ -1748,6 +1809,7 @@ function awCollect(S){
     else if(e._wimhof){ D.wim.push(d); (e.retentionLog||[]).forEach(function(r){ D.apneaMax=Math.max(D.apneaMax,+r.sec||0); }); }
     else if(e._breath) D.breath[d]=1;
     else if(e._rope){ D.rope=(D.rope||0)+1; D.train.push(d); }
+    else if(e._yoga||e.type==='Yoga'){ D.yoga=(D.yoga||0)+1; D.train.push(d); }
     else if(e._walk) D.walk.push(d);
     else if(!e._axe) D.train.push(d); });
   (S.axe||[]).forEach(function(a){ var d=awDmyToIso(a.date); if(d) D.train.push(d); });
@@ -1782,6 +1844,7 @@ var AW_BADGES=[
   {id:'apnea60', group:'Respiro',     name:'Un minuto',       icon:'timer',            color:'#50dad1', target:60, desc:'Apnea di un minuto nel Wim Hof',            val:function(D){return D.apneaMax;}},
   {id:'mattino', group:'Routine',     name:'Mattiniero',      icon:'wb_sunny',         color:'#e9c176', target:10, desc:'10 Routine di risveglio',                   val:function(D){return D.morning.length;}},
   {id:'sera',    group:'Routine',     name:'Sera tranquilla', icon:'bedtime',          color:'#8b9cf6', target:10, desc:'10 Mobilità serali',                        val:function(D){return D.evening.length;}},
+  {id:'yogi',    group:'Routine',     name:'Tappetino',       icon:'self_improvement', color:'#c084fc', target:12, desc:'12 sedute di yoga',                         val:function(D){return D.yoga||0;}},
   {id:'corda',   group:'Routine',     name:'Saltatore',       icon:'sports_gymnastics',color:'#f472b6', target:10, desc:'10 sedute di salto della corda',            val:function(D){return D.rope||0;}},
   {id:'passi',   group:'Routine',     name:'Camminatore',     icon:'directions_walk',  color:'#a3be6b', target:10, desc:'10 camminate',                              val:function(D){return D.walk.length;}},
   {id:'macro',   group:'Routine',     name:'Ciclo chiuso',    icon:'emoji_events',     color:'#ffb693', target:1,  desc:'Un macrociclo di 12 settimane completato',  val:function(D){return D.macroDone?1:0;}}
@@ -2350,6 +2413,229 @@ function mcRopePick(s,used){
 }
 
 // ══════════════════════════════════════════════════════════════════
+// YOGA — programmi per obiettivo, libreria posizioni, video di riferimento
+// ══════════════════════════════════════════════════════════════════
+var YOGA_C='#c084fc';
+function ytq(q){ return 'https://www.youtube.com/results?search_query='+encodeURIComponent(q); }
+var YA='Yoga With Adriene ', YF=' foundations of yoga';
+// Posizioni: nome, nome originale, istruzioni, attenzione, per lato, video
+var YOGA_POSES={
+  sukha:{n:'Posizione facile',o:'Sukhasana',c:'Seduto a gambe incrociate, bacino su un cuscino se le ginocchia sono alte. Schiena lunga, spalle morbide, respiro lento dal naso.',v:ytq(YA+'Sukhasana easy pose'+YF)},
+  gattomucca:{n:'Gatto e mucca',o:'Marjaryasana-Bitilasana',c:'A quattro zampe: inspirando apri il petto e allunga lo sguardo, espirando arrotonda la schiena. Il movimento segue il respiro.',v:ytq(YA+'cat cow'+YF)},
+  birddog:{n:'Tavolo con braccio e gamba',o:'Bird dog',c:'A quattro zampe, allunga braccio e gamba opposti senza ruotare il bacino. Addome attivo, collo in linea con la schiena.',s:1,v:ytq('bird dog exercise yoga tutorial')},
+  canegiu:{n:'Cane a testa in giù',o:'Adho Mukha Svanasana',c:'Mani alla larghezza delle spalle, bacino verso l\'alto e indietro. Ginocchia piegate quanto serve per tenere la schiena lunga: i talloni non devono toccare terra.',v:ytq(YA+'downward dog'+YF)},
+  bambino:{n:'Posizione del bambino',o:'Balasana',c:'Ginocchia larghe, glutei verso i talloni, fronte a terra o su un cuscino, braccia avanti o lungo i fianchi. Respira nella schiena.',v:ytq(YA+'extended child\'s pose'+YF)},
+  cobra:{n:'Cobra bassa',o:'Bhujangasana',c:'Prono, mani sotto le spalle. Solleva solo il petto quanto viene senza spingere con le braccia, gomiti vicini, glutei rilassati.',v:ytq(YA+'cobra pose'+YF)},
+  sfinge:{n:'Sfinge',o:'Salamba Bhujangasana',c:'Prono sugli avambracci, gomiti sotto le spalle. Petto avanti, spalle lontane dalle orecchie, bassa schiena morbida.',v:ytq('sphinx pose yoga tutorial')},
+  ponte:{n:'Ponte',o:'Setu Bandhasana',c:'Supino, piedi alla larghezza delle anche vicino ai glutei. Spingi nei piedi e solleva il bacino; ginocchia parallele, collo libero.',v:ytq(YA+'bridge pose'+YF)},
+  torsione:{n:'Torsione supina',o:'Supta Matsyendrasana',c:'Supino, porta le ginocchia piegate da un lato e lo sguardo dall\'altro. Spalle a terra, nessuna forzatura.',s:1,v:ytq(YA+'reclined twist'+YF)},
+  piccione:{n:'Piccione',o:'Eka Pada Rajakapotasana',c:'Una gamba piegata davanti, l\'altra distesa dietro. Bacino dritto; con le ginocchia delicate, fai la versione da sdraiato (caviglia sul ginocchio opposto).',s:1,v:ytq(YA+'pigeon pose'+YF)},
+  affondo:{n:'Affondo basso',o:'Anjaneyasana',c:'Un piede avanti, ginocchio dietro a terra (con un asciugamano). Bacino avanti di poco, busto alto: si allunga la parte davanti dell\'anca.',s:1,v:ytq(YA+'runner\'s lunge low lunge'+YF)},
+  avanti:{n:'Piegamento in avanti',o:'Uttanasana',c:'In piedi, piegati dalle anche con le ginocchia morbide. Lascia pendere testa e braccia; risali lentamente arrotolando la schiena.',v:ytq(YA+'forward fold'+YF)},
+  seduto:{n:'Piegamento seduto',o:'Paschimottanasana',c:'Seduto a gambe distese (ginocchia piegate se serve), allunga la schiena e scendi dalle anche, non dalla testa. Niente strattoni.',v:ytq('seated forward fold paschimottanasana beginner tutorial')},
+  montagna:{n:'Montagna',o:'Tadasana',c:'In piedi, piedi paralleli, peso distribuito su tutta la pianta. Allunga la colonna verso l\'alto, spalle basse, respiro tranquillo.',v:ytq(YA+'mountain pose'+YF)},
+  albero:{n:'Albero',o:'Vrksasana',c:'Pianta del piede sulla caviglia, sul polpaccio o sulla coscia, mai sul ginocchio. Sguardo su un punto fisso; usa il muro se serve.',s:1,v:ytq(YA+'tree pose'+YF)},
+  guerriero1:{n:'Guerriero I',o:'Virabhadrasana I',c:'Passo lungo, piede dietro ruotato di poco, ginocchio davanti sopra la caviglia. Bacino verso il davanti, braccia in alto.',s:1,v:ytq(YA+'warrior one'+YF)},
+  guerriero2:{n:'Guerriero II',o:'Virabhadrasana II',c:'Gambe larghe, piede davanti avanti e piede dietro parallelo al lato. Ginocchio sopra la caviglia, braccia aperte all\'altezza delle spalle.',s:1,v:ytq(YA+'warrior 2'+YF)},
+  guerriero3:{n:'Guerriero III assistito',o:'Virabhadrasana III',c:'Mani su una sedia o sul muro, porta il busto avanti e una gamba indietro fino a formare una T. Bacino parallelo al pavimento.',s:1,v:ytq('warrior 3 pose beginner with chair tutorial')},
+  triangolo:{n:'Triangolo',o:'Trikonasana',c:'Gambe larghe, allunga il busto sopra la gamba davanti e appoggia la mano su stinco o blocco. Petto aperto, entrambi i fianchi lunghi.',s:1,v:ytq(YA+'triangle pose trikonasana'+YF)},
+  sedia:{n:'Sedia',o:'Utkatasana',c:'Piedi uniti o alla larghezza delle anche, siediti indietro come su una sedia. Peso sui talloni, braccia in alto, petto aperto.',v:ytq('chair pose utkatasana beginner tutorial')},
+  dea:{n:'Dea',o:'Utkata Konasana',c:'Gambe larghe, punte verso l\'esterno, scendi piegando le ginocchia in linea con le dita dei piedi. Busto alto, addome attivo.',v:ytq(YA+'goddess pose'+YF)},
+  plank:{n:'Plank',o:'Phalakasana',c:'Mani sotto le spalle, corpo in linea da testa a talloni. Glutei e addome attivi; ginocchia a terra per la versione facilitata.',v:ytq(YA+'plank pose'+YF)},
+  plankl:{n:'Plank laterale',o:'Vasisthasana',c:'Su una mano o sull\'avambraccio, corpo di lato in linea. Il ginocchio di sotto a terra rende la versione più accessibile.',s:1,v:ytq(YA+'side plank vasisthasana'+YF)},
+  barca:{n:'Barca',o:'Navasana',c:'Seduto, piedi a terra o sollevati con ginocchia piegate, busto indietro a schiena lunga. Mani dietro le cosce se serve.',v:ytq('boat pose navasana beginner tutorial')},
+  farfalla:{n:'Farfalla supina',o:'Supta Baddha Konasana',c:'Supino, piante dei piedi unite e ginocchia che si aprono; cuscini sotto le ginocchia se tira. Mani sulla pancia, respiro lento.',v:ytq('supta baddha konasana reclined bound angle tutorial')},
+  ginocchia:{n:'Ginocchia al petto',o:'Apanasana',c:'Supino, abbraccia le ginocchia e dondola piano da un lato all\'altro. Bassa schiena che si appoggia a terra.',v:ytq('apanasana knees to chest yoga')},
+  muro:{n:'Gambe al muro',o:'Viparita Karani',c:'Glutei vicini al muro, gambe in alto appoggiate. Braccia aperte, respiro lento con l\'espirazione più lunga.',v:ytq('legs up the wall pose viparita karani tutorial')},
+  savasana:{n:'Rilassamento finale',o:'Savasana',c:'Supino, gambe e braccia aperte, palmi in alto. Lascia andare il peso a terra e osserva il respiro senza guidarlo.',v:ytq(YA+'corpse pose savasana'+YF)}
+};
+// Obiettivi: due sedute (A/B) che si alternano; i tempi sono in secondi (per lato se la posizione è per lato)
+var YOGA_GOALS=[
+  {id:'mobilita',name:'Mobilità e flessibilità',icon:'self_improvement',desc:'Anche, posteriori della coscia, spalle e colonna: la mobilità che serve anche al kettlebell.',
+   A:[['gattomucca',60],['canegiu',45],['affondo',30],['avanti',45],['guerriero2',30],['triangolo',30],['piccione',45],['farfalla',60],['savasana',60]],
+   B:[['montagna',30],['avanti',45],['affondo',30],['canegiu',45],['dea',30],['sfinge',45],['bambino',45],['torsione',45],['ponte',30],['savasana',60]]},
+  {id:'schiena',name:'Schiena',icon:'accessibility_new',desc:'Sequenza dolce per la zona lombare: mobilità, flessione d\'anca e rinforzo leggero. Solo per fastidi cronici, non per un dolore acuto.',
+   A:[['ginocchia',60],['gattomucca',60],['birddog',30],['bambino',60],['sfinge',45],['torsione',45],['ponte',30],['savasana',90]],
+   B:[['sukha',60],['gattomucca',60],['bambino',60],['canegiu',30],['cobra',30],['ginocchia',45],['farfalla',60],['muro',90]]},
+  {id:'equilibrio',name:'Equilibrio e core',icon:'sports_gymnastics',desc:'Equilibrio su una gamba, forza del tronco e stabilità del bacino: utile anche per il Wing Foil.',
+   A:[['gattomucca',45],['montagna',30],['albero',30],['sedia',30],['guerriero2',30],['guerriero3',20],['plank',30],['plankl',20],['barca',20],['bambino',45],['savasana',60]],
+   B:[['montagna',30],['sedia',30],['guerriero1',30],['albero',30],['dea',30],['plank',30],['plankl',20],['birddog',30],['ponte',30],['bambino',45],['savasana',60]]},
+  {id:'sonno',name:'Sonno e stress',icon:'bedtime',desc:'Ritmo lento, posizioni tenute a lungo e rilassamento finale guidato dal respiro. Da fare la sera, luci basse.',
+   A:[['sukha',90],['gattomucca',60],['bambino',120],['seduto',90],['torsione',90],['farfalla',120],['muro',180],['savasana',300]],
+   B:[['bambino',120],['sfinge',120],['ginocchia',60],['torsione',90],['farfalla',120],['muro',180],['savasana',300]]},
+  {id:'recupero',name:'Recupero',icon:'spa',desc:'Dopo l\'allenamento o il giorno dopo: anche, catena posteriore e schiena, senza fatica.',
+   A:[['bambino',60],['canegiu',45],['affondo',45],['piccione',60],['avanti',45],['torsione',60],['farfalla',60],['savasana',90]],
+   B:[['gattomucca',60],['sfinge',60],['bambino',60],['affondo',45],['seduto',60],['ginocchia',45],['muro',120],['savasana',90]]}
+];
+var YOGA_TOTAL=12;   // 4 settimane × 3 sedute
+function yogaGoal(id){ return YOGA_GOALS.filter(function(g){return g.id===id;})[0]||YOGA_GOALS[0]; }
+// Seduta n (da 0): alterna A/B; dalla seduta 7 (terza settimana) i tempi crescono del 25%
+function yogaSession(goalId,n){
+  var g=yogaGoal(goalId), key=n%2===0?'A':'B', f=n>=6?1.25:1;
+  var poses=g[key].map(function(p){ var P=YOGA_POSES[p[0]]; return {id:p[0],sec:Math.round(p[1]*f/5)*5,side:!!P.s}; });
+  var sec=poses.reduce(function(a,p){return a+p.sec*(p.side?2:1)+5;},0);
+  return {key:key,week:Math.min(4,Math.floor(n/3)+1),n:n,poses:poses,min:Math.round(sec/60),longer:f>1};
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PRANA BREATH — apre l'app sul telefono e, al rientro, chiede di registrare
+// ══════════════════════════════════════════════════════════════════
+var PRANA_PKG='com.abdula.pranabreath';
+var PRANA_STORE='https://play.google.com/store/apps/details?id='+PRANA_PKG;
+function pranaOpen(){
+  try{ localStorage.setItem('kb-prana-pending',String(Date.now())); }catch(e){}
+  var ua=navigator.userAgent||'';
+  if(/Android/i.test(ua)) location.href='intent://#Intent;package='+PRANA_PKG+';S.browser_fallback_url='+encodeURIComponent(PRANA_STORE)+';end';
+  else { window.open('https://apps.apple.com/search?term=prana%20breath','_blank'); }
+}
+function pranaPending(){ try{ var t=+localStorage.getItem('kb-prana-pending')||0; return t; }catch(e){ return 0; } }
+function pranaClear(){ try{ localStorage.removeItem('kb-prana-pending'); }catch(e){} var o=document.getElementById('prana-ask'); if(o) o.remove(); }
+function pranaCheck(){
+  var t=pranaPending(); if(!t||document.getElementById('prana-ask')) return;
+  var el=Date.now()-t; if(el<20000) return;                       // tornato subito: non chiedere
+  if(el>6*3600000){ pranaClear(); return; }                        // apertura vecchia: lascia stare
+  pranaAsk(Math.max(1,Math.min(60,Math.round(el/60000))));
+}
+function pranaAsk(min){
+  var C='#7dd3fc', d=document.createElement('div'); d.id='prana-ask';
+  d.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.75);display:flex;align-items:flex-end;justify-content:center';
+  d.innerHTML='<div style="width:100%;max-width:480px;background:#0C1017;padding:22px 20px 30px;border-top:2px solid '+C+'">'+
+    '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+C+'">Prana Breath</p>'+
+    '<p class="font-headline text-2xl mt-1">Hai fatto la pratica?</p>'+
+    '<p class="font-label text-[13px] text-gray-400 mt-1">La registro nel LOG e vale per la serie del Respiro.</p>'+
+    '<label class="font-label text-[11px] uppercase tracking-widest text-gray-500 block mt-4 mb-1">Minuti</label>'+
+    '<input id="prana-min" type="number" inputmode="numeric" value="'+min+'" class="log-input w-full" style="min-height:48px">'+
+    '<label class="font-label text-[11px] uppercase tracking-widest text-gray-500 block mt-3 mb-1">Esercizio (facoltativo)</label>'+
+    '<input id="prana-what" type="text" placeholder="es. Calma, Antistress, Ripartenza" class="log-input w-full" style="min-height:48px">'+
+    '<div style="display:flex;gap:8px;margin-top:16px">'+
+      '<button onclick="pranaClear()" class="font-label text-[14px]" style="flex:1;min-height:52px;border:1px solid rgba(255,255,255,0.12);color:#9aa3b2">No, non l\'ho fatta</button>'+
+      '<button onclick="pranaSave()" class="font-headline text-lg" style="flex:1;min-height:52px;background:linear-gradient(135deg,'+C+','+C+'bb);color:#000">Registra</button>'+
+    '</div></div>';
+  document.body.appendChild(d);
+}
+function pranaSave(){
+  var m=Math.max(1,+(document.getElementById('prana-min')||{}).value||0), w=((document.getElementById('prana-what')||{}).value||'').trim();
+  state.externalHistory.unshift({type:'Respiro · Prana Breath',date:homeDMY(new Date()),duration:m,notes:w?w:'Pratica su Prana Breath',_src:'ext',_breath:true,_prana:true});
+  saveExternalHistory(); pranaClear(); render(); showToast('Prana Breath: '+m+' min registrati','#7dd3fc',2800);
+}
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') setTimeout(pranaCheck,400); });
+window.addEventListener('pageshow',function(){ setTimeout(pranaCheck,600); });
+function pranaDoneToday(){ var t=homeDMY(new Date()); return (state.externalHistory||[]).some(function(e){return e._prana&&e.date===t;}); }
+function pranaButton(full){
+  return '<button onclick="pranaOpen()" class="'+(full?'w-full ':'')+'flex items-center justify-center gap-1.5 font-label text-[13px] active:scale-95" style="min-height:48px;padding:0 14px;border:1px solid #7dd3fc77;color:#7dd3fc">'+
+    '<span class="material-symbols-outlined" style="font-size:18px">open_in_new</span>Prana Breath</button>';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// YOGA — pagina del programma, libreria, seduta guidata
+// ══════════════════════════════════════════════════════════════════
+function yogaLoad(){ try{ return JSON.parse(localStorage.getItem('kb-yoga')||'null')||{goal:null,done:{}}; }catch(e){ return {goal:null,done:{}}; } }
+function yogaSave(y){ try{ localStorage.setItem('kb-yoga',JSON.stringify(y)); }catch(e){} }
+function yogaCount(y,g){ return (y.done&&y.done[g])||0; }
+function yogaSetGoal(id){ var y=yogaLoad(); y.goal=id; yogaSave(y); state.yogaOpen=null; render(); window.scrollTo(0,0); }
+function yogaFmt(s){ return s>=60?(Math.floor(s/60)+'\''+(s%60?String(s%60).padStart(2,'0')+'"':'')):s+'"'; }
+function yogaPoseRow(p,i,open){
+  var P=YOGA_POSES[p.id];
+  return '<div style="border-bottom:1px solid rgba(255,255,255,0.05)">'+
+    '<button onclick="state.yogaOpen=(state.yogaOpen===\''+i+'\'?null:\''+i+'\');render()" class="w-full flex items-center gap-3 px-3 py-2.5 text-left" style="min-height:52px">'+
+      '<span class="font-headline text-base w-5 flex-shrink-0" style="color:'+YOGA_C+'">'+(i+1)+'</span>'+
+      '<div class="flex-1 min-w-0"><p class="font-headline text-[15px] leading-tight">'+P.n+'</p><p class="font-label text-[11px] text-gray-500">'+P.o+'</p></div>'+
+      '<span class="font-label text-[12px] text-gray-400 flex-shrink-0">'+yogaFmt(p.sec)+(p.side?' per lato':'')+'</span>'+
+      '<span class="material-symbols-outlined text-gray-500" style="font-size:18px">'+(open?'expand_less':'expand_more')+'</span></button>'+
+    (open?'<div class="px-3 pb-3 pl-11"><p class="font-label text-[13px] text-gray-300 leading-snug">'+P.c+'</p>'+
+      '<a href="'+P.v+'" target="_blank" rel="noopener" class="inline-flex items-center gap-1 mt-2 font-label text-[13px]" style="color:'+YOGA_C+';min-height:36px"><span class="material-symbols-outlined" style="font-size:18px">smart_display</span>Guarda come si fa</a></div>':'')+
+  '</div>';
+}
+function tabYoga(){
+  var y=yogaLoad(), FILL="font-variation-settings:'FILL' 1";
+  var goals='<div class="grid grid-cols-2 gap-2">'+YOGA_GOALS.map(function(g){ var on=y.goal===g.id, c=yogaCount(y,g.id);
+    return '<button onclick="yogaSetGoal(\''+g.id+'\')" class="text-left p-3 active:scale-[0.98]" style="min-height:88px;border:1px solid '+(on?YOGA_C:'rgba(255,255,255,0.08)')+';background:'+(on?YOGA_C+'1a':'transparent')+'">'+
+      '<span class="material-symbols-outlined" style="color:'+YOGA_C+';'+(on?FILL:'')+'">'+g.icon+'</span>'+
+      '<p class="font-headline text-[15px] leading-tight mt-1">'+g.name+'</p><p class="font-label text-[11px] text-gray-400 mt-0.5">'+(c?c+' / '+YOGA_TOTAL+' sedute':'4 settimane · 3 a settimana')+'</p></button>'; }).join('')+'</div>';
+  var intro='<p class="font-label text-[13px] text-gray-300 leading-snug mb-4">Scegli un obiettivo: due sedute (A e B) che si alternano, 3 volte a settimana per 4 settimane. Dalla terza settimana le posizioni si tengono più a lungo. Tocca una posizione per le istruzioni e il video su come eseguirla.</p>';
+  var safety='<div class="bg-surface-container p-4 mt-5" style="border:1px solid rgba(255,255,255,0.06)"><p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-2">Regole</p>'+
+    ['Mai fino al dolore: una posizione deve tirare, non far male. Le versioni facilitate valgono quanto quelle complete.','Respira dal naso, lento: se il respiro si blocca, esci dalla posizione di un passo.','Ginocchia, polsi e bassa schiena delicati: usa cuscini, coperte o un blocco come appoggio.','Mal di schiena acuto, dolore che scende nella gamba o formicolii: prima un medico o un fisioterapista.']
+    .map(function(t){return '<p class="font-label text-[13px] text-gray-300 leading-snug flex gap-2 mb-1.5"><span style="color:'+YOGA_C+'">•</span><span>'+t+'</span></p>';}).join('')+'</div>';
+  var lib='<button onclick="state.yogaLib=!state.yogaLib;render()" class="w-full flex items-center justify-between mt-5 px-1" style="min-height:44px"><span class="font-label text-[11px] uppercase tracking-widest text-gray-500">Tutte le posizioni · '+Object.keys(YOGA_POSES).length+'</span><span class="material-symbols-outlined text-gray-500">'+(state.yogaLib?'expand_less':'expand_more')+'</span></button>'+
+    (state.yogaLib?'<div class="bg-surface-container" style="border:1px solid rgba(255,255,255,0.06)">'+Object.keys(YOGA_POSES).map(function(k,i){ return yogaPoseRow({id:k,sec:0,side:!!YOGA_POSES[k].s},'L'+i,state.yogaOpen==='L'+i).replace('>'+(i+1)+'<','>·<').replace(/<span class="font-label text-\[12px\] text-gray-400 flex-shrink-0">[^<]*<\/span>/,''); }).join('')+'</div>':'');
+  if(!y.goal) return intro+'<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mb-2">Obiettivo</p>'+goals+safety+lib;
+  var g=yogaGoal(y.goal), n=yogaCount(y,g.id), done=n>=YOGA_TOTAL, s=yogaSession(g.id,done?(n%2):n);
+  var head='<div class="bg-surface-container p-4" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid '+YOGA_C+'">'+
+    '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+YOGA_C+'">'+g.name+' · '+(done?'programma completato':'seduta '+(n+1)+' di '+YOGA_TOTAL+' · settimana '+s.week)+'</p>'+
+    '<p class="font-headline text-xl leading-tight mt-1">Seduta '+s.key+' · ~'+s.min+' min</p>'+
+    '<p class="font-label text-[12px] text-gray-400 mt-1 leading-snug">'+g.desc+(s.longer?' Da questa settimana i tempi crescono di un quarto.':'')+'</p>'+
+    '<div class="h-1 mt-3" style="background:rgba(255,255,255,0.08)"><div style="height:100%;width:'+Math.round(Math.min(n,YOGA_TOTAL)/YOGA_TOTAL*100)+'%;background:'+YOGA_C+'"></div></div>'+
+    '<button onclick="yogaRun()" class="w-full mt-3 flex items-center justify-center gap-2 font-headline text-lg active:scale-95" style="min-height:52px;background:linear-gradient(135deg,'+YOGA_C+','+YOGA_C+'bb);color:#000"><span class="material-symbols-outlined" style="'+FILL+'">play_arrow</span>'+(done?'Ripeti una seduta':'Inizia')+'</button></div>';
+  var list='<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mt-5 mb-2">Le posizioni di oggi</p><div class="bg-surface-container" style="border:1px solid rgba(255,255,255,0.06)">'+
+    s.poses.map(function(p,i){ return yogaPoseRow(p,i,state.yogaOpen===String(i)); }).join('')+'</div>';
+  return head+list+'<p class="font-label text-[11px] uppercase tracking-widest text-gray-500 mt-5 mb-2">Cambia obiettivo</p>'+goals+safety+lib;
+}
+// ── Seduta guidata ─────────────────────────────────────────────────────
+var yogaTID=null;
+function yogaRun(goalId){
+  var y=yogaLoad(); var gid=goalId||y.goal||'mobilita'; if(!y.goal){ y.goal=gid; yogaSave(y); }
+  var n=yogaCount(y,gid), s=yogaSession(gid,n>=YOGA_TOTAL?(n%2):n), steps=[];
+  s.poses.forEach(function(p){ if(p.side){ steps.push({id:p.id,sec:p.sec,lato:'destro'}); steps.push({id:p.id,sec:p.sec,lato:'sinistro'}); } else steps.push({id:p.id,sec:p.sec}); });
+  state.yg={goal:gid,s:s,steps:steps,i:0,left:steps[0].sec,running:true,t0:Date.now(),trans:true};
+  state.tab='yoga-run'; render(); requestWakeLock(); unlockAudio(); yogaTick();
+}
+function yogaTick(){
+  if(yogaTID) clearInterval(yogaTID);
+  yogaTID=setInterval(function(){
+    var g=state.yg; if(!g||state.tab!=='yoga-run'){ clearInterval(yogaTID); yogaTID=null; return; }
+    if(!g.running) return;
+    if(g.trans){ g.trans--; if(g.trans<=0){ g.trans=0; bsBell(528,1.4,0.18); render(); } return; }
+    g.left--; var el=document.getElementById('yg-left'); if(el) el.textContent=yogaFmt(Math.max(0,g.left));
+    if(g.left<=0) yogaNext();
+  },1000);
+}
+function yogaNext(){
+  var g=state.yg; if(!g) return;
+  if(g.i>=g.steps.length-1) return yogaEnd();
+  g.i++; g.left=g.steps[g.i].sec; g.trans=5; bsBell(660,0.9,0.16); if(navigator.vibrate) navigator.vibrate(60); render();
+}
+function yogaToggle(){ if(state.yg){ state.yg.running=!state.yg.running; render(); } }
+function yogaEnd(){
+  var g=state.yg; if(yogaTID) clearInterval(yogaTID); yogaTID=null; releaseWakeLock();
+  var y=yogaLoad(); y.done=y.done||{}; y.done[g.goal]=(y.done[g.goal]||0)+1; yogaSave(y);
+  var G=yogaGoal(g.goal);
+  state.externalHistory.unshift({type:'Yoga',date:homeDMY(new Date()),duration:Math.max(5,Math.round((Date.now()-g.t0)/60000)),
+    notes:G.name+' · seduta '+g.s.key+' ('+y.done[g.goal]+'/'+YOGA_TOTAL+')',_src:'ext',_yoga:true,_yogaGoal:g.goal});
+  saveExternalHistory(); bsEnd();
+  state.yg=null; state.trainSubTab='yoga'; state.tab='train'; render(); showToast('Yoga: seduta salvata',YOGA_C,2800);
+}
+function yogaExit(){
+  var g=state.yg; if(!g) return;
+  var mins=(Date.now()-g.t0)/60000;
+  if(mins>=3&&confirm('Salvare la seduta fatta fin qui?')){ g.i=g.steps.length-1; return yogaEnd(); }
+  if(mins<3&&!confirm('Uscire dalla seduta?')) return;
+  if(yogaTID) clearInterval(yogaTID); yogaTID=null; releaseWakeLock(); state.yg=null; state.trainSubTab='yoga'; switchTab('train');
+}
+function renderYogaRun(){
+  var g=state.yg; if(!g) return renderHome();
+  var st=g.steps[g.i], P=YOGA_POSES[st.id], nx=g.steps[g.i+1], NP=nx?YOGA_POSES[nx.id]:null;
+  var hold=!g.trans;
+  return '<div class="screen bg-background" style="height:100vh;display:flex;flex-direction:column;overflow:hidden">'+
+    '<div class="flex-shrink-0 flex items-center justify-between px-5 pt-5"><button onclick="yogaExit()" class="flex items-center justify-center" style="width:44px;height:44px"><span class="material-symbols-outlined text-gray-500">close</span></button>'+
+      '<p class="font-label text-[11px] uppercase tracking-widest" style="color:'+YOGA_C+'">Yoga · '+yogaGoal(g.goal).name+' · '+(g.i+1)+' / '+g.steps.length+'</p>'+
+      '<button onclick="bsToggle()" class="flex items-center justify-center" style="width:44px;height:44px;color:'+(bsOn()?YOGA_C:'#8a94a4')+'"><span class="material-symbols-outlined">'+(bsOn()?'volume_up':'volume_off')+'</span></button></div>'+
+    '<div class="flex-shrink-0 px-5 mt-1"><div class="h-1" style="background:rgba(255,255,255,0.08)"><div style="height:100%;width:'+Math.round(g.i/g.steps.length*100)+'%;background:'+YOGA_C+'"></div></div></div>'+
+    '<div class="flex-1 flex flex-col items-center justify-center px-6 text-center">'+
+      '<p class="font-label text-[12px] uppercase tracking-widest" style="color:'+(hold?YOGA_C:'#e9c176')+'">'+(hold?(st.lato?'Lato '+st.lato:'Tieni la posizione'):'Entra in posizione · '+g.trans+'"')+'</p>'+
+      '<h1 class="font-headline text-4xl leading-tight mt-2">'+P.n+'</h1><p class="font-label text-[12px] text-gray-500">'+P.o+'</p>'+
+      '<p id="yg-left" class="font-headline leading-none mt-4" style="font-size:84px;color:'+(hold?YOGA_C:'#6f7a8a')+'">'+yogaFmt(g.left)+'</p>'+
+      '<p class="font-label text-[13px] text-gray-300 leading-snug mt-4 max-w-xs">'+P.c+'</p>'+
+      '<a href="'+P.v+'" target="_blank" rel="noopener" class="inline-flex items-center gap-1 mt-2 font-label text-[13px]" style="color:'+YOGA_C+';min-height:36px"><span class="material-symbols-outlined" style="font-size:18px">smart_display</span>Guarda come si fa</a>'+
+      (!g.running?'<p class="font-label text-[12px] mt-1" style="color:#e9c176">In pausa</p>':'')+
+    '</div>'+
+    '<div class="flex-shrink-0" style="background:#0C1017">'+
+      (NP?'<div class="flex justify-between items-center px-5 py-2.5" style="border-top:1px solid rgba(255,255,255,0.05)"><span class="font-label text-[11px] uppercase text-gray-500">Prossima</span><span class="font-headline text-base" style="color:'+YOGA_C+'d9">'+NP.n+(nx.lato?' · '+nx.lato:'')+'</span></div>':'')+
+      '<div class="px-5 pb-6 pt-2 flex gap-2"><button onclick="yogaToggle()" class="flex-1 font-headline text-lg active:scale-95" style="min-height:56px;border:1px solid '+YOGA_C+'77;color:'+YOGA_C+'">'+(g.running?'Pausa':'Riprendi')+'</button>'+
+        '<button onclick="yogaNext()" class="px-5 font-label text-[13px] active:scale-95" style="min-height:56px;border:1px solid rgba(255,255,255,0.12);color:#9aa3b2">'+(NP?'Avanti':'Fine')+'</button></div></div></div>';
+}
+function yogaStartToday(){ var y=yogaLoad(); if(y.goal) return yogaRun(y.goal); state.trainSubTab='yoga'; switchTab('train'); }
+
+// ══════════════════════════════════════════════════════════════════
 // HOME "OGGI" — la giornata: mattino, allenamento, sera
 // ══════════════════════════════════════════════════════════════════
 function homeDMY(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
@@ -2403,7 +2689,8 @@ function renderHome(){
   var GG=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
   var MM=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
   var wk=homeWeek(), streak=breathStreak((state.breathHistory||[]).concat((state.externalHistory||[]).filter(function(e){return e._breath;}).map(function(e){var p=String(e.date).split('/');return {date:p[2]+'-'+p[1]+'-'+p[0]};})));
-  var breathDone=(state.breathHistory||[]).some(function(e){return e.date===isoToday();});
+  var pranaToday=pranaDoneToday();
+  var breathDone=(state.breathHistory||[]).some(function(e){return e.date===isoToday();})||pranaToday;
   var boltToday=(state.boltHistory||[]).filter(function(e){return e.date===isoToday();}).slice(-1)[0];
   var mrDone=(state.externalHistory||[]).some(function(e){return e._morning&&e.date===todayDMY;});
   var whDone=(state.externalHistory||[]).some(function(e){return e._wimhof&&e.date===todayDMY;});
@@ -2474,7 +2761,8 @@ function renderHome(){
   var BC='#7dd3fc';
   var mattino='<div class="flex items-center justify-between mb-2"><p class="font-label text-[11px] uppercase tracking-widest" style="color:'+(morningDone?'#9aa3b2':BC)+'">Mattino</p>'+
       '<button onclick="goMorning()" class="font-label text-[12px] text-gray-400 active:scale-95" style="min-height:32px">Daily routine ›</button></div>'+
-    item('spa',BC,'Respiro',breathDone?('fatto oggi'+(boltToday?' · BOLT '+boltToday.bolt_seconds+'"':'')):'15 minuti · naso e lentezza',breathDone?'':'Inizia','breathStartRoutine()',breathDone)+
+    item('spa',BC,'Respiro',breathDone?((pranaToday&&!(state.breathHistory||[]).some(function(e){return e.date===isoToday();})?'fatto su Prana Breath':'fatto oggi')+(boltToday?' · BOLT '+boltToday.bolt_seconds+'"':'')):'15 minuti · naso e lentezza',breathDone?'':'Inizia','breathStartRoutine()',breathDone)+
+    (breathDone?'':'<button onclick="pranaOpen()" class="w-full flex items-center justify-end gap-1 -mt-1 mb-2 font-label text-[12px] active:scale-95" style="min-height:36px;color:'+BC+'"><span class="material-symbols-outlined" style="font-size:16px">open_in_new</span>oppure con Prana Breath</button>')+
     item('wb_sunny','#e9c176','Routine di risveglio',mrDone?'fatta oggi':'8 minuti · facoltativa',mrDone?'':'Inizia','mrStart(60)',mrDone)+
     item('air','#50dad1','Wim Hof',whDone?'fatto oggi':'3 round · facoltativo',whDone?'':'Inizia','whStart()',whDone);
 
@@ -9334,7 +9622,7 @@ function renderTrain(){
   }
 
   // ── CATALOGO ────────────────────────────────────────────────────
-  var CATS={kb:{label:"Kettlebell",color:"#ffb693"},bw:{label:"Corpo libero",color:"#43A047"},sport:{label:"Sport",color:"#38bdf8"},daily:{label:"Daily routine",color:"#8b9cf6"}};
+  var CATS={kb:{label:"Kettlebell",color:"#ffb693"},bw:{label:"Corpo libero",color:"#43A047"},sport:{label:"Sport",color:"#38bdf8"},daily:{label:"Daily routine",color:"#8b9cf6"},yoga:{label:"Yoga",color:"#c084fc"}};
   var PROGS=[
     {id:"base",    cat:"kb",   icon:"🔔",name:"KB A·B·C",  desc:"La rotazione base: EMOM, HIIT e Ladder"},
     {id:"k30",     cat:"kb",   icon:"📅",name:"30 Days KB",desc:"4 settimane con un solo kettlebell"},
@@ -9347,6 +9635,7 @@ function renderTrain(){
     {id:"lm",      cat:"bw",   icon:"🎥",name:"LeoMoves",  desc:"Allenamenti video a corpo libero"},
     {id:"pu50",    cat:"bw",   icon:"💪",name:"50 piegamenti",desc:"4 settimane: test, serie sotto il massimo, richiami"},
     {id:"wf",      cat:"sport",icon:"🏄",name:"Wing Foil", desc:"Equilibrio, core e potenza d'anca"},
+    {id:"yoga",    cat:"yoga", icon:"🧘",name:"Yoga",desc:"Programmi per obiettivo, 28 posizioni con video"},
     {id:"rope",    cat:"sport",icon:"🪢",name:"Salto della corda",desc:"6 settimane nel weekend: sabato seduta, domenica tecnica"},
     {id:"daily",   cat:"daily",icon:"🌗",name:"Daily routine",desc:"Risveglio, Mobilità serale, Respiro e Wim Hof",go:"goMorning()"},
     {id:"walk",    cat:"daily",icon:"🚶",name:"Camminata",desc:"Passo svelto, con obiettivo di tempo",go:"walkStart(30)"},
@@ -9364,6 +9653,7 @@ function renderTrain(){
     if(id==="daily") X.forEach(function(e){ if(e._morning||e._evening||e._wimhof) cand.push(e.date); });
     if(id==="walk") X.forEach(function(e){ if(e._walk) cand.push(e.date); });
     if(id==="pu50") X.forEach(function(e){ if(e._pushup) cand.push(e.date); });
+    if(id==="yoga") X.forEach(function(e){ if(e._yoga||e.type==='Yoga') cand.push(e.date); });
     if(id==="rope") X.forEach(function(e){ if(e._rope) cand.push(e.date); });
     var best=null; cand.forEach(function(c){ var d=dParse(c); if(d&&!isNaN(d)&&(!best||d>best)) best=d; });
     return best?String(best.getDate()).padStart(2,'0')+'/'+String(best.getMonth()+1).padStart(2,'0'):null;
@@ -9376,6 +9666,7 @@ function renderTrain(){
     if(id==="flow") return FLOWS.length+" flow";
     if(id==="bw") return EXTRA_WORKOUTS.filter(function(w){return /^(BWJ|LTL)-/.test(w.id);}).length+" circuiti";
     if(id==="lm") return LM_WORKOUTS.length+" video";
+    if(id==="yoga"){ var yq=yogaLoad(); if(!yq.goal) return "5 obiettivi"; return yogaGoal(yq.goal).name+" · "+Math.min(yogaCount(yq,yq.goal),YOGA_TOTAL)+" / "+YOGA_TOTAL; }
     if(id==="rope"){ var rq=ropeLoad(); if(!rq||!rq.started) return "6 settimane"; return Object.keys(rq.done||{}).length+" / "+ropeSlots().length+" sedute"; }
     if(id==="pu50"){ var pq=puLoad(); if(!pq) return "28 giorni"; var nd=puDayOf(pq,puTodayIso()); return nd<1?"parte il "+puFmt(pq.start):nd>28?"concluso":"giorno "+nd+" di 28"; }
     if(id==="wf") return EXTRA_WORKOUTS.filter(function(w){return /^WF/.test(w.id);}).length+" sessioni";
@@ -9403,7 +9694,7 @@ function renderTrain(){
   }
   function catalogHTML(noTitle){
     var f=state.trainFilter||"all";
-    var chips=[["all","Tutti"],["kb","Kettlebell"],["bw","Corpo libero"],["sport","Sport"],["daily","Daily routine"]].map(function(o){
+    var chips=[["all","Tutti"],["kb","Kettlebell"],["bw","Corpo libero"],["sport","Sport"],["daily","Daily routine"],["yoga","Yoga"]].map(function(o){
       var on=f===o[0], c=o[0]==="all"?"#ffb693":CATS[o[0]].color;
       return '<button onclick="state.trainFilter=\''+o[0]+'\';render()" class="flex-shrink-0 px-4 font-label text-[13px] active:scale-95" style="min-height:44px;border:1px solid '+(on?c:'rgba(255,255,255,0.12)')+';color:'+(on?c:'#9aa3b2')+';background:'+(on?c+'1a':'transparent')+'">'+o[1]+'</button>';
     }).join('');
@@ -9428,7 +9719,7 @@ function renderTrain(){
     '<main class="px-5 pt-3">'+
       (!sub ? trainRootHTML() :
         programHeader()+
-        (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():sub==="lm"?tabLeoMoves():sub==="k30"?tabK30():sub==="pu50"?tabPu50():sub==="rope"?tabRope():tabKdp()))+
+        (sub==="base"?tabBase():sub==="alt"?tabAlt():sub==="bellplex"?tabBellplex():sub==="flow"?tabFlow():sub==="axe"?tabAxe():sub==="wf"?tabWingFoil():sub==="bw"?tabBodyweight():sub==="lm"?tabLeoMoves():sub==="k30"?tabK30():sub==="pu50"?tabPu50():sub==="rope"?tabRope():sub==="yoga"?tabYoga():tabKdp()))+
     '</main>'+
     navHTML("train")+
   '</div>';
@@ -9971,6 +10262,8 @@ function renderMorning(){
           '<button onclick="breathStartRoutine()" class="flex-1 py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,'+BREATH_COLOR+','+BREATH_COLOR+'99);color:#000">INIZIA</button>'+
           '<button onclick="boltOpenScreen()" class="py-3.5 px-4 font-headline text-base tracking-widest active:scale-95" style="border:1px solid '+BREATH_COLOR+'77;color:'+BREATH_COLOR+'">BOLT</button>'+
         '</div>'+
+        '<div class="mt-2">'+pranaButton(true)+'</div>'+
+        (pranaDoneToday()?'<p class="font-label text-[11px] mt-1.5" style="color:'+BREATH_COLOR+'">✓ Prana Breath registrato oggi</p>':'<p class="font-label text-[11px] text-gray-500 mt-1.5">Apre l\'app sul telefono; al rientro FORGE ti chiede se registrare la pratica.</p>')+
       '</div>';
     })()+
     // Wim Hof
@@ -11058,6 +11351,8 @@ function aiWorkoutToAction(workoutName){
   function has(id){ try{ return !!getExtraById(id); }catch(e){ return false; } }
   // Riposo per primo: "Riposo / recupero attivo" non deve avviare nulla
   if(/\b(riposo|rest day|giorno di recupero)\b/.test(n)) return {action:null,icon:'😴',color:'#64748b'};
+  if(/prana breath|pranabreath/.test(n)) return {action:'pranaOpen();',icon:'🫁',color:'#7dd3fc'};
+  if(/\byoga\b/.test(n)) return {action:'yogaStartToday();',icon:'🧘',color:'#c084fc'};
   if(/salto della corda|\bcorda\b|jump ?rope|skipping/.test(n)) return {action:'ropeStartToday();',icon:'🪢',color:'#f472b6'};
   // Camminata: "Camminata 45'", "Walk 30 min"
   if(/camminat|\bwalk/.test(n)){ var wmn=n.match(/(\d{2})\s*(?:'|min|minuti)/); return {action:'walkStart('+(wmn?+wmn[1]:30)+')',icon:'🚶',color:'#a3be6b'}; }
@@ -12758,8 +13053,21 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v121";
+var APP_VERSION = "v123";
 var APP_CHANGELOG = [
+  {v:"v123", data:"08/10/2026", items:[
+    "Camminata a schermo spento o con l'app in secondo piano: il tempo resta giusto",
+    "Campane a metà e all'obiettivo anche a schermo spento; comandi e tempo sulla schermata di blocco",
+    "Se il telefono chiude l'app, alla riapertura la camminata riprende da dove era",
+  ]},
+  {v:"v122", data:"08/10/2026", items:[
+    "Respiro: bottone che apre Prana Breath sul telefono",
+    "Al rientro in FORGE ti chiede se registrare la pratica (minuti ed esercizio); vale per la serie del Respiro",
+    "Nuova sezione Yoga: 5 obiettivi (mobilità, schiena, equilibrio e core, sonno e stress, recupero)",
+    "Per ogni obiettivo due sedute alternate, 3 a settimana per 4 settimane, tempi in crescita dalla terza",
+    "28 posizioni con istruzioni in italiano e video su come eseguirle; seduta guidata con timer e cambio lato",
+    "Lo yoga vale come Mobilità nel macrociclo; badge Tappetino",
+  ]},
   {v:"v121", data:"30/09/2026", items:[
     "Salto della corda nel LOG (Manuale e + Sport), con il suo colore",
     "Nuovo programma di 6 settimane nel weekend: sabato seduta a intervalli, domenica tecnica leggera",
@@ -13120,6 +13428,7 @@ function render(){
   else if(state.tab==="pu-test")  app.innerHTML=renderPuTest();
   else if(state.tab==="pu-session")  app.innerHTML=renderPuSession();
   else if(state.tab==="rope-run")  app.innerHTML=renderRopeRun();
+  else if(state.tab==="yoga-run")  app.innerHTML=renderYogaRun();
   else if(state.tab==="train")       app.innerHTML=renderTrain();
   else if(state.tab==="extra-detail")app.innerHTML=renderExtraDetail();
   else if(state.tab==="axe-setup")   app.innerHTML=renderAxe();
@@ -13150,7 +13459,7 @@ function render(){
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
 // ── WAKE LOCK ─────────────────────────────────────────────────────────────────
 let wakeLock=null;
-const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','k30-chipper','walk','cycle','pu-test','pu-session','rope-run','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
+const WORKOUT_TABS=new Set(['workout','bp-workout','bw-workout','breath-session','bolt-test','lm-detail','lm-workout','k30-chipper','walk','cycle','pu-test','pu-session','rope-run','yoga-run','axe-workout','kdp-workout','extra-detail','axe-setup','morning-go','wim-hof','dpu-workout']);
 async function requestWakeLock(){
   try{
     if('wakeLock' in navigator){
@@ -13884,6 +14193,7 @@ function deactivateProgram(){
 }
 
 render();
+try{ walkRestore(); }catch(e){}
 
 // ── PWA: Service Worker + Manifest ───────────────────────────────────────────
 (function(){
@@ -13891,7 +14201,7 @@ render();
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v121';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v123';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
