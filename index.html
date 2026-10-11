@@ -1299,6 +1299,7 @@ function mcSessionType(e){
   if(/^K30-/.test(id)){ var w=getExtraById(id); if(!w) return "forza";
     if(w.fmt==="wr"||/core/i.test(w.title||"")) return "mobilita";
     return (w.fmt==="emom"||w.fmt==="chipper")?"intervalli":"forza"; }
+  if(/^LMY/.test(id)){ var lw=getLmById(id); return lw&&lw.mc?lw.mc:"corpolibero"; }
   if(/^(BWJ-|LM\d)/.test(id)) return "corpolibero";
   if(/^(LTL-|BP\d|D1|B2|B3|B8|DPU|CORE7|C\d|WF[123])/.test(id)) return "forza";
   if(/^B[4-9]$/.test(id)) return "intervalli";
@@ -1319,6 +1320,7 @@ function mcCandidates(type){
     ["A","B","C"].forEach(function(k){ if(DAYS[k]) C.push({key:"day:"+k,title:DAYS[k].label+" · "+DAYS[k].subtitle,min:DAYS[k].totalMin||24,action:"startWorkout('"+k+"')"}); });
     (typeof K30_WORKOUTS!=="undefined"?K30_WORKOUTS:[]).forEach(function(w){ if(mcSessionType({day:"extra_"+w.id})==="intervalli") ex(w.id); });
     ["B4","B5","B6","B7","B9"].forEach(ex);
+    (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ if(l.mc==="intervalli") C.push({key:"x:"+l.id,title:"LeoMoves · "+l.label,min:l.min||30,action:"openLmDetail('"+l.id+"')"}); });
   }
   if(type==="forza"){
     (typeof K30_WORKOUTS!=="undefined"?K30_WORKOUTS:[]).forEach(function(w){ if(mcSessionType({day:"extra_"+w.id})==="forza"&&w.fmt!=="tech"&&!w.benchmark) ex(w.id); });
@@ -1329,7 +1331,9 @@ function mcCandidates(type){
     var ph=(typeof bwProgramProgress==="function")?bwProgramProgress("Bodyweight Jacked"):null;
     var pref=ph?ph.phaseId:"p1";
     (typeof EXTRA_WORKOUTS!=="undefined"?EXTRA_WORKOUTS:[]).forEach(function(w){ if(/^BWJ-/.test(w.id)&&w.phase===pref) ex(w.id); });
-    (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ C.push({key:"x:"+l.id,title:l.label,min:20,action:"openLmDetail('"+l.id+"')"}); });
+    (function(){ var nx=(typeof lmNext==="function")?lmNext():null;
+      if(nx) C.push({key:"x:"+nx.id,title:"LeoMoves · "+nx.label,min:nx.min||20,action:"openLmDetail('"+nx.id+"')"});
+      (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ if(!l.ytId) C.push({key:"x:"+l.id,title:(l.ytId?"LeoMoves · ":"")+l.label,min:l.min||20,action:"openLmDetail('"+l.id+"')"}); }); })();
   }
   if(type==="mobilita"){
     (function(){ var yq=yogaLoad(), gid=yq.goal||'mobilita', ss=yogaSession(gid,yogaCount(yq,gid)%YOGA_TOTAL); C.push({key:"yoga",title:"Yoga · "+yogaGoal(gid).name,min:ss.min,action:"yogaStartToday()"}); })();
@@ -6595,10 +6599,60 @@ const LM_WORKOUTS=[
   {id:"LM2", label:"LeoMoves 2", driveId:"1T7JwbrXXqvxsYciF471AsrHujCRRz3gR", color:"#22c55e"},
   {id:"LM3", label:"LeoMoves 3", driveId:"1GYsERtldZ5lqkJnIte4G8oaVqTIF_NpO", color:"#22c55e"},
   {id:"LM4", label:"LeoMoves 4", driveId:"1iVlyxKVaHlbo4mCQrgeMFaw9KwrAPdTu", color:"#22c55e"},
+  // Video pubblici dal canale YouTube @LeoMoves (verificati: autore LeoMoves, incorporabili)
+  {id:"LMY1", label:"Begin&Win · Classe 1", ytId:"v4rUsd9v8EQ", color:"#22c55e", min:16, level:"Principiante", focus:"Full body · base", mc:"corpolibero",
+   orig:'"Begin&Win" class 1 ➞ 16min Total Beginner Workout to get you started!',
+   desc:"Prima lezione del programma per principianti di Leo: movimenti semplici a corpo libero per partire senza attrezzi.", ai:"begin|beginner|classe 1|class 1"},
+  {id:"LMY2", label:"Ogni giorno · 15'", ytId:"6-de26TQpro", color:"#22c55e", min:15, level:"Tutti i livelli", focus:"Full body · con timer", mc:"corpolibero",
+   orig:"Join Me - 15 Minutes EVERYDAY To Feel Amazing in Your Body - Workout with Timer",
+   desc:"Seduta quotidiana breve con timer a schermo: per i giorni pieni o come attivazione.", ai:"join me|ogni giorno 15|everyday 15|15 minutes everyday"},
+  {id:"LMY3", label:"Follow along · 15'", ytId:"D1QAgAoFOkg", color:"#22c55e", min:15, level:"Intermedio", focus:"Full body · in diretta", mc:"corpolibero",
+   orig:"No time to workout? Watch This 15 Minute Follow Along Workout Now",
+   desc:"Allenamento completo in 15 minuti da seguire insieme a Leo, per quando hai poco tempo.", ai:"follow along|no time"},
+  {id:"LMY4", label:"Ogni giorno · 20'", ytId:"dZ5PgW5RD7A", color:"#22c55e", min:20, level:"Intermedio", focus:"Full body · con timer", mc:"corpolibero",
+   orig:"Do Those 20 Minutes EVERYDAY for your body - Workout with Timer",
+   desc:"Routine di 20 minuti con timer a schermo che lavora su tutto il corpo.", ai:"ogni giorno 20|everyday 20|20 minutes everyday|20 min"},
+  {id:"LMY5", label:"HIIT · 30'", ytId:"bpFBoab9GZs", color:"#22c55e", min:30, level:"Intermedio+", focus:"Riscaldamento · serie · finisher", mc:"intervalli",
+   orig:"30 Min Bodyweight Hiit Workout with WARMUP | SETS | FINISHER | LeoMoves",
+   desc:"Lavoro ad alta intensità con riscaldamento, blocchi di serie e finisher finale.", ai:"hiit"},
+  {id:"LMY6", label:"Full body · 30'", ytId:"1N0uV2_OKZM", color:"#22c55e", min:30, level:"Intermedio", focus:"Full body · con timer", mc:"corpolibero",
+   orig:"Transform your Body in 30 Minutes a Day | Full Body Workout with Timer",
+   desc:"Seduta completa di 30 minuti con timer: il formato giusto per i giorni di corpo libero del piano.", ai:"transform|full body 30|30 min full"},
+  {id:"LMY7", label:"Full body · 40'", ytId:"1ZxFzZLsmCY", color:"#22c55e", min:40, level:"Avanzato", focus:"Dall'app LeoMoves", mc:"corpolibero",
+   orig:"40-Minutes Full Body Workout - From the LeoMoves App [NO EQUIPMENT]",
+   desc:"Allenamento lungo preso dall'app di Leo, senza attrezzi: per quando hai tempo ed energia.", ai:"40"},
+  {id:"LMY8", label:"Verticale · 30'", ytId:"in9tSTo0XX0", color:"#22c55e", min:30, level:"Skill", focus:"Handstand", mc:null,
+   orig:"How does LeoMoves train? His 30 Min handstand Training",
+   desc:"Come si allena Leo sulla verticale: 30 minuti di lavoro tecnico. Scalda bene polsi e spalle prima di iniziare.", ai:"handstand|verticale"},
 ];
+// Percorso consigliato sui video YouTube: si passa al successivo dopo 2 sedute
+var LM_PATH=["LMY1","LMY2","LMY3","LMY4","LMY6","LMY5","LMY7"];
+var LM_STEPS=[
+  {t:"Settimane 1-2", ids:["LMY1","LMY2"]},
+  {t:"Settimane 3-4", ids:["LMY3","LMY4"]},
+  {t:"Settimane 5-6", ids:["LMY6","LMY5"]},
+  {t:"Poi",           ids:["LMY7"], note:"Verticale quando vuoi, come skill a parte."}
+];
+var LM_LEVEL_COL={"Principiante":"#4ade80","Tutti i livelli":"#4ade80","Intermedio":"#facc15","Intermedio+":"#fb923c","Avanzato":"#f97316","Skill":"#a78bfa"};
+function lmDoneList(id){ return (state.history||[]).filter(function(h){return h.day==="extra_"+id;}); }
+function lmNext(){
+  for(var i=0;i<LM_PATH.length;i++){ if(lmDoneList(LM_PATH[i]).length<2) return getLmById(LM_PATH[i]); }
+  var best=null,bc=1e9;
+  LM_PATH.forEach(function(id){ var c=lmDoneList(id).length; if(c<bc){bc=c;best=id;} });
+  return getLmById(best);
+}
+function lmEmbed(w){
+  var src=w.ytId?('https://www.youtube-nocookie.com/embed/'+w.ytId+'?rel=0&playsinline=1&modestbranding=1')
+                :('https://drive.google.com/file/d/'+w.driveId+'/preview');
+  return '<div style="position:relative;padding-top:56.25%;background:#000">'+
+    '<iframe data-lm-iframe src="'+src+'" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>'+
+  '</div>';
+}
+function lmSetFilter(f){ state.lmFilter=f; render(); }
 function getLmById(id){ return LM_WORKOUTS.find(function(w){return w.id===id;}); }
 
 function lmDisplayLabel(w){
+  if(w.ytId) return w.label;
   var mem=loadLmDurationMemory();
   var d=mem[w.id];
   return d?(w.label+' · '+d+' min'):w.label;
@@ -6660,8 +6714,11 @@ function startLmWorkout(id){
 function lmFinishToFeedback(){
   if(!state.lm)return;
   var mem=loadLmDurationMemory();
+  var lw=getLmById(state.lm.id);
   if(mem[state.lm.id]!=null){
     state.lm.logForm.duration=String(mem[state.lm.id]);
+  } else if(lw&&lw.min){
+    state.lm.logForm.duration=String(lw.min);
   } else {
     var estMin=state.lm.startTime?Math.max(1,Math.round((Date.now()-state.lm.startTime)/60000)):"";
     state.lm.logForm.duration=String(estMin);
@@ -6719,15 +6776,20 @@ function renderLmDetail(){
     '<header class="px-5 pt-10 pb-6 flex items-start gap-4">'+
       '<button onclick="switchTab(\'train\')" class="p-2 mt-1"><span class="material-symbols-outlined" style="color:'+w.color+'">arrow_back</span></button>'+
       '<div class="flex-1">'+
-        '<p class="font-label text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">LEOMOVES</p>'+
+        '<p class="font-label text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">LEOMOVES'+(w.ytId?' · YOUTUBE':'')+'</p>'+
         '<h1 class="font-headline text-4xl leading-none">'+lmDisplayLabel(w)+'</h1>'+
-        (lastDone?'<p class="font-label text-xs text-gray-500 mt-2">Ultima volta: '+lastDone.date+'</p>':'')+
+        (lastDone?'<p class="font-label text-xs text-gray-500 mt-2">Ultima volta: '+lastDone.date+' · fatto '+lmDoneList(w.id).length+(lmDoneList(w.id).length===1?' volta':' volte')+'</p>':'')+
       '</div>'+
     '</header>'+
     '<main class="px-5 pb-10 space-y-5">'+
-      '<div style="position:relative;padding-top:56.25%;background:#000">'+
-        '<iframe data-lm-iframe src="https://drive.google.com/file/d/'+w.driveId+'/preview" allow="autoplay; fullscreen" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>'+
-      '</div>'+
+      (w.ytId?(
+        '<div class="flex flex-wrap gap-2">'+
+          '<span class="font-label text-[10px] uppercase tracking-wider px-2 py-1" style="background:'+(LM_LEVEL_COL[w.level]||'#22c55e')+'1f;color:'+(LM_LEVEL_COL[w.level]||'#22c55e')+'">'+w.level+'</span>'+
+          '<span class="font-label text-[10px] uppercase tracking-wider px-2 py-1 text-gray-400" style="background:rgba(255,255,255,0.05)">'+w.min+' min</span>'+
+          '<span class="font-label text-[10px] uppercase tracking-wider px-2 py-1 text-gray-400" style="background:rgba(255,255,255,0.05)">'+w.focus+'</span>'+
+        '</div>'+
+        '<p class="font-label text-sm text-gray-300 leading-relaxed">'+w.desc+'</p>'):'')+
+      lmEmbed(w)+
       '<button onclick="lmRequestFullscreen()" class="w-full py-2.5 font-label text-[11px] uppercase tracking-widest text-gray-500 flex items-center justify-center gap-1.5" style="border:1px solid rgba(90,65,54,0.3);border-top:none">'+
         '<span class="material-symbols-outlined text-base">fullscreen</span> Schermo intero'+
       '</button>'+
@@ -6737,6 +6799,10 @@ function renderLmDetail(){
         '▶ SEGUI E REGISTRA'+
         '<span class="material-symbols-outlined">play_arrow</span>'+
       '</button>'+
+      (w.ytId?(
+        '<a href="https://www.youtube.com/watch?v='+w.ytId+'" target="_blank" rel="noopener" class="w-full py-3 font-label text-[11px] uppercase tracking-widest text-gray-400 flex items-center justify-center gap-1.5" style="border:1px solid rgba(90,65,54,0.3)">'+
+          '<span class="material-symbols-outlined text-base">open_in_new</span> Apri su YouTube</a>'+
+        '<p class="font-label text-[10px] text-gray-600 leading-relaxed">Titolo originale: '+w.orig.replace(/</g,'&lt;')+'<br>Se il video non parte qui, aprilo su YouTube e poi torna a registrare con «Segui e registra».</p>'):'')+
     '</main>'+
   '</div>';
 }
@@ -6797,9 +6863,7 @@ function renderLmWorkout(){
       <div style="width:32px"></div>
     </div>
     <div class="px-5">
-      <div style="position:relative;padding-top:56.25%;background:#000">
-        <iframe data-lm-iframe src="https://drive.google.com/file/d/${w.driveId}/preview" allow="autoplay; fullscreen" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>
-      </div>
+      ${lmEmbed(w)}
       <button onclick="lmRequestFullscreen()" class="w-full py-2.5 font-label text-[11px] uppercase tracking-widest text-gray-500 flex items-center justify-center gap-1.5" style="border:1px solid rgba(90,65,54,0.3);border-top:none">
         <span class="material-symbols-outlined text-base">fullscreen</span> Schermo intero
       </button>
@@ -9490,23 +9554,78 @@ function renderTrain(){
 
   // ── TAB LEOMOVES (video allenamenti su Google Drive) ──────────────
   function tabLeoMoves(){
-    var h='<div class="p-4 mb-3" style="background:rgba(34,197,94,0.05);border-left:2px solid #22c55e">'+
-      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:#22c55e">LEOMOVES</p>'+
-      '<p class="font-label text-[11px] text-gray-400 leading-relaxed">Allenamenti video — segui il video per intero, poi registra la sessione.</p>'+
-    '</div>';
-    h+=LM_WORKOUTS.map(function(w){
-      var lastDone=(state.history||[]).filter(function(hh){return hh.day==="extra_"+w.id;}).slice(-1)[0];
-      return '<div onclick="openLmDetail(\''+w.id+'\')"'+
-        ' class="flex items-center gap-3 p-4 mb-2 bg-surface-container ghost-border border-l-2 cursor-pointer active:bg-surface-container-high"'+
-        ' style="border-left-color:'+w.color+'">'+
-        '<span class="text-2xl flex-shrink-0">🎥</span>'+
-        '<div class="flex-1 min-w-0">'+
-          '<p class="font-headline text-lg leading-none">'+lmDisplayLabel(w)+'</p>'+
-          '<p class="font-label text-[10px] text-gray-500 mt-1">'+(lastDone?'Ultima: '+lastDone.date:'Non ancora fatto')+'</p>'+
+    var G='#22c55e';
+    var f=state.lmFilter||'tutti';
+    function card(w,big){
+      var n=lmDoneList(w.id).length, lc=LM_LEVEL_COL[w.level]||G;
+      return '<div onclick="openLmDetail(\''+w.id+'\')" class="flex items-stretch gap-3 mb-2 bg-surface-container ghost-border cursor-pointer active:bg-surface-container-high" style="border-left:2px solid '+lc+'">'+
+        '<div class="flex-shrink-0 relative" style="width:'+(big?132:104)+'px;background:#000">'+
+          '<img src="https://i.ytimg.com/vi/'+w.ytId+'/mqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;opacity:.85;min-height:'+(big?74:58)+'px">'+
+          '<span class="font-label text-[10px] px-1.5 py-0.5 absolute" style="right:4px;bottom:4px;background:rgba(0,0,0,.75);color:#fff">'+w.min+'\'</span>'+
         '</div>'+
-        '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
+        '<div class="flex-1 min-w-0 py-3 pr-2">'+
+          '<p class="font-headline text-lg leading-none">'+w.label+'</p>'+
+          '<p class="font-label text-[10px] mt-1" style="color:'+lc+'">'+w.level+' · <span class="text-gray-500">'+w.focus+'</span></p>'+
+          '<p class="font-label text-[10px] text-gray-500 mt-1">'+(n?('Fatto '+n+(n===1?' volta':' volte')):'Non ancora fatto')+'</p>'+
+        '</div>'+
+        '<span class="material-symbols-outlined text-gray-700 text-sm self-center pr-2">chevron_right</span>'+
       '</div>';
-    }).join('');
+    }
+    var yt=LM_WORKOUTS.filter(function(w){return w.ytId;});
+    var drive=LM_WORKOUTS.filter(function(w){return !w.ytId;});
+    var nx=lmNext();
+    var h='<div class="p-4 mb-4" style="background:rgba(34,197,94,0.05);border-left:2px solid '+G+'">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:'+G+'">LEOMOVES · LEANDRO FORNITO</p>'+
+      '<p class="font-label text-[11px] text-gray-400 leading-relaxed">Ex calciatore passato a breakdance e acrobatica: corpo libero che unisce forza, mobilità e abilità. Segui il video per intero, poi registra la sessione.</p>'+
+      '<p class="font-label text-[10px] mt-2" style="color:'+G+'">“Make your body your best friend.”</p>'+
+    '</div>';
+    if(nx){
+      h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-2">PROSSIMO CONSIGLIATO</p>'+card(nx,true)+
+        '<button onclick="startLmWorkout(\''+nx.id+'\')" class="w-full mb-5 flex items-center justify-center gap-1.5 font-headline text-base active:scale-95" style="min-height:46px;background:'+G+';color:#000"><span class="material-symbols-outlined text-lg">play_arrow</span> Inizia · '+nx.min+' min</button>';
+    }
+    // percorso
+    h+='<div class="p-4 mb-5" style="background:rgba(255,255,255,0.02);border:1px solid rgba(90,65,54,0.25)">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1">PERCORSO CONSIGLIATO</p>'+
+      '<p class="font-label text-[10px] text-gray-500 mb-3">Passa al video successivo dopo 2 sedute fatte bene. 2-3 sedute a settimana.</p>';
+    LM_STEPS.forEach(function(st){
+      var names=st.ids.map(function(id){ var w=getLmById(id), ok=lmDoneList(id).length>=2;
+        return '<span style="color:'+(ok?G:'inherit')+'">'+(ok?'✓ ':'')+w.label+'</span>'; }).join(' · ');
+      h+='<div class="flex justify-between items-start gap-3 py-2" style="border-bottom:1px solid rgba(255,255,255,0.05)">'+
+        '<p class="font-label text-[10px] text-gray-500 flex-shrink-0">'+st.t+'</p>'+
+        '<p class="font-label text-[10px] text-right text-gray-300">'+names+(st.note?'<br><span class="text-gray-500">'+st.note+'</span>':'')+'</p>'+
+      '</div>';
+    });
+    h+='</div>';
+    // filtri per tempo
+    var F=[['tutti','Tutti'],['15','≤ 20 min'],['30','30 min'],['40','40 min'],['skill','Skill']];
+    h+='<div class="flex flex-wrap gap-2 mb-3">'+F.map(function(x){ var on=f===x[0];
+      return '<button onclick="lmSetFilter(\''+x[0]+'\')" class="font-label text-[10px] uppercase tracking-wider px-3 py-1.5" style="'+(on?'background:'+G+';color:#000':'border:1px solid rgba(90,65,54,0.35);color:#94a3b8')+'">'+x[1]+'</button>'; }).join('')+'</div>';
+    var list=yt.filter(function(w){
+      if(f==='15') return w.min<=20&&w.level!=='Skill';
+      if(f==='30') return w.min===30&&w.level!=='Skill';
+      if(f==='40') return w.min>=40;
+      if(f==='skill') return w.level==='Skill';
+      return true; });
+    h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-2">DAL CANALE YOUTUBE · '+list.length+' VIDEO</p>';
+    h+=list.map(function(w){return card(w,false);}).join('');
+    // video personali su Drive
+    if(drive.length){
+      h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mt-5 mb-2">I TUOI VIDEO (DRIVE)</p>';
+      h+=drive.map(function(w){
+        var lastDone=lmDoneList(w.id).slice(-1)[0];
+        return '<div onclick="openLmDetail(\''+w.id+'\')"'+
+          ' class="flex items-center gap-3 p-4 mb-2 bg-surface-container ghost-border border-l-2 cursor-pointer active:bg-surface-container-high"'+
+          ' style="border-left-color:'+w.color+'">'+
+          '<span class="text-2xl flex-shrink-0">🎥</span>'+
+          '<div class="flex-1 min-w-0">'+
+            '<p class="font-headline text-lg leading-none">'+lmDisplayLabel(w)+'</p>'+
+            '<p class="font-label text-[10px] text-gray-500 mt-1">'+(lastDone?'Ultima: '+lastDone.date:'Non ancora fatto')+'</p>'+
+          '</div>'+
+          '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span>'+
+        '</div>';
+      }).join('');
+    }
+    h+='<p class="font-label text-[10px] text-gray-600 leading-relaxed mt-4">Video pubblici di LeoMoves su YouTube. Il programma completo è nell\'app LeoMoves.</p>';
     return h;
   }
 
@@ -9632,7 +9751,7 @@ function renderTrain(){
     {id:"kdp",     cat:"kb",   icon:"📈",name:"KDP-26",    desc:"Forge Density Protocol"},
     {id:"axe",     cat:"kb",   icon:"🫀",name:"AXE",       desc:"Aerobico anti-glicolitico"},
     {id:"bw",      cat:"bw",   icon:"🤸",name:"Bodyweight",desc:"Bodyweight Jacked e Limitless, a round"},
-    {id:"lm",      cat:"bw",   icon:"🎥",name:"LeoMoves",  desc:"Allenamenti video a corpo libero"},
+    {id:"lm",      cat:"bw",   icon:"🎥",name:"LeoMoves",  desc:"Video dal canale YouTube: percorso da principiante a 40', HIIT e verticale"},
     {id:"pu50",    cat:"bw",   icon:"💪",name:"50 piegamenti",desc:"4 settimane: test, serie sotto il massimo, richiami"},
     {id:"wf",      cat:"sport",icon:"🏄",name:"Wing Foil", desc:"Equilibrio, core e potenza d'anca"},
     {id:"yoga",    cat:"yoga", icon:"🧘",name:"Yoga",desc:"Programmi per obiettivo, 28 posizioni con video"},
@@ -9696,10 +9815,10 @@ function renderTrain(){
     var f=state.trainFilter||"all";
     var chips=[["all","Tutti"],["kb","Kettlebell"],["bw","Corpo libero"],["sport","Sport"],["daily","Daily routine"],["yoga","Yoga"]].map(function(o){
       var on=f===o[0], c=o[0]==="all"?"#ffb693":CATS[o[0]].color;
-      return '<button onclick="state.trainFilter=\''+o[0]+'\';render()" class="flex-shrink-0 px-4 font-label text-[13px] active:scale-95" style="min-height:44px;border:1px solid '+(on?c:'rgba(255,255,255,0.12)')+';color:'+(on?c:'#9aa3b2')+';background:'+(on?c+'1a':'transparent')+'">'+o[1]+'</button>';
+      return '<button onclick="state.trainFilter=\''+o[0]+'\';render()" class="px-3.5 font-label text-[13px] active:scale-95" style="min-height:44px;border:1px solid '+(on?c:'rgba(255,255,255,0.12)')+';color:'+(on?c:'#9aa3b2')+';background:'+(on?c+'1a':'transparent')+'">'+o[1]+'</button>';
     }).join('');
     var out=(noTitle?'':'<h1 class="font-headline text-3xl leading-none mb-4">Train</h1>')+
-      '<div class="flex gap-2 mb-5 overflow-x-auto" style="scrollbar-width:none">'+chips+'</div>';
+      '<div class="flex flex-wrap gap-2 mb-5">'+chips+'</div>';
     Object.keys(CATS).forEach(function(k){
       if(f!=="all"&&f!==k) return;
       var list=PROGS.filter(function(p){return p.cat===k;});
@@ -11364,9 +11483,14 @@ function aiWorkoutToAction(workoutName){
     return tab('k30','🔔','#facc15');
   }
   // LeoMoves: "LeoMoves 2", "LM2"
-  if(/leo\s*moves|\blm\s*\d\b/.test(n)){
-    m=n.match(/(?:leo\s*moves|\blm)\s*(\d)\b/);
-    if(m) return {action:"openLmDetail('LM"+m[1]+"');",icon:'🎥',color:'#22c55e'};
+  if(/leo\s*moves|\blm\s*\d\b|\blmy\d\b/.test(n)){
+    m=n.match(/\blmy\s*(\d)\b/);
+    if(m&&getLmById('LMY'+m[1])) return {action:"openLmDetail('LMY"+m[1]+"');",icon:'🎥',color:'#22c55e'};
+    var lmHit=null;
+    LM_WORKOUTS.forEach(function(l){ if(!lmHit&&l.ai&&new RegExp(l.ai).test(n.replace(/leo\s*moves/,''))) lmHit=l; });
+    if(lmHit) return {action:"openLmDetail('"+lmHit.id+"');",icon:'🎥',color:'#22c55e'};
+    m=n.match(/(?:leo\s*moves|\blm)\s*(\d)\b(?!\s*(?:'|min|’))/);
+    if(m&&getLmById('LM'+m[1])) return {action:"openLmDetail('LM"+m[1]+"');",icon:'🎥',color:'#22c55e'};
     return tab('lm','🎥','#22c55e');
   }
   // Limitless: "Limitless Fase 2 W1", "LTL-P2-1"
@@ -11909,7 +12033,7 @@ function forgeExportWeekly(){
       '30 Days KB · Day 1-30 (indica il giorno, es. "30 Days KB · Day 5")','Complex CX1-CX21 (indica il numero, es. "Complex CX12")',
       'Wing Foil WF1-WF3 + Balance&Core','Core & Forza 7R','Deep Push-Up EMOM','Condizionamento B4-B9',
       'Flow FL1-FL4 (sequenze continue)','Bodyweight Jacked · Beginner W1-W3 e Fase 1-3 W1-W3 (es. "Bodyweight Jacked Fase 1 W2")',
-      'Limitless · Fase 1-3 W1-W3 (es. "Limitless Fase 2 W1")','LeoMoves 1-4 (video)','Respiro (routine 15 min)','Routine Mattutina 8min','Wim Hof']
+      'Limitless · Fase 1-3 W1-W3 (es. "Limitless Fase 2 W1")','LeoMoves 1-4 (video Drive)','LeoMoves YouTube: Begin&Win, Ogni giorno 15\', Follow along 15\', Ogni giorno 20\', HIIT 30\', Full body 30\', Full body 40\', Verticale 30\'','Respiro (routine 15 min)','Routine Mattutina 8min','Wim Hof']
   };
 
   var prompt='Sei un coach di kettlebell. Analizza i dati e fornisci raccomandazioni per la settimana prossima.\n\n'+
@@ -13053,8 +13177,17 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v123";
+var APP_VERSION = "v125";
 var APP_CHANGELOG = [
+  {v:"v125", data:"11/10/2026", items:[
+    "LeoMoves: 8 allenamenti dal canale YouTube (da Begin&Win per principianti fino al full body da 40', HIIT 30' e verticale)",
+    "LeoMoves: percorso consigliato con «Prossimo» calcolato dalle sedute fatte; filtri per durata",
+    "LeoMoves: video dentro l'app, pulsante «Apri su YouTube» e registrazione con la durata del video",
+    "Macrocicli e Piano AI riconoscono i nuovi video (HIIT nelle sedute a intervalli)",
+  ]},
+  {v:"v124", data:"08/10/2026", items:[
+    "Catalogo: i filtri vanno a capo, così Daily routine e Yoga sono visibili senza scorrere di lato",
+  ]},
   {v:"v123", data:"08/10/2026", items:[
     "Camminata a schermo spento o con l'app in secondo piano: il tempo resta giusto",
     "Campane a metà e all'obiettivo anche a schermo spento; comandi e tempo sulla schermata di blocco",
@@ -14201,7 +14334,7 @@ try{ walkRestore(); }catch(e){}
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v123';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v125';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
