@@ -1309,6 +1309,9 @@ function mcSessionType(e){
 
 // Candidati per tipo di seduta
 function mcCandidates(type){
+  return mcCandidatesAll(type).filter(function(c){ return !forgeActionOff(c.action); });
+}
+function mcCandidatesAll(type){
   var C=[];
   function ex(id){ var w=getExtraById(id); if(w) C.push({key:"x:"+id,title:w.label+(w.title?" · "+w.title:""),min:w.totalMin||20,action:"openExtraDetail('"+id+"')"}); }
   if(type==="aerobico"){
@@ -1339,6 +1342,7 @@ function mcCandidates(type){
     (function(){ var yq=yogaLoad(), gid=yq.goal||'mobilita', ss=yogaSession(gid,yogaCount(yq,gid)%YOGA_TOTAL); C.push({key:"yoga",title:"Yoga · "+yogaGoal(gid).name,min:ss.min,action:"yogaStartToday()"}); })();
     (typeof K30_WORKOUTS!=="undefined"?K30_WORKOUTS:[]).forEach(function(w){ if(mcSessionType({day:"extra_"+w.id})==="mobilita") ex(w.id); });
     ex("WFB");
+    (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ if(l.mc==="mobilita") C.push({key:"x:"+l.id,title:"LeoMoves · "+l.label,min:l.min||10,action:"openLmDetail('"+l.id+"')"}); });
   }
   return C;
 }
@@ -1371,6 +1375,7 @@ function mcBuildWeek(macro, w, daysJs, hist, k30NextId){
   var info=mcWeekInfo(w), used={}, tested={};
   return mcWeekTypes(macro.goal, macro.secondary, info.block, daysJs).map(function(s){
     var tp=(info.kind==="test"&&!tested[s.type])?mcTestPick(s.type):null;
+    if(tp&&forgeActionOff(tp.action)) tp=null;
     if(tp) tested[s.type]=1;
     var p=tp||(typeof mcRopePick==='function'&&mcRopePick(s,used))||mcPick(s.type,used,hist,s.type===mcK30Type(k30NextId)?k30NextId:null);
     if(p) used[p.key]=1;
@@ -1393,7 +1398,7 @@ function macroK30Next(){ try{ var p=k30Progress(state.history); return (p.nDone>
 function macroDayDate(m,w,js){ var d=mcFromIso(m.start); d.setDate(d.getDate()+(w-1)*7+((js+6)%7)); return d; }
 
 function macroWeekPlan(m,w){
-  var days=macroDays(), sig=days.slice().sort().join(',');
+  var days=macroDays(), sig=days.slice().sort().join(',')+((FORGE_PROFILE.off||[]).length?'|'+(FORGE_PROFILE.off||[]).slice().sort().join(','):'');
   m.plans=m.plans||{};
   var p=m.plans[w];
   if(!p||p.sig!==sig){
@@ -2412,7 +2417,7 @@ function ropeHomeCard(){
   return '<div class="bg-surface-container p-4 mb-6" style="border:1px solid rgba(255,255,255,0.06);border-left:3px solid '+ROPE_C+'">'+ropeTodayCard(r,true)+'</div>';
 }
 function mcRopePick(s,used){
-  if(!(s.js===6||s.js===0)||!(s.type==='intervalli'||s.type==='aerobico')||!ropeActive()||used['rope-'+s.js]) return null;
+  if(forgeOff('rope')||!(s.js===6||s.js===0)||!(s.type==='intervalli'||s.type==='aerobico')||!ropeActive()||used['rope-'+s.js]) return null;
   return {key:'rope-'+s.js,title:s.js===6?'Salto della corda · seduta':'Salto della corda · tecnica',min:s.js===6?15:8,action:'ropeStartToday()'};
 }
 
@@ -2708,7 +2713,7 @@ function renderHome(){
     sug=mt.item?{title:mt.item.title,action:mt.item.action,color:T_.color,reason:(mt.item.min?'~'+mt.item.min+' min':'')+(mt.item.note?(mt.item.min?' · ':'')+mt.item.note:''),_fromPlan:true,typeLabel:T_.label}:{title:'',action:null,_fromPlan:true};
   }
   // Weekend con il programma della corda attivo e nessun piano: l'allenamento proposto è la corda
-  if(!usePlan&&!sug._fromAI&&typeof ropeActive==='function'&&ropeActive()){
+  if(!usePlan&&!sug._fromAI&&!forgeOff('rope')&&typeof ropeActive==='function'&&ropeActive()){
     var rt=ropeToday(ropeLoad(),now.getDay(),ropeIso());
     if(rt&&rt.slot&&!rt.done) sug={title:'Salto della corda · '+(rt.makeup?'recupero del sabato':rt.slot.day==='sab'?'seduta':'tecnica'),action:"ropeRun('"+rt.slot.id+"')",color:ROPE_C,
       reason:'Sett. '+rt.slot.w+' · '+ropeDesc(rt.slot.s)+' · ~'+ropeMin(rt.slot.s)+' min',_rope:true};
@@ -2742,7 +2747,7 @@ function renderHome(){
       '</div>'+
       '<div class="flex-1 min-w-0"><p class="font-label text-[11px] uppercase tracking-widest text-gray-500">Settimana</p>'+
         '<p class="font-headline text-lg leading-tight mt-0.5">'+wk.mins+' minuti di allenamento</p>'+
-        '<p class="font-label text-[12px] text-gray-400 mt-0.5">'+(streak?'Respiro: '+streak+(streak===1?' giorno':' giorni di fila'):'Respiro: inizia la serie oggi')+'</p></div>'+
+        (forgeOff('respiro')?'':'<p class="font-label text-[12px] text-gray-400 mt-0.5">'+(streak?'Respiro: '+streak+(streak===1?' giorno':' giorni di fila'):'Respiro: inizia la serie oggi')+'</p>')+'</div>'+
     '</div>'+
     '<div class="flex mt-4">'+dots+'</div>'+
   '</div>';
@@ -2765,10 +2770,10 @@ function renderHome(){
   var BC='#7dd3fc';
   var mattino='<div class="flex items-center justify-between mb-2"><p class="font-label text-[11px] uppercase tracking-widest" style="color:'+(morningDone?'#9aa3b2':BC)+'">Mattino</p>'+
       '<button onclick="goMorning()" class="font-label text-[12px] text-gray-400 active:scale-95" style="min-height:32px">Daily routine ›</button></div>'+
-    item('spa',BC,'Respiro',breathDone?((pranaToday&&!(state.breathHistory||[]).some(function(e){return e.date===isoToday();})?'fatto su Prana Breath':'fatto oggi')+(boltToday?' · BOLT '+boltToday.bolt_seconds+'"':'')):'15 minuti · naso e lentezza',breathDone?'':'Inizia','breathStartRoutine()',breathDone)+
-    (breathDone?'':'<button onclick="pranaOpen()" class="w-full flex items-center justify-end gap-1 -mt-1 mb-2 font-label text-[12px] active:scale-95" style="min-height:36px;color:'+BC+'"><span class="material-symbols-outlined" style="font-size:16px">open_in_new</span>oppure con Prana Breath</button>')+
-    item('wb_sunny','#e9c176','Routine di risveglio',mrDone?'fatta oggi':'8 minuti · facoltativa',mrDone?'':'Inizia','mrStart(60)',mrDone)+
-    item('air','#50dad1','Wim Hof',whDone?'fatto oggi':'3 round · facoltativo',whDone?'':'Inizia','whStart()',whDone);
+    (forgeOff('respiro')?'':(item('spa',BC,'Respiro',breathDone?((pranaToday&&!(state.breathHistory||[]).some(function(e){return e.date===isoToday();})?'fatto su Prana Breath':'fatto oggi')+(boltToday?' · BOLT '+boltToday.bolt_seconds+'"':'')):'15 minuti · naso e lentezza',breathDone?'':'Inizia','breathStartRoutine()',breathDone)+
+    (breathDone?'':'<button onclick="pranaOpen()" class="w-full flex items-center justify-end gap-1 -mt-1 mb-2 font-label text-[12px] active:scale-95" style="min-height:36px;color:'+BC+'"><span class="material-symbols-outlined" style="font-size:16px">open_in_new</span>oppure con Prana Breath</button>')))+
+    (forgeOff('risveglio')?'':item('wb_sunny','#e9c176','Routine di risveglio',mrDone?'fatta oggi':'8 minuti · facoltativa',mrDone?'':'Inizia','mrStart(60)',mrDone))+
+    (forgeOff('wimhof')?'':item('air','#50dad1','Wim Hof',whDone?'fatto oggi':'3 round · facoltativo',whDone?'':'Inizia','whStart()',whDone));
 
   var tCol=sug.color||P, training;
   if(trained){
@@ -2788,11 +2793,11 @@ function renderHome(){
           '<span class="flex items-center gap-1 font-label text-[12px]" style="color:#7A9A3A"><span class="material-symbols-outlined" style="font-size:18px;'+FILL+'">check_circle</span>previsto dal piano</span></div>'+
         '<p class="font-headline text-xl leading-tight mt-1">Oggi recupero</p>'+
         '<p class="font-label text-[12px] text-gray-400 mt-0.5">'+(usePlan?'Oggi riposo nel piano.':sug._fromAI?'Oggi riposo nel piano AI.':'Oggi non è un tuo giorno di allenamento.')+' Muoviti leggero, se ti va.</p>'+
-        (function(){ var wm=(state.externalHistory||[]).filter(function(e){return e._walk&&e.date===todayDMY;}).reduce(function(a,e){return a+(+e.duration||0);},0);
+        (forgeOff('walk')?'':(function(){ var wm=(state.externalHistory||[]).filter(function(e){return e._walk&&e.date===todayDMY;}).reduce(function(a,e){return a+(+e.duration||0);},0);
           return '<div class="flex items-center gap-3 mt-3 px-3 py-2" style="background:rgba(255,255,255,0.04)">'+
             '<span class="material-symbols-outlined" style="color:'+WALK_C+';'+FILL+'">directions_walk</span>'+
             '<div class="flex-1"><p class="font-headline text-base leading-tight">Camminata</p><p class="font-label text-[12px] text-gray-400">'+(wm?'fatta oggi · '+wm+' min':'30 minuti a passo svelto')+'</p></div>'+
-            (wm?'<span class="material-symbols-outlined" style="color:'+WALK_C+';'+FILL+'">check_circle</span>':'<button onclick="walkStart(30)" class="px-3 font-label text-[13px] active:scale-95" style="min-height:44px;color:'+WALK_C+'">Inizia</button>')+'</div>'; })()+
+            (wm?'<span class="material-symbols-outlined" style="color:'+WALK_C+';'+FILL+'">check_circle</span>':'<button onclick="walkStart(30)" class="px-3 font-label text-[13px] active:scale-95" style="min-height:44px;color:'+WALK_C+'">Inizia</button>')+'</div>'; })())+
         (usePlan?'<button onclick="state.trainSubTab=null;state.trainView=\'plan\';switchTab(\'train\')" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:#7A9A3A">Vedi la settimana ›</button>':
          sug._fromAI?'<button onclick="goAiPlan()" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:#7A9A3A">Vedi il piano AI ›</button>':
          sug.action?'<button onclick="'+forgeStartDirect(sug.action)+'" class="font-label text-[13px] mt-2 active:scale-95" style="min-height:40px;color:#7A9A3A">Vuoi allenarti lo stesso? '+sug.title+' ›</button>':'')+
@@ -2818,13 +2823,15 @@ function renderHome(){
   var allenamento='<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:'+((trained||isRest)?'#9aa3b2':tCol)+'">Allenamento</p>'+training;
 
   var sera='<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:'+(eveDone?'#9aa3b2':'#8b9cf6')+'">Sera</p>'+
-    item('self_improvement','#8b9cf6','Mobilità serale',eveDone?'fatta oggi':'8 minuti · a terra, senza attrezzi',eveDone?'':'Inizia',"mrStart(60,'evening')",eveDone)+
-    (function(){ var d=cycleDoneToday('478'); return item('bedtime','#8b9cf6','Respiro 4-7-8',d?'fatto oggi':'3 minuti · verso il sonno · facoltativo',d?'':'Inizia',"cycleStart('478',3)",d); })();
+    (forgeOff('serale')?'':item('self_improvement','#8b9cf6','Mobilità serale',eveDone?'fatta oggi':'8 minuti · a terra, senza attrezzi',eveDone?'':'Inizia',"mrStart(60,'evening')",eveDone))+
+    (forgeOff('cicli')?'':(function(){ var d=cycleDoneToday('478'); return item('bedtime','#8b9cf6','Respiro 4-7-8',d?'fatto oggi':'3 minuti · verso il sonno · facoltativo',d?'':'Inizia',"cycleStart('478',3)",d); })());
+  var mattinoOn=!(forgeOff('respiro')&&forgeOff('risveglio')&&forgeOff('wimhof')), seraOn=!(forgeOff('serale')&&forgeOff('cicli'));
+  var nSec=(mattinoOn?1:0)+1+(seraOn?1:0), dc=(mattinoOn&&morningDone?1:0)+((trained||isRest)?1:0)+(seraOn&&eveDone?1:0);
 
   // Scorciatoie a un tocco, sotto la settimana: le funzioni che altrimenti stanno a 2-3 tocchi o in fondo alla pagina
   var SC=[
     ['edit_note','Registra','#8b5cf6',"switchTab('log');state.logSub='sessioni';manualLogOpen()"],
-    ['directions_walk','Camminata',WALK_C,'walkStart(30)'],
+    forgeOff('walk')?['menu_book','Catalogo','#ffb693',"state.trainSubTab=null;state.trainView='catalog';switchTab('train')"]:['directions_walk','Camminata',WALK_C,'walkStart(30)'],
     ['air','BOLT','#7dd3fc','boltOpenScreen()'],
     ['monitor_heart','Salute','#ffb4ab',"switchTab('log');state.logSub='salute';render()"],
     ['flag','Piano','#50dad1',"state.trainSubTab=null;state.trainView='plan';switchTab('train')"],
@@ -2842,17 +2849,17 @@ function renderHome(){
     '<main class="px-5 pt-3">'+
       '<p class="font-label text-[12px] text-gray-400">'+GG[now.getDay()]+' '+now.getDate()+' '+MM[now.getMonth()]+'</p>'+
       '<div class="flex items-end justify-between '+(usePlan?'mb-1':'mb-4')+'"><h1 class="font-headline text-3xl leading-none">Oggi</h1>'+
-        '<span class="font-label text-[12px] text-gray-400">'+doneCount+' di 3 fatti</span></div>'+
+        '<span class="font-label text-[12px] text-gray-400">'+dc+' di '+nSec+' fatti</span></div>'+
       (usePlan?'<button onclick="state.trainSubTab=null;state.trainView=\'plan\';switchTab(\'train\')" class="flex items-center gap-1.5 mb-4 font-label text-[12px] active:scale-95" style="min-height:32px;color:'+mt.block.color+'">'+
         '<span class="material-symbols-outlined" style="font-size:16px">flag</span>Settimana '+mt.week+' di 12 · '+mt.block.name+(mt.info.kind==='scarico'?' · scarico':mt.info.kind==='test'?' · test':'')+'</button>':'')+
       weekCard+
       shortcuts+
       awHomeStrip()+
-      puHomeCard()+
-      (ropeShown?'':ropeHomeCard())+
+      (forgeOff('pu50')?'':puHomeCard())+
+      ((ropeShown||forgeOff('rope'))?'':ropeHomeCard())+
       '<div class="relative" style="padding-left:27px">'+
         '<div class="absolute" style="left:8px;top:30px;bottom:30px;width:2px;background:rgba(255,255,255,0.08)"></div>'+
-        mattino+'<div class="mb-4"></div>'+allenamento+sera+
+        (mattinoOn?mattino+'<div class="mb-4"></div>':'')+allenamento+(seraOn?sera:'')+
       '</div>'+
     '</main>'+
     navHTML('home')+
@@ -6624,14 +6631,66 @@ const LM_WORKOUTS=[
   {id:"LMY8", label:"Verticale · 30'", ytId:"in9tSTo0XX0", color:"#22c55e", min:30, level:"Skill", focus:"Handstand", mc:null,
    orig:"How does LeoMoves train? His 30 Min handstand Training",
    desc:"Come si allena Leo sulla verticale: 30 minuti di lavoro tecnico. Scalda bene polsi e spalle prima di iniziare.", ai:"handstand|verticale"},
+  {id:"LMY9", label:'Body friend · 20 round', ytId:"bnInRlkES88", color:"#22c55e", min:17, level:"Intermedio", focus:'Full body · in diretta', mc:"corpolibero",
+   orig:'Do These 20 Rounds To Make Your Body Your Friend [Follow Along Workout]',
+   desc:'20 round da seguire insieme a Leo, senza attrezzi.', ai:"body friend|make your body"},
+  {id:"LMY10", label:'Movimento primale · 28\'', ytId:"O7KQugJUrJ0", color:"#22c55e", min:28, level:"Intermedio", focus:'Locomozione a terra', mc:"corpolibero",
+   orig:'28 Minutes of Primal Movement [Follow Along]',
+   desc:'28 minuti di movimenti primali e spostamenti a terra, da seguire in diretta.', ai:"primal|primale"},
+  {id:"LMY11", label:'10 round · 8\'', ytId:"ra3cHBGd6Tk", color:"#22c55e", min:8, level:"Tutti i livelli", focus:'Full body · breve', mc:"corpolibero",
+   orig:'Feel Great in your Body in just 10 Rounds [Follow Along, No Equipment]',
+   desc:'10 round brevi a corpo libero: perfetto nei giorni pieni.', ai:"10 round"},
+  {id:"LMY12", label:'5 esercizi · 15\'', ytId:"MiUnlzKct0k", color:"#22c55e", min:15, level:"Tutti i livelli", focus:'Poco spazio', mc:"corpolibero",
+   orig:'Do These 5 Exercises Everyday (No Space Needed)',
+   desc:'Cinque esercizi da fare ogni giorno, in un metro quadro.', ai:"5 esercizi|5 exercises|no space"},
+  {id:"LMY13", label:'Movimento leggero · 10\'', ytId:"W_t30AEhTo0", color:"#22c55e", min:10, level:"Principiante", focus:'Leggero · recupero', mc:"mobilita",
+   orig:'10 Minutes of Light Movement to Feel Better',
+   desc:'Dieci minuti di movimento leggero: per i giorni di scarico o quando sei stanco.', ai:"leggero|light"},
+  {id:"LMY14", label:'Impara il movimento · 10\'', ytId:"4thEoC7ho18", color:"#22c55e", min:11, level:"Principiante", focus:'Coordinazione · in diretta', mc:"corpolibero",
+   orig:'All you need is 10 Minutes to Teach your Body Movement [Follow Along]',
+   desc:'Dieci minuti per insegnare al corpo a muoversi meglio, da seguire in diretta.', ai:"impara|teach"},
+  {id:"LMY15", label:'Prima del caffè · 10\'', ytId:"0KSuHwuAzk4", color:"#22c55e", min:11, level:"Tutti i livelli", focus:'Attivazione mattutina', mc:"mobilita",
+   orig:'Before Coffee, Do This (10 Minute Morning Activation)',
+   desc:'Attivazione del mattino in dieci minuti, prima di colazione.', ai:"caff|coffee|attivazione"},
+  {id:"LMY16", label:'Avanzato · 15\'', ytId:"aNqR15Flog0", color:"#22c55e", min:17, level:"Avanzato", focus:'Full body · in diretta', mc:"corpolibero",
+   orig:'15 Minutes of Advanced Exercises - Guided Follow Along Workout',
+   desc:'Quindici minuti di esercizi avanzati, guidati passo passo.', ai:"avanzat|advanced"},
+  {id:"LMY17", label:'Feel better · 20 round', ytId:"NS_YPPuxUPA", color:"#22c55e", min:19, level:"Intermedio", focus:'Full body · in diretta', mc:"corpolibero",
+   orig:'Feel Better Instantly - 20 Rounds of Bodyweight Exercises [Follow Along Workout]',
+   desc:'20 round di esercizi a corpo libero da seguire insieme a Leo.', ai:"feel better"},
+  {id:"LMY18", label:'Core flow · 9\'', ytId:"2GTBmRF_EpA", color:"#22c55e", min:9, level:"Intermedio", focus:'Core · un solo flow', mc:"corpolibero",
+   orig:'Instead of Crunches, Do This ONE Flow',
+   desc:'Un flow per il core al posto dei crunch.', ai:"core"},
+  {id:"LMY19", label:'Start 2026 · 30\'', ytId:"rRqbCorYi9s", color:"#22c55e", min:34, level:"Intermedio", focus:'Full body · ovunque', mc:"corpolibero",
+   orig:'Best Start Into 2026: 30 Minutes Bodyweight Workout You Can Do Anywhere!',
+   desc:'Trenta minuti a corpo libero, fattibili ovunque.', ai:"2026"},
+  {id:"LMY20", label:'Primi 10 minuti', ytId:"Qo5bRRG7uxM", color:"#22c55e", min:11, level:"Principiante", focus:'Full body · base', mc:"corpolibero",
+   orig:'Do These 10 Minutes as a Beginner - Your Body will Change [No Equipment Needed]',
+   desc:'Dieci minuti pensati per chi parte da zero, senza attrezzi.', ai:"primi 10"},
+  {id:"LMY21", label:'Si parte da qui · 49\'', ytId:"IGj1-k2J3Cg", color:"#22c55e", min:49, level:"Principiante", focus:'Seduta lunga per principianti', mc:"corpolibero",
+   orig:'This is how you START - Beginner Workout With My Parents',
+   desc:'Seduta lunga per principianti, che Leo fa con i suoi genitori.', ai:"si parte|parents|genitori"},
+  {id:"LMY22", label:'Efficiente · 15\'', ytId:"CU9jn-VN4QU", color:"#22c55e", min:17, level:"Intermedio", focus:'Full body · intenso', mc:"corpolibero",
+   orig:'No Time To Workout? Do This Efficient 15 Min Workout!',
+   desc:'Quindici minuti intensi per quando hai poco tempo.', ai:"efficient"},
+  {id:"LMY23", label:'All\'aperto · 15\'', ytId:"mx-uEJ6p4SA", color:"#22c55e", min:15, level:"Intermedio", focus:'Outdoor · 10+ esercizi', mc:"corpolibero",
+   orig:'Don\'t Like The Gym? Get FIT Outdoor [10+ Exercises!]',
+   desc:'Allenamento all\'aperto con più di dieci esercizi: parco o spiaggia.', ai:"aperto|outdoor"},
+  {id:"LMY24", label:'30 giorni · 10\'', ytId:"nyWMbrzvnFg", color:"#22c55e", min:10, level:"Principiante", focus:'Da fare ogni giorno', mc:"corpolibero",
+   orig:'Start Feeling Good in Your Body in 30 Days',
+   desc:'Dieci minuti da ripetere ogni giorno per un mese.', ai:"30 giorni|30 days"},
+  // Playlist ufficiale "Workouts With Timer" (70 video): si sceglie dentro il lettore
+  {id:"LMYP", label:"Workouts With Timer", ytList:"PLLlMy3U4tg25dkfpBNu_8nZ3FvULfKFn-", color:"#22c55e", min:null, level:"Tutti i livelli", focus:"Playlist ufficiale · 70 video", mc:null,
+   orig:'Playlist «Workouts With Timer» di LeoMoves',
+   desc:"Tutti gli allenamenti con timer del canale in un unico lettore: scegli il video dall'elenco della playlist, poi registra con la durata reale.", ai:"playlist|with timer"},
 ];
 // Percorso consigliato sui video YouTube: si passa al successivo dopo 2 sedute
-var LM_PATH=["LMY1","LMY2","LMY3","LMY4","LMY6","LMY5","LMY7"];
+var LM_PATH=["LMY1","LMY20","LMY2","LMY3","LMY4","LMY9","LMY6","LMY10","LMY5","LMY19","LMY16","LMY7"];
 var LM_STEPS=[
-  {t:"Settimane 1-2", ids:["LMY1","LMY2"]},
-  {t:"Settimane 3-4", ids:["LMY3","LMY4"]},
-  {t:"Settimane 5-6", ids:["LMY6","LMY5"]},
-  {t:"Poi",           ids:["LMY7"], note:"Verticale quando vuoi, come skill a parte."}
+  {t:"Settimane 1-2", ids:["LMY1","LMY20","LMY2"]},
+  {t:"Settimane 3-4", ids:["LMY3","LMY4","LMY9"]},
+  {t:"Settimane 5-6", ids:["LMY6","LMY10","LMY5"]},
+  {t:"Poi",           ids:["LMY19","LMY16","LMY7"], note:"Video brevi (8-11') come extra o nei giorni pieni. Verticale come skill a parte."}
 ];
 var LM_LEVEL_COL={"Principiante":"#4ade80","Tutti i livelli":"#4ade80","Intermedio":"#facc15","Intermedio+":"#fb923c","Avanzato":"#f97316","Skill":"#a78bfa"};
 function lmDoneList(id){ return (state.history||[]).filter(function(h){return h.day==="extra_"+id;}); }
@@ -6642,7 +6701,8 @@ function lmNext(){
   return getLmById(best);
 }
 function lmEmbed(w){
-  var src=w.ytId?('https://www.youtube-nocookie.com/embed/'+w.ytId+'?rel=0&playsinline=1&modestbranding=1')
+  var src=w.ytList?('https://www.youtube-nocookie.com/embed/videoseries?list='+w.ytList+'&rel=0&playsinline=1&modestbranding=1')
+         :w.ytId?('https://www.youtube-nocookie.com/embed/'+w.ytId+'?rel=0&playsinline=1&modestbranding=1')
                 :('https://drive.google.com/file/d/'+w.driveId+'/preview');
   return '<div style="position:relative;padding-top:56.25%;background:#000">'+
     '<iframe data-lm-iframe src="'+src+'" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"></iframe>'+
@@ -6652,7 +6712,7 @@ function lmSetFilter(f){ state.lmFilter=f; render(); }
 function getLmById(id){ return LM_WORKOUTS.find(function(w){return w.id===id;}); }
 
 function lmDisplayLabel(w){
-  if(w.ytId) return w.label;
+  if(w.ytId||w.ytList) return w.label;
   var mem=loadLmDurationMemory();
   var d=mem[w.id];
   return d?(w.label+' · '+d+' min'):w.label;
@@ -6776,16 +6836,16 @@ function renderLmDetail(){
     '<header class="px-5 pt-10 pb-6 flex items-start gap-4">'+
       '<button onclick="switchTab(\'train\')" class="p-2 mt-1"><span class="material-symbols-outlined" style="color:'+w.color+'">arrow_back</span></button>'+
       '<div class="flex-1">'+
-        '<p class="font-label text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">LEOMOVES'+(w.ytId?' · YOUTUBE':'')+'</p>'+
+        '<p class="font-label text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">LEOMOVES'+(w.ytList?' · PLAYLIST':w.ytId?' · YOUTUBE':'')+'</p>'+
         '<h1 class="font-headline text-4xl leading-none">'+lmDisplayLabel(w)+'</h1>'+
         (lastDone?'<p class="font-label text-xs text-gray-500 mt-2">Ultima volta: '+lastDone.date+' · fatto '+lmDoneList(w.id).length+(lmDoneList(w.id).length===1?' volta':' volte')+'</p>':'')+
       '</div>'+
     '</header>'+
     '<main class="px-5 pb-10 space-y-5">'+
-      (w.ytId?(
+      ((w.ytId||w.ytList)?(
         '<div class="flex flex-wrap gap-2">'+
           '<span class="font-label text-[10px] uppercase tracking-wider px-2 py-1" style="background:'+(LM_LEVEL_COL[w.level]||'#22c55e')+'1f;color:'+(LM_LEVEL_COL[w.level]||'#22c55e')+'">'+w.level+'</span>'+
-          '<span class="font-label text-[10px] uppercase tracking-wider px-2 py-1 text-gray-400" style="background:rgba(255,255,255,0.05)">'+w.min+' min</span>'+
+          (w.min?'<span class="font-label text-[10px] uppercase tracking-wider px-2 py-1 text-gray-400" style="background:rgba(255,255,255,0.05)">'+w.min+' min</span>':'')+
           '<span class="font-label text-[10px] uppercase tracking-wider px-2 py-1 text-gray-400" style="background:rgba(255,255,255,0.05)">'+w.focus+'</span>'+
         '</div>'+
         '<p class="font-label text-sm text-gray-300 leading-relaxed">'+w.desc+'</p>'):'')+
@@ -6799,8 +6859,8 @@ function renderLmDetail(){
         '▶ SEGUI E REGISTRA'+
         '<span class="material-symbols-outlined">play_arrow</span>'+
       '</button>'+
-      (w.ytId?(
-        '<a href="https://www.youtube.com/watch?v='+w.ytId+'" target="_blank" rel="noopener" class="w-full py-3 font-label text-[11px] uppercase tracking-widest text-gray-400 flex items-center justify-center gap-1.5" style="border:1px solid rgba(90,65,54,0.3)">'+
+      ((w.ytId||w.ytList)?(
+        '<a href="'+(w.ytList?'https://www.youtube.com/playlist?list='+w.ytList:'https://www.youtube.com/watch?v='+w.ytId)+'" target="_blank" rel="noopener" class="w-full py-3 font-label text-[11px] uppercase tracking-widest text-gray-400 flex items-center justify-center gap-1.5" style="border:1px solid rgba(90,65,54,0.3)">'+
           '<span class="material-symbols-outlined text-base">open_in_new</span> Apri su YouTube</a>'+
         '<p class="font-label text-[10px] text-gray-600 leading-relaxed">Titolo originale: '+w.orig.replace(/</g,'&lt;')+'<br>Se il video non parte qui, aprilo su YouTube e poi torna a registrare con «Segui e registra».</p>'):'')+
     '</main>'+
@@ -9572,7 +9632,8 @@ function renderTrain(){
       '</div>';
     }
     var yt=LM_WORKOUTS.filter(function(w){return w.ytId;});
-    var drive=LM_WORKOUTS.filter(function(w){return !w.ytId;});
+    var pl=LM_WORKOUTS.filter(function(w){return w.ytList;})[0];
+    var drive=LM_WORKOUTS.filter(function(w){return !w.ytId&&!w.ytList;});
     var nx=lmNext();
     var h='<div class="p-4 mb-4" style="background:rgba(34,197,94,0.05);border-left:2px solid '+G+'">'+
       '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:'+G+'">LEOMOVES · LEANDRO FORNITO</p>'+
@@ -9597,17 +9658,35 @@ function renderTrain(){
     });
     h+='</div>';
     // filtri per tempo
-    var F=[['tutti','Tutti'],['15','≤ 20 min'],['30','30 min'],['40','40 min'],['skill','Skill']];
+    var F=[['tutti','Tutti'],['12','≤ 12 min'],['20','15-20 min'],['30','25-35 min'],['40','40+ min'],['skill','Skill']];
     h+='<div class="flex flex-wrap gap-2 mb-3">'+F.map(function(x){ var on=f===x[0];
       return '<button onclick="lmSetFilter(\''+x[0]+'\')" class="font-label text-[10px] uppercase tracking-wider px-3 py-1.5" style="'+(on?'background:'+G+';color:#000':'border:1px solid rgba(90,65,54,0.35);color:#94a3b8')+'">'+x[1]+'</button>'; }).join('')+'</div>';
     var list=yt.filter(function(w){
-      if(f==='15') return w.min<=20&&w.level!=='Skill';
-      if(f==='30') return w.min===30&&w.level!=='Skill';
-      if(f==='40') return w.min>=40;
-      if(f==='skill') return w.level==='Skill';
+      var sk=w.level==='Skill';
+      if(f==='12') return w.min<=12&&!sk;
+      if(f==='20') return w.min>12&&w.min<=22&&!sk;
+      if(f==='30') return w.min>22&&w.min<=36&&!sk;
+      if(f==='40') return w.min>36&&!sk;
+      if(f==='skill') return sk;
       return true; });
     h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-2">DAL CANALE YOUTUBE · '+list.length+' VIDEO</p>';
-    h+=list.map(function(w){return card(w,false);}).join('');
+    var GR=[['Principiante',['Principiante','Tutti i livelli']],['Intermedio',['Intermedio','Intermedio+']],['Avanzato',['Avanzato']],['Skill',['Skill']]];
+    GR.forEach(function(g){
+      var gl=list.filter(function(w){return g[1].indexOf(w.level)>=0;}).sort(function(a,b){return a.min-b.min;});
+      if(!gl.length) return;
+      h+='<p class="font-label text-[10px] uppercase tracking-widest mt-3 mb-2" style="color:'+(LM_LEVEL_COL[g[0]]||G)+'">'+g[0]+' · '+gl.length+'</p>';
+      h+=gl.map(function(w){return card(w,false);}).join('');
+    });
+    if(pl&&f==='tutti'){
+      var pn=lmDoneList(pl.id).length;
+      h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mt-5 mb-2">PLAYLIST COMPLETA</p>'+
+        '<div onclick="openLmDetail(\''+pl.id+'\')" class="flex items-center gap-3 p-4 mb-2 bg-surface-container ghost-border cursor-pointer active:bg-surface-container-high" style="border-left:2px solid '+G+'">'+
+          '<span class="material-symbols-outlined flex-shrink-0" style="font-size:30px;color:'+G+'">playlist_play</span>'+
+          '<div class="flex-1 min-w-0"><p class="font-headline text-lg leading-none">'+pl.label+'</p>'+
+            '<p class="font-label text-[10px] text-gray-400 mt-1">70 allenamenti con timer · scegli dal lettore</p>'+
+            '<p class="font-label text-[10px] text-gray-500 mt-0.5">'+(pn?('Fatto '+pn+(pn===1?' volta':' volte')):'Non ancora usata')+'</p></div>'+
+          '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span></div>';
+    }
     // video personali su Drive
     if(drive.length){
       h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mt-5 mb-2">I TUOI VIDEO (DRIVE)</p>';
@@ -9821,9 +9900,13 @@ function renderTrain(){
       '<div class="flex flex-wrap gap-2 mb-5">'+chips+'</div>';
     Object.keys(CATS).forEach(function(k){
       if(f!=="all"&&f!==k) return;
-      var list=PROGS.filter(function(p){return p.cat===k;});
+      var list=PROGS.filter(function(p){return p.cat===k&&!forgeOff(p.id)&&!(p.id==='daily'&&forgeDailyAllOff());});
+      if(!list.length) return;
       out+='<p class="font-label text-[11px] uppercase tracking-widest mb-2 mt-1" style="color:'+CATS[k].color+'">'+CATS[k].label+' · '+list.length+'</p>'+list.map(progCard).join('')+'<div class="mb-4"></div>';
     });
+    var nOffP=PROGS.filter(function(p){return forgeOff(p.id);}).length;
+    if(nOffP) out+='<button onclick="switchTab(\'settings\')" class="w-full flex items-center justify-center gap-1.5 font-label text-[12px] text-gray-500 active:scale-95" style="min-height:44px;border:1px dashed rgba(255,255,255,0.14)">'+
+      '<span class="material-symbols-outlined" style="font-size:16px">toggle_off</span>'+nOffP+(nOffP===1?' programma spento':' programmi spenti')+' · gestisci in Set</button>';
     return out;
   }
   function programHeader(){
@@ -10328,8 +10411,8 @@ function renderMorning(){
   var evLogs=(state.externalHistory||[]).filter(function(e){return e._evening;}), lastEV=evLogs[0];
   var ER=EVENING_ROUTINE, EC='#8b9cf6';
   routineContent +=
-    '<p class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:#e9c176">Mattino</p>'+
-    '<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:#e9c176">'+
+    '<p data-sec="h-mattino" class="font-label text-[11px] uppercase tracking-widest mb-2" style="color:#e9c176">Mattino</p>'+
+    '<div data-sec="risveglio" class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:#e9c176">'+
       '<div class="flex items-center gap-2 mb-1">'+
         '<span class="material-symbols-outlined text-lg" style="color:#e9c176;font-variation-settings:\'FILL\' 1">wb_sunny</span>'+
         '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:#e9c176">ROUTINE MATTUTINA</p>'+
@@ -10360,7 +10443,7 @@ function renderMorning(){
       var lastBreath=(state.breathHistory||[]).slice(-1)[0];
       var progDay=breathProgramDay(state.breathStartDate);
       var streak=breathStreak(state.breathHistory||[]);
-      return '<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:'+BREATH_COLOR+'">'+
+      return '<div data-sec="respiro" class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:'+BREATH_COLOR+'">'+
         '<div class="flex items-center gap-2 mb-1">'+
           '<span class="material-symbols-outlined text-lg" style="color:'+BREATH_COLOR+';font-variation-settings:\'FILL\' 1">spa</span>'+
           '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:'+BREATH_COLOR+'">RESPIRO</p>'+
@@ -10386,7 +10469,7 @@ function renderMorning(){
       '</div>';
     })()+
     // Wim Hof
-    '<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#50dad1">'+
+    '<div data-sec="wimhof" class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:#50dad1">'+
       '<div class="flex items-center gap-2 mb-1">'+
         '<span class="material-symbols-outlined text-lg" style="color:#50dad1;font-variation-settings:\'FILL\' 1">air</span>'+
         '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:#50dad1">WIM HOF</p>'+
@@ -10397,8 +10480,8 @@ function renderMorning(){
       '<button onclick="whStart()" class="w-full py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#50dad1,#00aba2);color:#000">INIZIA</button>'+
     '</div>'+
     // Cicli di respiro
-    '<p class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:#7dd3fc">Cicli di respiro</p>'+
-    '<div class="bg-surface-container ghost-border border-l-2" style="border-color:#7dd3fc">'+
+    '<p data-sec="cicli" class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:#7dd3fc">Cicli di respiro</p>'+
+    '<div data-sec="cicli" class="bg-surface-container ghost-border border-l-2" style="border-color:#7dd3fc">'+
       BREATH_CYCLES.map(function(c,i){
         var last=(state.externalHistory||[]).filter(function(e){return e._cycle===c.id;})[0];
         return '<button onclick="cycleOpen(\''+c.id+'\')" class="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-surface-container-high" style="min-height:62px;'+(i?'border-top:1px solid rgba(255,255,255,0.05)':'')+'">'+
@@ -10409,8 +10492,8 @@ function renderMorning(){
       }).join('')+
     '</div>'+
     // Giorno — Camminata
-    '<p class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:'+WALK_C+'">Giorno</p>'+
-    '<div class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:'+WALK_C+'">'+
+    '<p data-sec="walk" class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:'+WALK_C+'">Giorno</p>'+
+    '<div data-sec="walk" class="bg-surface-container ghost-border p-5 border-l-2" style="border-color:'+WALK_C+'">'+
       '<div class="flex items-center gap-2 mb-1"><span class="material-symbols-outlined text-lg" style="color:'+WALK_C+';font-variation-settings:\'FILL\' 1">directions_walk</span>'+
         '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:'+WALK_C+'">CAMMINATA</p></div>'+
       '<h2 class="font-headline text-3xl mb-1">Camminata</h2>'+
@@ -10421,8 +10504,8 @@ function renderMorning(){
       '</div>'+
     '</div>'+
     // Sera — Mobilità serale
-    '<p class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:'+EC+'">Sera</p>'+
-    '<div class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:'+EC+'">'+
+    '<p data-sec="serale" class="font-label text-[11px] uppercase tracking-widest mb-2 mt-6" style="color:'+EC+'">Sera</p>'+
+    '<div data-sec="serale" class="bg-surface-container ghost-border p-5 border-l-2 mb-4" style="border-color:'+EC+'">'+
       '<div class="flex items-center gap-2 mb-1">'+
         '<span class="material-symbols-outlined text-lg" style="color:'+EC+';font-variation-settings:\'FILL\' 1">bedtime</span>'+
         '<p class="font-label text-[9px] uppercase tracking-[0.2em]" style="color:'+EC+'">MOBILITÀ SERALE</p>'+
@@ -10451,6 +10534,7 @@ function renderMorning(){
   // ══════════════════════════════════════════════════════════════
   // TAB PIANO AI
   // ══════════════════════════════════════════════════════════════
+  routineContent=forgeStripOff(routineContent);
   var pianoContent = '';
   if(FORGE_AI_RESULT && FORGE_AI_RESULT.piano_settimana){
     var GIORNI_IT=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
@@ -11543,6 +11627,12 @@ function aiWorkoutToAction(workoutName){
 }
 
 function getWorkoutSuggestion(){
+  var r=getWorkoutSuggestionRaw();
+  if(r&&!r._fromAI&&r.action&&forgeActionOff(r.action))
+    r=Object.assign({},r,{title:'Scegli dal catalogo',action:"state.trainSubTab=null;state.trainView='catalog';switchTab('train')",reason:'Il suggerimento era un programma che hai spento.'});
+  return r;
+}
+function getWorkoutSuggestionRaw(){
   var now=new Date();
 
   // ── PRIORITÀ AL PIANO AI ────────────────────────────────────────
@@ -11663,7 +11753,7 @@ function getWorkoutSuggestion(){
       var w=Object.assign({},item.w);
       w.reason='Obiettivo: '+((FORGE_OBJ||[]).filter(function(o){return o.id===primary;})[0]||{label:primary}).label+'.';
       w.priority=(w.priority||50)+20; // boost primario
-      suggestions.push(w);
+      if(!forgeActionOff(w.action)) suggestions.push(w);
     }
   }
 
@@ -11674,6 +11764,7 @@ function getWorkoutSuggestion(){
       if(secList[j].fn()){
         var ws=Object.assign({},secList[j].w);
         ws.reason='Secondario: '+((FORGE_OBJ||[]).filter(function(o){return o.id===secondary[s];})[0]||{label:secondary[s]}).label+'.';
+        if(forgeActionOff(ws.action)) continue;
         suggestions.push(ws);
         break; // max 1 per obiettivo secondario
       }
@@ -11710,6 +11801,65 @@ function getWorkoutSuggestion(){
   suggestions.sort(function(a,b){return (b.priority||0)-(a.priority||0);});
   return suggestions[0];
 }
+// ── Sezioni attive: programmi e pratiche che si possono spegnere ─────────
+var FORGE_SECTIONS=[
+  {g:'Programmi', items:[['base','KB A·B·C','🔔'],['k30','30 Days KB','📅'],['alt','Extra','⚡'],['bellplex','Complex','🔗'],['flow','Flow','🌊'],['kdp','KDP-26','📈'],['axe','AXE','🫀'],
+    ['bw','Bodyweight','🤸'],['lm','LeoMoves','🎥'],['pu50','50 piegamenti','💪'],['wf','Wing Foil','🏄'],['yoga','Yoga','🧘'],['rope','Salto della corda','🪢'],['walk','Camminata','🚶']]},
+  {g:'Pratiche quotidiane', items:[['respiro','Respiro mattutino','🌬️'],['risveglio','Routine di risveglio','☀️'],['wimhof','Wim Hof','💨'],['cicli','Cicli di respiro','🫁'],['serale','Mobilità serale','🌙']]}
+];
+function forgeOff(id){ return (FORGE_PROFILE.off||[]).indexOf(id)>=0; }
+function forgeToggleOff(id){
+  var o=(FORGE_PROFILE.off||[]).slice(), i=o.indexOf(id);
+  if(i>=0) o.splice(i,1); else o.push(id);
+  FORGE_PROFILE.off=o; saveForgeProfile(); render();
+}
+function forgeDailyAllOff(){ return ['respiro','risveglio','wimhof','cicli','serale','walk'].every(forgeOff); }
+// A quale sezione appartiene un'azione (per togliere dai suggerimenti ciò che è spento)
+function forgeProgOfAction(a){
+  if(!a) return null; a=String(a);
+  var R=[[/forgeAxe|axe-setup/,'axe'],[/forgeKdp|trainSubTab='kdp'/,'kdp'],[/forgeStartKb|startWorkout(Immediate)?\('[ABC]'\)/,'base'],
+    [/forgeBellplex|openExtraDetail\('BP|trainSubTab='bellplex'/,'bellplex'],[/openExtraDetail\('K30-|trainSubTab='k30'/,'k30'],
+    [/openExtraDetail\('(BWJ|LTL)-|trainSubTab='bw'/,'bw'],[/openExtraDetail\('WF|trainSubTab='wf'/,'wf'],[/forgeCore7|forgeDpu|openExtraDetail\(/,'alt'],
+    [/openLmDetail|startLmWorkout|trainSubTab='lm'/,'lm'],[/openFlowDetail/,'flow'],[/yogaStart|yogaRun|trainSubTab='yoga'/,'yoga'],
+    [/ropeStart|ropeRun|trainSubTab='rope'/,'rope'],[/walkStart/,'walk'],[/mrStart\(\d+,\s*'evening'\)/,'serale'],[/mrStart/,'risveglio'],
+    [/whStart/,'wimhof'],[/cycleStart|cycleOpen/,'cicli'],[/breathStartRoutine/,'respiro'],[/trainSubTab='pu50'|puStart|puTest/,'pu50']];
+  for(var i=0;i<R.length;i++) if(R[i][0].test(a)) return R[i][1];
+  return null;
+}
+function forgeActionOff(a){ var p=forgeProgOfAction(a); return !!(p&&forgeOff(p)); }
+// Toglie dall'HTML i blocchi marcati data-sec che sono spenti (senza passare dal setter innerHTML)
+function forgeStripOff(html){
+  if(!(FORGE_PROFILE.off||[]).length) return html;
+  try{
+    var doc=new DOMParser().parseFromString('<body>'+html+'</body>','text/html');
+    doc.body.querySelectorAll('[data-sec]').forEach(function(el){
+      var k=el.getAttribute('data-sec');
+      var off=k==='h-mattino'?(forgeOff('respiro')&&forgeOff('risveglio')&&forgeOff('wimhof')):forgeOff(k);
+      if(off) el.parentNode.removeChild(el);
+    });
+    return doc.body.innerHTML;
+  }catch(e){ return html; }
+}
+function forgeSectionsHTML(){
+  var nOff=(FORGE_PROFILE.off||[]).length;
+  var h='<section><p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1">SEZIONI ATTIVE</p>'+
+    '<p class="font-label text-[11px] text-gray-500 mb-3">Spegni quello che non usi: sparisce da Oggi, dal catalogo e dal piano. Lo storico resta nel Log.'+(nOff?' <span style="color:#ffb693">'+nOff+' spent'+(nOff===1?'a':'e')+'.</span>':'')+'</p>';
+  FORGE_SECTIONS.forEach(function(g){
+    h+='<p class="font-label text-[10px] uppercase tracking-widest text-gray-500 mt-3 mb-1.5">'+g.g+'</p>';
+    g.items.forEach(function(it){
+      var on=!forgeOff(it[0]);
+      h+='<button onclick="forgeToggleOff(\''+it[0]+'\')" class="w-full flex items-center gap-3 px-3 py-2 mb-1 text-left active:scale-[0.99]" style="min-height:48px;background:'+(on?'rgba(255,255,255,0.04)':'transparent')+';border:1px solid rgba(255,255,255,0.06)">'+
+        '<span class="text-lg w-7 text-center flex-shrink-0" style="opacity:'+(on?1:0.4)+'">'+it[2]+'</span>'+
+        '<span class="flex-1 font-label text-sm '+(on?'text-on-surface':'text-gray-500')+'">'+it[1]+'</span>'+
+        '<span class="font-label text-[11px] mr-1 '+(on?'':'text-gray-500')+'" style="'+(on?'color:#ffb693':'')+'">'+(on?'Attivo':'Spento')+'</span>'+
+        '<span class="relative flex-shrink-0 rounded-full" style="width:40px;height:22px;background:'+(on?'#ffb693':'rgba(255,255,255,0.14)')+'">'+
+          '<span class="absolute rounded-full" style="top:3px;left:'+(on?21:3)+'px;width:16px;height:16px;background:'+(on?'#000':'#9aa3b2')+'"></span></span>'+
+      '</button>';
+    });
+  });
+  return h+'</section>';
+}
+
 function renderSettings(){
   var objs=FORGE_PROFILE.objectives||[];
   var days=FORGE_PROFILE.trainingDays||[];
@@ -11748,6 +11898,7 @@ function renderSettings(){
     h+='<button onclick="forgeToggleDay('+d.j+')" class="w-10 h-10 font-headline text-base active:scale-90" style="background:'+(act?'#ffb693':'transparent')+';color:'+(act?'#000':'#64748b')+';border:1px solid '+(act?'#ffb693':'rgba(90,65,54,0.4)')+'">'+d.l+'</button>';
   }
   h+='</div></section>';
+  h+=forgeSectionsHTML();
   h+='<section class="space-y-2 mt-2">';
   h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-2">PIANO AI SETTIMANALE</p>';
   h+='<p class="font-label text-[9px] text-gray-600 mb-4">Esporta i dati, incollali su Claude/ChatGPT, reimporta il piano.</p>';
@@ -12033,7 +12184,7 @@ function forgeExportWeekly(){
       '30 Days KB · Day 1-30 (indica il giorno, es. "30 Days KB · Day 5")','Complex CX1-CX21 (indica il numero, es. "Complex CX12")',
       'Wing Foil WF1-WF3 + Balance&Core','Core & Forza 7R','Deep Push-Up EMOM','Condizionamento B4-B9',
       'Flow FL1-FL4 (sequenze continue)','Bodyweight Jacked · Beginner W1-W3 e Fase 1-3 W1-W3 (es. "Bodyweight Jacked Fase 1 W2")',
-      'Limitless · Fase 1-3 W1-W3 (es. "Limitless Fase 2 W1")','LeoMoves 1-4 (video Drive)','LeoMoves YouTube: Begin&Win, Ogni giorno 15\', Follow along 15\', Ogni giorno 20\', HIIT 30\', Full body 30\', Full body 40\', Verticale 30\'','Respiro (routine 15 min)','Routine Mattutina 8min','Wim Hof']
+      'Limitless · Fase 1-3 W1-W3 (es. "Limitless Fase 2 W1")','LeoMoves 1-4 (video Drive)','LeoMoves YouTube (scrivi "LeoMoves " + nome): '+LM_WORKOUTS.filter(function(w){return w.ytId;}).map(function(w){return w.label;}).join(', '),'Respiro (routine 15 min)','Routine Mattutina 8min','Wim Hof']
   };
 
   var prompt='Sei un coach di kettlebell. Analizza i dati e fornisci raccomandazioni per la settimana prossima.\n\n'+
@@ -13177,8 +13328,14 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v125";
+var APP_VERSION = "v126";
 var APP_CHANGELOG = [
+  {v:"v126", data:"11/10/2026", items:[
+    "LeoMoves: 16 allenamenti in più dal canale (24 in tutto), divisi per livello, più la playlist ufficiale «Workouts With Timer» con 70 video",
+    "LeoMoves: percorso consigliato aggiornato, filtri per durata (≤12, 15-20, 25-35, 40+ min)",
+    "Set › Sezioni attive: spegni i programmi e le pratiche che non usi; spariscono da Oggi, catalogo, Daily routine e piano",
+    "Esporta JSON ora salva anche i progressi dei programmi (macrociclo, yoga, corda, 50 piegamenti, badge) e le sezioni spente",
+  ]},
   {v:"v125", data:"11/10/2026", items:[
     "LeoMoves: 8 allenamenti dal canale YouTube (da Begin&Win per principianti fino al full body da 40', HIIT 30' e verticale)",
     "LeoMoves: percorso consigliato con «Prossimo» calcolato dalle sedute fatte; filtri per durata",
@@ -14186,6 +14343,10 @@ function exportJSON(){
     activeProgram:state.activeProgram,
     forgeProfile:FORGE_PROFILE,
     aiResult:FORGE_AI_RESULT,
+    // progressi dei programmi (macrociclo, yoga, corda, 50 piegamenti, badge...) salvati in chiavi a parte
+    extras:(function(){ var o={}, skip=['kb-history-v2','kb-external-history','kb-health-history','kb-health-profile','kb-breath-history','kb-bolt-history','kb-breath-start-date','kb-axe-history','kb-axe-progress','kb-active-program','kb-walk','kb-prana-pending'];
+      try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.indexOf('kb-')===0&&skip.indexOf(k)<0) o[k]=localStorage.getItem(k); } }catch(e){}
+      return o; })(),
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
@@ -14276,13 +14437,17 @@ function importJSON(){
           if(data.forgeProfile){
             FORGE_PROFILE.objectives=data.forgeProfile.objectives||FORGE_PROFILE.objectives;
             FORGE_PROFILE.trainingDays=data.forgeProfile.trainingDays||FORGE_PROFILE.trainingDays;
-            try{localStorage.setItem('forge-profile',JSON.stringify(FORGE_PROFILE));}catch(e){}
+            if(data.forgeProfile.off) FORGE_PROFILE.off=data.forgeProfile.off;
+            saveForgeProfile();
           }
           if(data.aiResult){
             FORGE_AI_RESULT=data.aiResult;
             try{localStorage.setItem('forge-ai-result',JSON.stringify(data.aiResult));}catch(e){}
           }
         }
+        if(data.extras&&typeof data.extras==='object') Object.keys(data.extras).forEach(function(k){
+          if(k.indexOf('kb-')===0&&(!merge||localStorage.getItem(k)==null)) try{ localStorage.setItem(k,data.extras[k]); }catch(e){}
+        });
         saveHistory();
         saveExternalHistory();
         saveHealthHistory();
@@ -14334,7 +14499,7 @@ try{ walkRestore(); }catch(e){}
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v125';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v126';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
