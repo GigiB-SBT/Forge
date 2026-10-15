@@ -1299,7 +1299,7 @@ function mcSessionType(e){
   if(/^K30-/.test(id)){ var w=getExtraById(id); if(!w) return "forza";
     if(w.fmt==="wr"||/core/i.test(w.title||"")) return "mobilita";
     return (w.fmt==="emom"||w.fmt==="chipper")?"intervalli":"forza"; }
-  if(/^LMY/.test(id)){ var lw=getLmById(id); return lw&&lw.mc?lw.mc:"corpolibero"; }
+  if(/^LM[A-Z]/.test(id)){ var lw=getLmById(id); return lw&&lw.mc?lw.mc:"corpolibero"; }
   if(/^(BWJ-|LM\d)/.test(id)) return "corpolibero";
   if(/^(LTL-|BP\d|D1|B2|B3|B8|DPU|CORE7|C\d|WF[123])/.test(id)) return "forza";
   if(/^B[4-9]$/.test(id)) return "intervalli";
@@ -1323,7 +1323,7 @@ function mcCandidatesAll(type){
     ["A","B","C"].forEach(function(k){ if(DAYS[k]) C.push({key:"day:"+k,title:DAYS[k].label+" · "+DAYS[k].subtitle,min:DAYS[k].totalMin||24,action:"startWorkout('"+k+"')"}); });
     (typeof K30_WORKOUTS!=="undefined"?K30_WORKOUTS:[]).forEach(function(w){ if(mcSessionType({day:"extra_"+w.id})==="intervalli") ex(w.id); });
     ["B4","B5","B6","B7","B9"].forEach(ex);
-    (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ if(l.mc==="intervalli") C.push({key:"x:"+l.id,title:"LeoMoves · "+l.label,min:l.min||30,action:"openLmDetail('"+l.id+"')"}); });
+    (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ if(l.mc==="intervalli"&&vcCoachId(l)==='leo') C.push({key:"x:"+l.id,title:"LeoMoves · "+l.label,min:l.min||30,action:"openLmDetail('"+l.id+"')"}); });
   }
   if(type==="forza"){
     (typeof K30_WORKOUTS!=="undefined"?K30_WORKOUTS:[]).forEach(function(w){ if(mcSessionType({day:"extra_"+w.id})==="forza"&&w.fmt!=="tech"&&!w.benchmark) ex(w.id); });
@@ -1336,13 +1336,15 @@ function mcCandidatesAll(type){
     (typeof EXTRA_WORKOUTS!=="undefined"?EXTRA_WORKOUTS:[]).forEach(function(w){ if(/^BWJ-/.test(w.id)&&w.phase===pref) ex(w.id); });
     (function(){ var nx=(typeof lmNext==="function")?lmNext():null;
       if(nx) C.push({key:"x:"+nx.id,title:"LeoMoves · "+nx.label,min:nx.min||20,action:"openLmDetail('"+nx.id+"')"});
-      (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ if(!l.ytId) C.push({key:"x:"+l.id,title:(l.ytId?"LeoMoves · ":"")+l.label,min:l.min||20,action:"openLmDetail('"+l.id+"')"}); }); })();
+      (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ if(!l.ytId&&!l.ytList) C.push({key:"x:"+l.id,title:(l.ytId?"LeoMoves · ":"")+l.label,min:l.min||20,action:"openLmDetail('"+l.id+"')"}); }); })();
+    ['ss','smoov','altri'].forEach(function(cid){ var v=(typeof vcNext==="function")?vcNext(cid,['flow','forza']):null; if(v) C.push({key:"x:"+v.id,title:lmFullLabel(v),min:v.min||15,action:"openLmDetail('"+v.id+"')"}); });
   }
   if(type==="mobilita"){
     (function(){ var yq=yogaLoad(), gid=yq.goal||'mobilita', ss=yogaSession(gid,yogaCount(yq,gid)%YOGA_TOTAL); C.push({key:"yoga",title:"Yoga · "+yogaGoal(gid).name,min:ss.min,action:"yogaStartToday()"}); })();
     (typeof K30_WORKOUTS!=="undefined"?K30_WORKOUTS:[]).forEach(function(w){ if(mcSessionType({day:"extra_"+w.id})==="mobilita") ex(w.id); });
     ex("WFB");
-    (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ if(l.mc==="mobilita") C.push({key:"x:"+l.id,title:"LeoMoves · "+l.label,min:l.min||10,action:"openLmDetail('"+l.id+"')"}); });
+    (typeof LM_WORKOUTS!=="undefined"?LM_WORKOUTS:[]).forEach(function(l){ if(l.mc==="mobilita"&&vcCoachId(l)==='leo') C.push({key:"x:"+l.id,title:"LeoMoves · "+l.label,min:l.min||10,action:"openLmDetail('"+l.id+"')"}); });
+    ['tm','ss','altri'].forEach(function(cid){ var v=(typeof vcNext==="function")?vcNext(cid,['mobilita']):null; if(v) C.push({key:"x:"+v.id,title:lmFullLabel(v),min:v.min||10,action:"openLmDetail('"+v.id+"')"}); });
   }
   return C;
 }
@@ -2672,7 +2674,7 @@ function homeTrainingToday(){
   if(last.day){
     var id=String(last.day).replace('extra_','');
     var w=getExtraById(id), lm=(typeof getLmById==='function')?getLmById(id):null;
-    label=w?(w.label+(w.title?' · '+w.title:'')):lm?lm.label:(DAYS[last.day]?DAYS[last.day].label:'Giorno '+last.day);
+    label=w?(w.label+(w.title?' · '+w.title:'')):lm?lmFullLabel(lm):(DAYS[last.day]?DAYS[last.day].label:'Giorno '+last.day);
   }
   return {label:label,dur:last.dur};
 }
@@ -3273,7 +3275,7 @@ function renderLog(){
         const lmW=isLM?getLmById(rawId):null;
         const label=isExt
           ?(isFlowEntry?((getFlowById((h.type||'').replace('KB Flow_',''))||{}).nome||h.type):isAxeEntry?"AXE Protocol":isKDP?"KDP-26":isFinisher?"Finisher Snatch":h.type)
-          :(bpW?(bpW.label+" — "+bpW.title):lmW?lmW.label:rawId?rawId:`Giorno ${h.day}`);
+          :(bpW?(bpW.label+" — "+bpW.title):lmW?lmFullLabel(lmW):rawId?rawId:`Giorno ${h.day}`);
         const [dayN,...rest]=h.date?h.date.split("/"):["—"];
         const mo=rest.length?["","GEN","FEB","MAR","APR","MAG","GIU","LUG","AGO","SET","OTT","NOV","DIC"][Number(rest[0])]||"":"";
         const editBlock=isEditing?`<div class="mt-3 pt-3 border-t border-white/5 space-y-3">
@@ -3408,6 +3410,7 @@ function renderLog(){
           }).join("")}
         </div>
       </div>
+      ${vcStatsHTML()}
     </div>`;
   }
 
@@ -6683,6 +6686,121 @@ const LM_WORKOUTS=[
   {id:"LMYP", label:"Workouts With Timer", ytList:"PLLlMy3U4tg25dkfpBNu_8nZ3FvULfKFn-", color:"#22c55e", min:null, level:"Tutti i livelli", focus:"Playlist ufficiale · 70 video", mc:null,
    orig:'Playlist «Workouts With Timer» di LeoMoves',
    desc:"Tutti gli allenamenti con timer del canale in un unico lettore: scegli il video dall'elenco della playlist, poi registra con la durata reale.", ai:"playlist|with timer"},
+  // ── Altri coach (video pubblici verificati: autore del canale, incorporabili) ──
+  {id:"LMSS1", coach:"ss", label:'Forza base · 10\'', ytId:"IfmPRcYO0J8", color:"#f59e0b", min:10, level:"Principiante", tipo:"forza", focus:'Forza full body', mc:"corpolibero",
+   orig:'Beginner Full Body Strength Workout (10 min. Follow Along)',
+   desc:'Dieci minuti di forza a corpo libero per chi inizia.', ai:"forza base|beginner full body strength"},
+  {id:"LMSS2", coach:"ss", label:'Animali per iniziare · 10\'', ytId:"v2yyET-yFeQ", color:"#f59e0b", min:10, level:"Principiante", tipo:"forza", focus:'Condizionamento animale', mc:"corpolibero",
+   orig:'Beginner Animal Movement Conditioning (10 MIN)',
+   desc:'Movimenti animali semplici in sequenza: fiato e controllo del corpo.', ai:"animali per iniziare|beginner animal"},
+  {id:"LMSS3", coach:"ss", label:'Movimenti primali · 10\'', ytId:"s6s8fLgnv58", color:"#f59e0b", min:10, level:"Principiante", tipo:"flow", focus:'Primale · in diretta', mc:"corpolibero",
+   orig:'Primal Movements YOU SHOULD Do (Follow Along Routine)',
+   desc:'I movimenti primali di base, da seguire in diretta.', ai:"primal"},
+  {id:"LMSS4", coach:"ss", label:'Mobilità animale · 10\'', ytId:"-rW0583WZ6w", color:"#f59e0b", min:10, level:"Principiante", tipo:"mobilita", focus:'Mobilità con movimenti animali', mc:"mobilita",
+   orig:'The Animal Mobility Everyone NEEDS (Just 10 Minutes)',
+   desc:'Mobilità di anche e spalle attraverso i movimenti animali.', ai:"mobilit. animale|animal mobility"},
+  {id:"LMSS5", coach:"ss", label:'Stretching con forza · 10\'', ytId:"3R_BSL7nOOM", color:"#f59e0b", min:10, level:"Principiante", tipo:"mobilita", focus:'Allungamento attivo', mc:"mobilita",
+   orig:'Full Body Stretching with Strength (10 Min. Follow Along)',
+   desc:'Allungamento di tutto il corpo con contrazioni attive.', ai:"stretching con forza|stretching with strength"},
+  {id:"LMSS6", coach:"ss", label:'Mobilità quotidiana · 10\'', ytId:"YTgv-9EVLbc", color:"#f59e0b", min:10, level:"Principiante", tipo:"mobilita", focus:'Da fare ogni giorno', mc:"mobilita",
+   orig:'Do This Mobility Daily to Feel 10 Years Younger.',
+   desc:'Mobilità quotidiana leggera, adatta anche ai giorni di scarico.', ai:"quotidiana|daily mobility|10 years"},
+  {id:"LMSS7", coach:"ss", label:'Forza + mobilità · 10\'', ytId:"rK9NdlgY41U", color:"#f59e0b", min:10, level:"Intermedio", tipo:"flow", focus:'Flow forza e mobilità', mc:"corpolibero",
+   orig:'Do This Daily. Where Strength & Mobility Meet (10 Minutes)',
+   desc:'Flow quotidiano dove forza e mobilità si incontrano.', ai:"forza \+ mobilit|where strength"},
+  {id:"LMSS8", coach:"ss", label:'Animal flow musicale · 10\'', ytId:"w-meiemEwhI", color:"#f59e0b", min:10, level:"Intermedio", tipo:"flow", focus:'Flow a tempo di musica', mc:"corpolibero",
+   orig:'Animal Movement Routine to Big Wild (Follow Along)',
+   desc:'Sequenza di movimenti animali a tempo di musica.', ai:"musicale|big wild"},
+  {id:"LMSS9", coach:"ss", label:'20 movimenti in flow · 12\'', ytId:"mYt_tFojVmE", color:"#f59e0b", min:12, level:"Intermedio", tipo:"flow", focus:'Flow animale', mc:"corpolibero",
+   orig:'20 Flow Animal Movements',
+   desc:'Venti movimenti animali collegati in un flow continuo.', ai:"20 moviment|20 flow"},
+  {id:"LMSS10", coach:"ss", label:'Gambe forza + mobilità · 10\'', ytId:"v0FtlLQ6HWk", color:"#f59e0b", min:10, level:"Intermedio", tipo:"forza", focus:'Gambe · animale', mc:"corpolibero",
+   orig:'Strength + Mobility Legs Routine (Animal Follow Along)',
+   desc:'Routine per le gambe che unisce forza e mobilità.', ai:"gambe|legs"},
+  {id:"LMSS11", coach:"ss", label:'Condizionamento animale · 10\'', ytId:"mhu5U0MUnas", color:"#f59e0b", min:10, level:"Intermedio", tipo:"forza", focus:'Condizionamento', mc:"corpolibero",
+   orig:'Animal Movement Conditioning Changes Your Body like crazy.',
+   desc:'Condizionamento intenso con movimenti animali.', ai:"condizionamento|conditioning"},
+  {id:"LMSS12", coach:"ss", label:'Flessibilità gambe · 10\'', ytId:"W5LvKNElKH4", color:"#f59e0b", min:10, level:"Intermedio", tipo:"mobilita", focus:'Flessibilità gambe', mc:"mobilita",
+   orig:'The Most Potent FLEXIBILITY Routine for your legs (10 min. Follow Along)',
+   desc:'Flessibilità per posteriori, adduttori e anche.', ai:"flessibilit. gambe|flexibility routine for your legs"},
+  {id:"LMSM1", coach:"smoov", label:'Primal per principianti · 25\'', ytId:"NE02QPONhhk", color:"#38bdf8", min:25, level:"Principiante", tipo:"flow", focus:'Primale full body', mc:"corpolibero",
+   orig:'Full Body Primal Movement | 25 Min Beginner Workout',
+   desc:'Allenamento primale completo pensato per chi inizia.', ai:"principianti|beginner"},
+  {id:"LMSM2", coach:"smoov", label:'Primal per tutti · 30\'', ytId:"fGs2GwsVX6A", color:"#38bdf8", min:30, level:"Tutti i livelli", tipo:"flow", focus:'Primale full body', mc:"corpolibero",
+   orig:'FULL BODY PRIMAL MOVEMENT | 30 Min Workout for All Fitness Levels',
+   desc:'Trenta minuti di movimento primale, adattabili a ogni livello.', ai:"per tutti|all fitness"},
+  {id:"LMSM3", coach:"smoov", label:'Mobilità primale · 10\'', ytId:"IndsMfc1OP0", color:"#38bdf8", min:10, level:"Principiante", tipo:"mobilita", focus:'Mobilità a terra', mc:"mobilita",
+   orig:'Quick Primal Mobility | Bodyweight Exercises For Full Body Connection',
+   desc:'Mobilità primale breve per collegare tutto il corpo.', ai:"mobilit"},
+  {id:"LMSM4", coach:"smoov", label:'Forza primale petto e spalle · 25\'', ytId:"8w6cOtR5pZU", color:"#38bdf8", min:25, level:"Principiante", tipo:"forza", focus:'Petto, spalle, tricipiti', mc:"corpolibero",
+   orig:'25 MIN Full Body Primal Strength | Build Chest, Shoulders & Triceps',
+   desc:'Forza primale con accento su petto, spalle e tricipiti.', ai:"petto|chest"},
+  {id:"LMSM5", coach:"smoov", label:'Primal forza e mobilità · 20\'', ytId:"ILTM7bzEKIA", color:"#38bdf8", min:20, level:"Intermedio", tipo:"forza", focus:'Forza e mobilità', mc:"corpolibero",
+   orig:'20 MIN Primal Workout | Full Body Strength & Mobility',
+   desc:'Venti minuti di forza e mobilità con movimenti primali.', ai:"forza e mobilit|20 min primal"},
+  {id:"LMSM6", coach:"smoov", label:'Flow energia · 20\'', ytId:"dmMxQj8MyEk", color:"#38bdf8", min:20, level:"Intermedio", tipo:"flow", focus:'Flow continuo', mc:"corpolibero",
+   orig:'This 20 Minute Movement Flow Will Boost Your Energy!',
+   desc:'Flow continuo di venti minuti per ricaricarsi.', ai:"energia|energy"},
+  {id:"LMSM7", coach:"smoov", label:'Skills flow · 30\'', ytId:"z-camKx6o18", color:"#38bdf8", min:30, level:"Intermedio", tipo:"flow", focus:'Abilità e flow', mc:"corpolibero",
+   orig:'Full Body Skills Flow | 30 Minute Primal Movement Workout',
+   desc:'Flow più tecnico con abilità di movimento.', ai:"skill"},
+  {id:"LMSM8", coach:"smoov", label:'Primal flow completo · 30\'', ytId:"H_CEtG4fB64", color:"#38bdf8", min:30, level:"Avanzato", tipo:"forza", focus:'Forza e mobilità complete', mc:"corpolibero",
+   orig:'30 Minute Primal Flow | Complete Full Body Strength & Mobility',
+   desc:'Seduta lunga e impegnativa di forza e mobilità.', ai:"completo|complete"},
+  {id:"LMTM1", coach:"tm", label:'Mobilità del mattino · 10\'', ytId:"0VrLgzwTmTg", color:"#a78bfa", min:10, level:"Principiante", tipo:"mobilita", focus:'Mattino', mc:"mobilita",
+   orig:'10 Minute Morning Mobility Routine! (FOLLOW ALONG)',
+   desc:'Mobilità del mattino in dieci minuti.', ai:"mattino|morning"},
+  {id:"LMTM2", coach:"tm", label:'Spalle · 10\'', ytId:"TNU6umd0sNA", color:"#a78bfa", min:10, level:"Principiante", tipo:"mobilita", focus:'Spalle', mc:"mobilita",
+   orig:'Quick Shoulder Mobility Routine FOLLOW ALONG',
+   desc:'Mobilità rapida delle spalle.', ai:"spalle|shoulder"},
+  {id:"LMTM3", coach:"tm", label:'Anche · 12\'', ytId:"jj2AAH6jbHk", color:"#a78bfa", min:12, level:"Principiante", tipo:"mobilita", focus:'Anche', mc:"mobilita",
+   orig:'12 Minute Hip Mobility Routine (FOLLOW ALONG)',
+   desc:'Dodici minuti per sbloccare le anche.', ai:"anche|hip"},
+  {id:"LMTM4", coach:"tm", label:'Stretching principianti · 15\'', ytId:"L_xrDAtykMI", color:"#a78bfa", min:15, level:"Principiante", tipo:"mobilita", focus:'Corpo intero', mc:"mobilita",
+   orig:'15 Minute Beginner Stretch Flexibility Routine! (FOLLOW ALONG)',
+   desc:'Stretching completo e accessibile per chi inizia.', ai:"stretching principianti · 15|15 minute beginner"},
+  {id:"LMTM5", coach:"tm", label:'Rilassante per il sonno · 18\'', ytId:"zRPNh_QCIgo", color:"#a78bfa", min:18, level:"Principiante", tipo:"mobilita", focus:'Sera · sonno', mc:"mobilita",
+   orig:'18 Minute Relaxing Sleep Flexibility Routine (FOLLOW ALONG)',
+   desc:'Flessibilità lenta e rilassante, da fare prima di dormire.', ai:"sonno|sleep|rilassant"},
+  {id:"LMTM6", coach:"tm", label:'Stretching principianti V5 · 20\'', ytId:"DCdKTMlatYw", color:"#a78bfa", min:20, level:"Principiante", tipo:"mobilita", focus:'Corpo intero', mc:"mobilita",
+   orig:'20 Minute Beginner Stretch Routine V5! (FOLLOW ALONG)',
+   desc:'Venti minuti di stretching per principianti.', ai:"v5|20 minute beginner"},
+  {id:"LMTM7", coach:"tm", label:'Flessibilità principianti V3 · 25\'', ytId:"OjcN6RzWFWs", color:"#a78bfa", min:25, level:"Principiante", tipo:"mobilita", focus:'Corpo intero', mc:"mobilita",
+   orig:'25 Minute Beginner Flexibility Routine V3 (FOLLOW ALONG)',
+   desc:'Flessibilità per principianti, versione più lunga.', ai:"v3|25 minute beginner"},
+  {id:"LMTM8", coach:"tm", label:'Posteriori della coscia · 25\'', ytId:"QlqfnIfOVPk", color:"#a78bfa", min:25, level:"Intermedio", tipo:"mobilita", focus:'Femorali', mc:"mobilita",
+   orig:'25 Minute Hamstring Flexibility Routine V2 (FOLLOW ALONG)',
+   desc:'Flessibilità dei posteriori della coscia.', ai:"posteriori|hamstring|femoral"},
+  {id:"LMTM9", coach:"tm", label:'Corpo intero V4 · 30\'', ytId:"CmCysOVh5gA", color:"#a78bfa", min:30, level:"Intermedio", tipo:"mobilita", focus:'Corpo intero', mc:"mobilita",
+   orig:'30 Minute Full Body Flexibility Routine V4! (FOLLOW ALONG)',
+   desc:'Trenta minuti di flessibilità per tutto il corpo.', ai:"v4"},
+  {id:"LMTM10", coach:"tm", label:'Corpo intero V6 · 30\'', ytId:"vOvVg0EIi6w", color:"#a78bfa", min:30, level:"Intermedio", tipo:"mobilita", focus:'Corpo intero', mc:"mobilita",
+   orig:'30 Minute Full Body Flexibility Routine V6! (FOLLOW ALONG)',
+   desc:'Trenta minuti di flessibilità, versione più recente.', ai:"v6"},
+  {id:"LMTP1", coach:"altri", by:'Tom Peto Training', label:'Mobility flow · 10\'', ytId:"GWbEI6moUBo", color:"#f472b6", min:10, level:"Principiante", tipo:"mobilita", focus:'Tom Peto · stretching dinamico', mc:"mobilita",
+   orig:'10 MIN MOBILITY FLOW | Full Body Dynamic Stretch',
+   desc:'Stretching dinamico in flow per tutto il corpo.', ai:"mobility flow"},
+  {id:"LMTP2", coach:"altri", by:'Tom Peto Training', label:'Animal movement · 15\'', ytId:"ietk995kKBw", color:"#f472b6", min:15, level:"Intermedio", tipo:"flow", focus:'Tom Peto · forza e mobilità', mc:"corpolibero",
+   orig:'15 Minute Animal Movement Workout | Strength & Mobility Flow',
+   desc:'Movimento animale per forza e mobilità.', ai:"animal movement"},
+  {id:"LMTP3", coach:"altri", by:'Tom Peto Training', label:'Forza primale · 20\'', ytId:"ClgtuBNDsDY", color:"#f472b6", min:20, level:"Intermedio", tipo:"forza", focus:'Tom Peto · forza', mc:"corpolibero",
+   orig:'20 Min FULL BODY PRIMAL STRENGTH | Follow Along',
+   desc:'Venti minuti di forza primale a corpo libero.', ai:"forza primale|primal strength"},
+  {id:"LMCF1", coach:"altri", by:'Charlie Follows', label:'Animal moves flow · 20\'', ytId:"IZi0rl8G-qw", color:"#f472b6", min:20, level:"Intermedio", tipo:"flow", focus:'Charlie Follows · flow e stretch', mc:"corpolibero",
+   orig:'20 Min Animal Moves Flow | Full Body Stretch + Primal Movement',
+   desc:'Flow animale con allungamenti: transizioni un po\' tecniche.', ai:"animal moves"},
+  {id:"LMCF2", coach:"altri", by:'Charlie Follows', label:'Yoga flow mattino · 20\'', ytId:"ujXfWGpioHo", color:"#f472b6", min:20, level:"Tutti i livelli", tipo:"mobilita", focus:'Charlie Follows · yoga flow', mc:"mobilita",
+   orig:'20 Min Morning Yoga Flow | Every Day Full Body Yoga For All Levels',
+   desc:'Yoga flow del mattino per ogni livello.', ai:"yoga flow mattino|morning yoga"},
+  {id:"LMCF3", coach:"altri", by:'Charlie Follows', label:'Yoga flow corpo intero · 25\'', ytId:"65NZMuQpSH4", color:"#f472b6", min:25, level:"Intermedio", tipo:"mobilita", focus:'Charlie Follows · yoga flow', mc:"mobilita",
+   orig:'25 Min Full Body Yoga Flow with Charlie Follows',
+   desc:'Yoga flow completo di venticinque minuti.', ai:"yoga flow corpo|25 min full body yoga"},
+  {id:"LMSSP", coach:"ss", label:"Follow Along Routines", ytList:"PLPDHotOCPg88ReMCcZknvoA-R8rVAgkt5", color:"#f59e0b", min:null, level:"Tutti i livelli", focus:"Playlist ufficiale · 63 video", mc:null,
+   orig:'Playlist «Follow Along Routines [Movement & Mobility]» di Strength Side',
+   desc:"Tutte le routine da seguire di Strength Side in un lettore: scegli il video dall'elenco, poi registra con la durata reale.", ai:"playlist"},
+  {id:"LMSMP", coach:"smoov", label:"Primal Movement Workouts", ytList:"PLv0o5WrpkzDdzym8fS4dhSXWZUB6P7ins", color:"#38bdf8", min:null, level:"Tutti i livelli", focus:"Playlist ufficiale · 47 video", mc:null,
+   orig:'Playlist «Primal Movement Workouts (Bodyweight Training)» di smoov Movement',
+   desc:"Tutti gli allenamenti primali di smoov in un lettore: scegli il video dall'elenco, poi registra con la durata reale.", ai:"playlist"},
 ];
 // Percorso consigliato sui video YouTube: si passa al successivo dopo 2 sedute
 var LM_PATH=["LMY1","LMY20","LMY2","LMY3","LMY4","LMY9","LMY6","LMY10","LMY5","LMY19","LMY16","LMY7"];
@@ -6692,6 +6810,66 @@ var LM_STEPS=[
   {t:"Settimane 5-6", ids:["LMY6","LMY10","LMY5"]},
   {t:"Poi",           ids:["LMY19","LMY16","LMY7"], note:"Video brevi (8-11') come extra o nei giorni pieni. Verticale come skill a parte."}
 ];
+var VC_COACHES=[
+  {id:'leo',   name:'LeoMoves',       who:'Leandro Fornito',    color:'#22c55e'},
+  {id:'ss',    name:'Strength Side',  who:'Jared Kaplan',       color:'#f59e0b', pl:'LMSSP', plN:63,
+   bio:'Sedute da 10 minuti che mescolano movimenti animali, forza e mobilità, spesso a tempo di musica.', motto:'“King of the 10 Minute Movement Session.”'},
+  {id:'smoov', name:'smoov Movement', who:'',                   color:'#38bdf8', pl:'LMSMP', plN:47,
+   bio:'Allenamenti primali e flow a terra da 10 a 30 minuti: forza e mobilità insieme, più tecnici di LeoMoves.'},
+  {id:'tm',    name:'Tom Merrick',    who:'Bodyweight Warrior', color:'#a78bfa',
+   bio:'Flessibilità e mobilità da seguire in diretta: anche, spalle, posteriori, corpo intero. Ideale la sera e nei giorni di scarico.'},
+  {id:'altri', name:'Altri',          who:'Charlie Follows · Tom Peto', color:'#f472b6',
+   bio:'Charlie Follows: flow animali e yoga flow. Tom Peto Training: movimento animale, mobilità e forza primale.'}
+];
+var VC_TIPI=[['flow','Flow e animale','#38bdf8'],['forza','Forza a corpo libero','#f97316'],['mobilita','Mobilità e flessibilità','#a78bfa']];
+function vcCoachId(w){ return (w&&w.coach)||'leo'; }
+function vcCoach(id){ return VC_COACHES.filter(function(c){return c.id===id;})[0]||VC_COACHES[0]; }
+function vcAuthor(w){ return (w&&w.by)||vcCoach(vcCoachId(w)).name; }
+function lmFullLabel(w){ return (w.ytId||w.ytList)?vcAuthor(w)+' · '+w.label:w.label; }
+function vcList(cid){ return LM_WORKOUTS.filter(function(w){return vcCoachId(w)===cid&&w.ytId;}); }
+// Il prossimo video di un coach: il meno fatto, a parità il primo dell'elenco (l'elenco è già in ordine di progressione)
+function vcNext(cid,tipi){
+  if(forgeOff('lm')||forgeOff('vc-'+cid)) return null;
+  var L=vcList(cid).filter(function(w){return !tipi||tipi.indexOf(w.tipo)>=0;}), best=null, bc=1e9;
+  L.forEach(function(w){ var c=lmDoneList(w.id).length; if(c<bc){bc=c;best=w;} });
+  return best;
+}
+function vcSetCoach(id){ state.vcCoach=id; state.vcTipo='tutti'; render(); window.scrollTo(0,0); }
+function vcCard(w,big){
+  var n=lmDoneList(w.id).length, lc=LM_LEVEL_COL[w.level]||w.color;
+  return '<div onclick="openLmDetail(\''+w.id+'\')" class="flex items-stretch gap-3 mb-2 bg-surface-container ghost-border cursor-pointer active:bg-surface-container-high" style="border-left:2px solid '+lc+'">'+
+    '<div class="flex-shrink-0 relative" style="width:'+(big?132:104)+'px;background:#000">'+
+      '<img src="https://i.ytimg.com/vi/'+w.ytId+'/mqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;opacity:.85;min-height:'+(big?74:58)+'px">'+
+      '<span class="font-label text-[10px] px-1.5 py-0.5 absolute" style="right:4px;bottom:4px;background:rgba(0,0,0,.75);color:#fff">'+w.min+'\'</span>'+
+    '</div>'+
+    '<div class="flex-1 min-w-0 py-3 pr-2">'+
+      '<p class="font-headline text-lg leading-none">'+w.label+'</p>'+
+      '<p class="font-label text-[10px] mt-1" style="color:'+lc+'">'+w.level+' · <span class="text-gray-500">'+w.focus+'</span></p>'+
+      '<p class="font-label text-[10px] text-gray-500 mt-1">'+(n?('Fatto '+n+(n===1?' volta':' volte')):'Non ancora fatto')+'</p>'+
+    '</div>'+
+    '<span class="material-symbols-outlined text-gray-700 text-sm self-center pr-2">chevron_right</span>'+
+  '</div>';
+}
+// Riga "alternativa video" nella Daily routine
+function vcAltLine(id,sec){
+  var w=getLmById(id); if(!w||forgeOff('lm')||forgeOff('vc-'+vcCoachId(w))) return '';
+  return '<button data-sec="'+sec+'" onclick="openLmDetail(\''+id+'\')" class="w-full flex items-center gap-2 px-4 mb-4 -mt-2 text-left active:scale-[0.99]" style="min-height:44px;border:1px dashed rgba(255,255,255,0.14)">'+
+    '<span class="material-symbols-outlined" style="font-size:18px;color:'+w.color+'">smart_display</span>'+
+    '<span class="flex-1 font-label text-[12px] text-gray-400">Alternativa video · <span style="color:'+w.color+'">'+lmFullLabel(w)+'</span></span>'+
+    '<span class="material-symbols-outlined text-gray-600" style="font-size:18px">chevron_right</span></button>';
+}
+// Stats: sedute per coach
+function vcStatsHTML(){
+  var cnt={}, tot=0;
+  (state.history||[]).forEach(function(h){ if(h.day&&String(h.day).indexOf('extra_LM')===0){ var w=getLmById(String(h.day).slice(6)); var a=w?vcAuthor(w):'LeoMoves'; cnt[a]=(cnt[a]||0)+1; tot++; } });
+  if(!tot) return '';
+  var colOf=function(a){ var w=LM_WORKOUTS.filter(function(x){return vcAuthor(x)===a;})[0]; return w?w.color:'#22c55e'; };
+  return '<div class="bg-surface-container ghost-border p-5"><p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-4">VIDEO COACH · '+tot+' SEDUTE</p><div class="space-y-3">'+
+    Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];}).map(function(a){ var v=cnt[a], pct=Math.round(v/tot*100), c=colOf(a);
+      return '<div><div class="flex justify-between mb-1"><span class="font-headline text-lg" style="color:'+c+'">'+a+'</span><span class="font-headline text-lg text-gray-500">'+v+' · '+pct+'%</span></div>'+
+        '<div class="h-1.5 bg-surface-container-high overflow-hidden"><div style="height:100%;width:'+pct+'%;background:'+c+'"></div></div></div>'; }).join('')+
+  '</div></div>';
+}
 var LM_LEVEL_COL={"Principiante":"#4ade80","Tutti i livelli":"#4ade80","Intermedio":"#facc15","Intermedio+":"#fb923c","Avanzato":"#f97316","Skill":"#a78bfa"};
 function lmDoneList(id){ return (state.history||[]).filter(function(h){return h.day==="extra_"+id;}); }
 function lmNext(){
@@ -6751,6 +6929,7 @@ function lmRequestFullscreen(){
 
 function openLmDetail(id){
   state.lmDetailId=id;
+  try{ state.vcCoach=vcCoachId(getLmById(id)); }catch(e){}
   state.tab="lm-detail";
   render();
 }
@@ -6805,7 +6984,7 @@ function lmSaveDone(){
     feeling:state.lm.logForm.feeling,
     hrAvg:state.lm.logForm.hrAvg?Number(state.lm.logForm.hrAvg):null,
     notes:state.lm.logForm.notes||"",
-    program:"LeoMoves",
+    program:vcAuthor(getLmById(state.lm.id)),
   };
   if(mins>0){
     var mem=loadLmDurationMemory();
@@ -6836,7 +7015,7 @@ function renderLmDetail(){
     '<header class="px-5 pt-10 pb-6 flex items-start gap-4">'+
       '<button onclick="switchTab(\'train\')" class="p-2 mt-1"><span class="material-symbols-outlined" style="color:'+w.color+'">arrow_back</span></button>'+
       '<div class="flex-1">'+
-        '<p class="font-label text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">LEOMOVES'+(w.ytList?' · PLAYLIST':w.ytId?' · YOUTUBE':'')+'</p>'+
+        '<p class="font-label text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">'+vcAuthor(w).toUpperCase()+(w.ytList?' · PLAYLIST':w.ytId?' · YOUTUBE':'')+'</p>'+
         '<h1 class="font-headline text-4xl leading-none">'+lmDisplayLabel(w)+'</h1>'+
         (lastDone?'<p class="font-label text-xs text-gray-500 mt-2">Ultima volta: '+lastDone.date+' · fatto '+lmDoneList(w.id).length+(lmDoneList(w.id).length===1?' volta':' volte')+'</p>':'')+
       '</div>'+
@@ -9614,6 +9793,51 @@ function renderTrain(){
 
   // ── TAB LEOMOVES (video allenamenti su Google Drive) ──────────────
   function tabLeoMoves(){
+    var on=VC_COACHES.filter(function(c){return !forgeOff('vc-'+c.id);});
+    if(!on.length) return '<p class="font-label text-sm text-gray-400 p-4">Tutti i coach sono spenti. Riaccendili in Set › Sezioni attive.</p>';
+    var cid=state.vcCoach||'leo'; if(!on.some(function(c){return c.id===cid;})) cid=on[0].id;
+    var chips='<div class="flex flex-wrap gap-2 mb-4">'+on.map(function(c){ var sel=c.id===cid;
+      return '<button onclick="vcSetCoach(\''+c.id+'\')" class="px-3 font-label text-[13px] active:scale-95" style="min-height:40px;border:1px solid '+(sel?c.color:'rgba(255,255,255,0.12)')+';color:'+(sel?c.color:'#9aa3b2')+';background:'+(sel?c.color+'1a':'transparent')+'">'+c.name+'</button>'; }).join('')+'</div>';
+    return chips+(cid==='leo'?tabLeo():tabCoach(cid));
+  }
+  function tabCoach(cid){
+    var c=vcCoach(cid), C=c.color, t=state.vcTipo||'tutti', L=vcList(cid), nx=vcNext(cid);
+    var plw=c.pl?getLmById(c.pl):null;
+    var h='<div class="p-4 mb-4" style="background:'+C+'0d;border-left:2px solid '+C+'">'+
+      '<p class="font-label text-[9px] uppercase tracking-[0.2em] mb-1.5" style="color:'+C+'">'+c.name.toUpperCase()+(c.who?' · '+c.who.toUpperCase():'')+'</p>'+
+      '<p class="font-label text-[11px] text-gray-400 leading-relaxed">'+c.bio+'</p>'+
+      (c.motto?'<p class="font-label text-[10px] mt-2" style="color:'+C+'">'+c.motto+'</p>':'')+
+      '<p class="font-label text-[10px] text-gray-500 mt-2">'+L.length+' video verificati'+(plw?' · playlist ufficiale da '+c.plN:'')+'</p>'+
+    '</div>';
+    if(nx){
+      h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-2">PROSSIMO CONSIGLIATO</p>'+vcCard(nx,true)+
+        '<button onclick="startLmWorkout(\''+nx.id+'\')" class="w-full mb-5 flex items-center justify-center gap-1.5 font-headline text-base active:scale-95" style="min-height:46px;background:'+C+';color:#000"><span class="material-symbols-outlined text-lg">play_arrow</span> Inizia · '+nx.min+' min</button>';
+    }
+    var present=VC_TIPI.filter(function(x){return L.some(function(w){return w.tipo===x[0];});});
+    if(present.length>1){
+      h+='<div class="flex flex-wrap gap-2 mb-3">'+[['tutti','Tutti',C]].concat(present).map(function(x){ var sel=t===x[0];
+        return '<button onclick="state.vcTipo=\''+x[0]+'\';render()" class="font-label text-[10px] uppercase tracking-wider px-3 py-1.5" style="'+(sel?'background:'+C+';color:#000':'border:1px solid rgba(90,65,54,0.35);color:#94a3b8')+'">'+x[1]+'</button>'; }).join('')+'</div>';
+    }
+    VC_TIPI.forEach(function(x){
+      if(t!=='tutti'&&t!==x[0]) return;
+      var gl=L.filter(function(w){return w.tipo===x[0];}).sort(function(a,b){return a.min-b.min;});
+      if(!gl.length) return;
+      h+='<p class="font-label text-[10px] uppercase tracking-widest mt-3 mb-2" style="color:'+x[2]+'">'+x[1]+' · '+gl.length+'</p>'+gl.map(function(w){return vcCard(w,false);}).join('');
+    });
+    if(plw&&t==='tutti'){
+      var pn=lmDoneList(plw.id).length;
+      h+='<p class="font-label text-[9px] uppercase tracking-[0.2em] text-gray-500 mt-5 mb-2">PLAYLIST COMPLETA</p>'+
+        '<div onclick="openLmDetail(\''+plw.id+'\')" class="flex items-center gap-3 p-4 mb-2 bg-surface-container ghost-border cursor-pointer active:bg-surface-container-high" style="border-left:2px solid '+C+'">'+
+          '<span class="material-symbols-outlined flex-shrink-0" style="font-size:30px;color:'+C+'">playlist_play</span>'+
+          '<div class="flex-1 min-w-0"><p class="font-headline text-lg leading-none">'+plw.label+'</p>'+
+            '<p class="font-label text-[10px] text-gray-400 mt-1">'+c.plN+' video · scegli dal lettore</p>'+
+            '<p class="font-label text-[10px] text-gray-500 mt-0.5">'+(pn?('Fatto '+pn+(pn===1?' volta':' volte')):'Non ancora usata')+'</p></div>'+
+          '<span class="material-symbols-outlined text-gray-700 text-sm">chevron_right</span></div>';
+    }
+    h+='<p class="font-label text-[10px] text-gray-600 leading-relaxed mt-4">Video pubblici su YouTube di '+(cid==='altri'?'Charlie Follows e Tom Peto Training':c.name)+'. Spegni questo coach in Set › Sezioni attive.</p>';
+    return h;
+  }
+  function tabLeo(){
     var G='#22c55e';
     var f=state.lmFilter||'tutti';
     function card(w,big){
@@ -9631,8 +9855,8 @@ function renderTrain(){
         '<span class="material-symbols-outlined text-gray-700 text-sm self-center pr-2">chevron_right</span>'+
       '</div>';
     }
-    var yt=LM_WORKOUTS.filter(function(w){return w.ytId;});
-    var pl=LM_WORKOUTS.filter(function(w){return w.ytList;})[0];
+    var yt=vcList('leo');
+    var pl=LM_WORKOUTS.filter(function(w){return w.ytList&&vcCoachId(w)==='leo';})[0];
     var drive=LM_WORKOUTS.filter(function(w){return !w.ytId&&!w.ytList;});
     var nx=lmNext();
     var h='<div class="p-4 mb-4" style="background:rgba(34,197,94,0.05);border-left:2px solid '+G+'">'+
@@ -9830,7 +10054,7 @@ function renderTrain(){
     {id:"kdp",     cat:"kb",   icon:"📈",name:"KDP-26",    desc:"Forge Density Protocol"},
     {id:"axe",     cat:"kb",   icon:"🫀",name:"AXE",       desc:"Aerobico anti-glicolitico"},
     {id:"bw",      cat:"bw",   icon:"🤸",name:"Bodyweight",desc:"Bodyweight Jacked e Limitless, a round"},
-    {id:"lm",      cat:"bw",   icon:"🎥",name:"LeoMoves",  desc:"Video dal canale YouTube: percorso da principiante a 40', HIIT e verticale"},
+    {id:"lm",      cat:"bw",   icon:"🎥",name:"Video coach",desc:"LeoMoves, Strength Side, smoov, Tom Merrick e altri: video da seguire"},
     {id:"pu50",    cat:"bw",   icon:"💪",name:"50 piegamenti",desc:"4 settimane: test, serie sotto il massimo, richiami"},
     {id:"wf",      cat:"sport",icon:"🏄",name:"Wing Foil", desc:"Equilibrio, core e potenza d'anca"},
     {id:"yoga",    cat:"yoga", icon:"🧘",name:"Yoga",desc:"Programmi per obiettivo, 28 posizioni con video"},
@@ -9863,7 +10087,7 @@ function renderTrain(){
     if(id==="bellplex") return BP_LEVELS.reduce(function(a,l){return a+l.ids.length;},0)+" complex";
     if(id==="flow") return FLOWS.length+" flow";
     if(id==="bw") return EXTRA_WORKOUTS.filter(function(w){return /^(BWJ|LTL)-/.test(w.id);}).length+" circuiti";
-    if(id==="lm") return LM_WORKOUTS.length+" video";
+    if(id==="lm") return LM_WORKOUTS.filter(function(w){return w.ytId||w.driveId;}).length+" video";
     if(id==="yoga"){ var yq=yogaLoad(); if(!yq.goal) return "5 obiettivi"; return yogaGoal(yq.goal).name+" · "+Math.min(yogaCount(yq,yq.goal),YOGA_TOTAL)+" / "+YOGA_TOTAL; }
     if(id==="rope"){ var rq=ropeLoad(); if(!rq||!rq.started) return "6 settimane"; return Object.keys(rq.done||{}).length+" / "+ropeSlots().length+" sedute"; }
     if(id==="pu50"){ var pq=puLoad(); if(!pq) return "28 giorni"; var nd=puDayOf(pq,puTodayIso()); return nd<1?"parte il "+puFmt(pq.start):nd>28?"concluso":"giorno "+nd+" di 28"; }
@@ -10438,6 +10662,7 @@ function renderMorning(){
         '<button onclick="mrStart(30)" class="flex-1 py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#c9a856,#9a7830);color:#000">EXPRESS 30"</button>'+
       '</div>'+
     '</div>'+
+    vcAltLine('LMTM1','risveglio')+
     // Respiro — routine mattutina 4 fasi
     (function(){
       var lastBreath=(state.breathHistory||[]).slice(-1)[0];
@@ -10529,7 +10754,7 @@ function renderMorning(){
         '<button onclick="mrStart(60,\'evening\')" class="flex-1 py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,'+EC+',#6d7fe0);color:#000">FULL 60"</button>'+
         '<button onclick="mrStart(30,\'evening\')" class="flex-1 py-3.5 font-headline text-xl tracking-widest active:scale-95" style="background:linear-gradient(135deg,#6d7fe0,#5063c4);color:#000">EXPRESS 30"</button>'+
       '</div>'+
-    '</div>';
+    '</div>'+vcAltLine('LMTM5','serale');
 
   // ══════════════════════════════════════════════════════════════
   // TAB PIANO AI
@@ -11567,11 +11792,18 @@ function aiWorkoutToAction(workoutName){
     return tab('k30','🔔','#facc15');
   }
   // LeoMoves: "LeoMoves 2", "LM2"
-  if(/leo\s*moves|\blm\s*\d\b|\blmy\d\b/.test(n)){
+  var vcM=n.match(/strength side|smoov|tom merrick|merrick|charlie follows|tom peto|video coach/);
+  if(vcM&&vcM[0]!=='video coach'){
+    var vcid=/strength/.test(vcM[0])?'ss':/smoov/.test(vcM[0])?'smoov':/merrick/.test(vcM[0])?'tm':'altri', vrest=n.replace(vcM[0],''), vhit=null;
+    LM_WORKOUTS.forEach(function(l){ if(!vhit&&vcCoachId(l)===vcid&&l.ai&&new RegExp(l.ai).test(vrest)) vhit=l; });
+    if(vhit) return {action:"openLmDetail('"+vhit.id+"');",icon:'🎥',color:vcCoach(vcid).color};
+    return {action:"state.vcCoach='"+vcid+"';state.trainSubTab='lm';switchTab('train');",icon:'🎥',color:vcCoach(vcid).color};
+  }
+  if(/leo\s*moves|\blm\s*\d\b|\blmy\d\b|video coach/.test(n)){
     m=n.match(/\blmy\s*(\d)\b/);
     if(m&&getLmById('LMY'+m[1])) return {action:"openLmDetail('LMY"+m[1]+"');",icon:'🎥',color:'#22c55e'};
     var lmHit=null;
-    LM_WORKOUTS.forEach(function(l){ if(!lmHit&&l.ai&&new RegExp(l.ai).test(n.replace(/leo\s*moves/,''))) lmHit=l; });
+    LM_WORKOUTS.forEach(function(l){ if(!lmHit&&vcCoachId(l)==='leo'&&l.ai&&new RegExp(l.ai).test(n.replace(/leo\s*moves/,''))) lmHit=l; });
     if(lmHit) return {action:"openLmDetail('"+lmHit.id+"');",icon:'🎥',color:'#22c55e'};
     m=n.match(/(?:leo\s*moves|\blm)\s*(\d)\b(?!\s*(?:'|min|’))/);
     if(m&&getLmById('LM'+m[1])) return {action:"openLmDetail('LM"+m[1]+"');",icon:'🎥',color:'#22c55e'};
@@ -11804,7 +12036,8 @@ function getWorkoutSuggestionRaw(){
 // ── Sezioni attive: programmi e pratiche che si possono spegnere ─────────
 var FORGE_SECTIONS=[
   {g:'Programmi', items:[['base','KB A·B·C','🔔'],['k30','30 Days KB','📅'],['alt','Extra','⚡'],['bellplex','Complex','🔗'],['flow','Flow','🌊'],['kdp','KDP-26','📈'],['axe','AXE','🫀'],
-    ['bw','Bodyweight','🤸'],['lm','LeoMoves','🎥'],['pu50','50 piegamenti','💪'],['wf','Wing Foil','🏄'],['yoga','Yoga','🧘'],['rope','Salto della corda','🪢'],['walk','Camminata','🚶']]},
+    ['bw','Bodyweight','🤸'],['lm','Video coach','🎥'],['pu50','50 piegamenti','💪'],['wf','Wing Foil','🏄'],['yoga','Yoga','🧘'],['rope','Salto della corda','🪢'],['walk','Camminata','🚶']]},
+  {g:'Video coach', items:[['vc-leo','LeoMoves','🎥'],['vc-ss','Strength Side','🐆'],['vc-smoov','smoov Movement','🦍'],['vc-tm','Tom Merrick','🧘‍♂️'],['vc-altri','Altri (Charlie Follows, Tom Peto)','🎬']]},
   {g:'Pratiche quotidiane', items:[['respiro','Respiro mattutino','🌬️'],['risveglio','Routine di risveglio','☀️'],['wimhof','Wim Hof','💨'],['cicli','Cicli di respiro','🫁'],['serale','Mobilità serale','🌙']]}
 ];
 function forgeOff(id){ return (FORGE_PROFILE.off||[]).indexOf(id)>=0; }
@@ -11826,7 +12059,13 @@ function forgeProgOfAction(a){
   for(var i=0;i<R.length;i++) if(R[i][0].test(a)) return R[i][1];
   return null;
 }
-function forgeActionOff(a){ var p=forgeProgOfAction(a); return !!(p&&forgeOff(p)); }
+function forgeActionOff(a){
+  var p=forgeProgOfAction(a); if(p&&forgeOff(p)) return true;
+  var m=String(a||'').match(/(?:openLmDetail|startLmWorkout)\('([^']+)'/);
+  if(m){ var w=getLmById(m[1]); if(w&&forgeOff('vc-'+vcCoachId(w))) return true; }
+  var c=String(a||'').match(/state\.vcCoach='([a-z]+)'/); if(c&&forgeOff('vc-'+c[1])) return true;
+  return false;
+}
 // Toglie dall'HTML i blocchi marcati data-sec che sono spenti (senza passare dal setter innerHTML)
 function forgeStripOff(html){
   if(!(FORGE_PROFILE.off||[]).length) return html;
@@ -12184,7 +12423,8 @@ function forgeExportWeekly(){
       '30 Days KB · Day 1-30 (indica il giorno, es. "30 Days KB · Day 5")','Complex CX1-CX21 (indica il numero, es. "Complex CX12")',
       'Wing Foil WF1-WF3 + Balance&Core','Core & Forza 7R','Deep Push-Up EMOM','Condizionamento B4-B9',
       'Flow FL1-FL4 (sequenze continue)','Bodyweight Jacked · Beginner W1-W3 e Fase 1-3 W1-W3 (es. "Bodyweight Jacked Fase 1 W2")',
-      'Limitless · Fase 1-3 W1-W3 (es. "Limitless Fase 2 W1")','LeoMoves 1-4 (video Drive)','LeoMoves YouTube (scrivi "LeoMoves " + nome): '+LM_WORKOUTS.filter(function(w){return w.ytId;}).map(function(w){return w.label;}).join(', '),'Respiro (routine 15 min)','Routine Mattutina 8min','Wim Hof']
+      'Limitless · Fase 1-3 W1-W3 (es. "Limitless Fase 2 W1")','LeoMoves 1-4 (video Drive)','LeoMoves YouTube (scrivi "LeoMoves " + nome): '+vcList('leo').map(function(w){return w.label;}).join(', '),
+      'Video coach (scrivi nome coach + nome video): '+VC_COACHES.filter(function(c){return c.id!=='leo';}).map(function(c){return (c.id==='altri'?'Charlie Follows / Tom Peto':c.name)+': '+vcList(c.id).map(function(w){return w.label;}).join(', ');}).join(' | '),'Respiro (routine 15 min)','Routine Mattutina 8min','Wim Hof']
   };
 
   var prompt='Sei un coach di kettlebell. Analizza i dati e fornisci raccomandazioni per la settimana prossima.\n\n'+
@@ -13328,8 +13568,15 @@ function renderFlowWorkout(){
 // ══════════════════════════════════════════════════════════════════
 // VERSIONE & CHANGELOG
 // ══════════════════════════════════════════════════════════════════
-var APP_VERSION = "v126";
+var APP_VERSION = "v127";
 var APP_CHANGELOG = [
+  {v:"v127", data:"15/10/2026", items:[
+    "LeoMoves diventa «Video coach»: LeoMoves, Strength Side, smoov Movement, Tom Merrick e Altri (Charlie Follows, Tom Peto)",
+    "36 nuovi video da seguire verificati, divisi per tipo (Flow e animale, Forza, Mobilità), più le playlist ufficiali di Strength Side (63) e smoov (47)",
+    "Prossimo consigliato per ogni coach; il macrociclo propone anche questi video nelle sedute di corpo libero e mobilità",
+    "Daily routine: alternativa video di Tom Merrick per il risveglio e per la sera",
+    "Log e Stats mostrano il nome del coach; in Set ogni coach ha il suo interruttore",
+  ]},
   {v:"v126", data:"11/10/2026", items:[
     "LeoMoves: 16 allenamenti in più dal canale (24 in tutto), divisi per livello, più la playlist ufficiale «Workouts With Timer» con 70 video",
     "LeoMoves: percorso consigliato aggiornato, filtri per durata (≤12, 15-20, 25-35, 40+ min)",
@@ -14499,7 +14746,7 @@ try{ walkRestore(); }catch(e){}
   try{const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const url=URL.createObjectURL(blob);const ex=document.querySelector('link[rel="manifest"]');if(ex)ex.href=url;else{const l=document.createElement('link');l.rel='manifest';l.href=url;document.head.appendChild(l);}}catch(e){}
 
   if('serviceWorker' in navigator){
-    const swCode=`const CACHE='kb-v126';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
+    const swCode=`const CACHE='kb-v127';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});self.addEventListener('fetch',e=>{const u=e.request.url;const isNav=e.request.mode==='navigate'||u.endsWith('.html')||u.endsWith('/');if(isNav){e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));return;}if(u.includes('fonts.googleapis')||u.includes('youtube')||u.includes('ytimg')){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r&&r.status===200&&e.request.method==='GET'){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}return r;})));});`;
     try{const b=new Blob([swCode],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});}catch(e){}
   }
 
